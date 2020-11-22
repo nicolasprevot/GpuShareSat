@@ -11,6 +11,8 @@ This is done by exporting all learned clauses to the GPU. The GPU checks its cla
 
 The GPU repeatedly checks up to millions of clauses against up to 1024 assignments. Experiments show that the GPU is more than able to cope with assignments coming from the CPU (provided the CPU only sends the parent of a conflict).
 
+For more details, see [the whitepaper](./paper.pdf)
+
 ## Directory overview:
 
 - mtl:            Minisat Template Library. Utilities not related to SAT.
