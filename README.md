@@ -3,7 +3,7 @@
 GpuShareSat is a solver for the boolean satisfiability problem (SAT).
 It is a portfolio solver based upon glucose-syrup which uses both the CPU and the GPU via CUDA. It solves 22 more instances of the SAT 2020 competition than glucose-syrup. The CPU runs a multithreaded portfolio conflict driven SAT solver (like glucose syrup).
 
-In traditional portfolio SAT solvers, each CPU thread export clauses it learns directly other thread. It uses a heuristic (size, lbd...) to determine which clauses are good enough to share. 
+In traditional portfolio SAT solvers, each CPU thread export clauses it learns directly to other threads. It uses a heuristic (size, lbd...) to determine which clauses are good enough to share. 
 
 In contrast, in GpuShareSat, a thead will only import a clause if this clause would have been useful in the past few milliseconds (in which case it is likely to be useful again soon).
 
