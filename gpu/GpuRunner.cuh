@@ -1,0 +1,93 @@
+/***************************************************************************************
+ GpuShareSat -- Copyright (c) 2020, Nicolas Prevot
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
+associated documentation files (the "Software"), to deal in the Software without restriction,
+including without limitation the rights to use, copy, modify, merge, publish, distribute,
+sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or
+substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT
+NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT
+OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ **************************************************************************************************/
+#ifndef GpuRunner_h
+#define GpuRunner_h
+
+#include "BaseTypes.cuh"
+#include "Reporter.cuh"
+#include "GpuUtils.cuh"
+#include <memory>
+#include "utils/Profiler.h"
+
+namespace Glucose {
+
+class HostAssigs;
+class HostClauses;
+class ClauseActivity;
+class DAssigs;
+class Reported;
+class DOneSolverAssigs;
+class DAssigAggregates;
+class AssigsAndUpdates;
+
+// This class deals with actually running the GPU and checking clauses against assignments
+class GpuRunner {
+private:
+    ContigCopier cpuToGpuContigCopier;
+    ContigCopier gpuToCpuContigCopier;
+
+    int warpsPerBlock;
+    int blockCount;
+    long clauseChecks;
+    long assigClsChecked;
+    long assigsCopiedToGpu;
+    EventPointer beforeFindClauses;
+    EventPointer afterFindClauses;
+
+    EventPointer gpuToCpuCopyDone;
+    EventPointer cpuToGpuCopyDone;
+
+    cudaStream_t &stream;
+
+    int executeCount;
+    vec<ReportedClause> reportedCls;
+    int lastInAssigIdsPerSolver;
+    vec<AssigIdsPerSolver> assigIdsPerSolver[2];
+    std::unique_ptr<Reporter<ReportedClause>> prevReporter;
+
+    CorrespArr<long> oneSolverChecks;
+    void prepareOneSolverChecksAsync(int threadCount, cudaStream_t &tream);
+    // if we do some simple profiling
+    bool quickProf;
+    int categoryCount;
+    int countPerCategory;
+    int minLatencyMicros;
+    HostAssigs &hostAssigs;
+    HostClauses &hostClauses;
+    Reported &reported;
+
+    Profiler profiler;
+
+    float timeToWaitSec;
+
+    bool startGpuRunAsync(cudaStream_t &stream, vec<AssigIdsPerSolver> &assigIdsPerSolver, std::unique_ptr<Reporter<ReportedClause>> &reporter);
+    void scheduleGpuToCpuCopyAsync(cudaStream_t &stream);
+    void gatherGpuRunResults(vec<AssigIdsPerSolver> &assigIdsPerSolver, Reporter<ReportedClause> &reporter);
+
+public:
+    GpuRunner(HostClauses &hClauses, HostAssigs &hostAssigs, Reported &reported, GpuDims gpuDimsGuideline, bool quickProf, int countPerCategory, int minLatencyMicros, cudaStream_t &stream);
+
+    void wholeRun(bool canStart);
+    void execute();
+    void printStats();
+};
+
+}
+
+#endif
