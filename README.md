@@ -41,13 +41,5 @@ in simp directory: ./glucose --help
 
 in gpu directory: ./glucose-gpu --help
 
-## General design of the GPU version:
-Regarding threads: 
-I've tried to keep the cpu threads as separate as possible. That is, each one has data that only it will read / write.
-There are a few places where several threads can read / write. In this case, it will be protected by a lock. 
-
-There are two types:
-- the solver threads
-- the gpu caller thread: deals directly with the gpu, tells the solver threads about the reported clauses...
-
-To index: ctags **/*.cu **/*.cuh **/*.cc **/*.h
+## Contact
+[nicolas.prevt@gmail.com](mailto:nicolas.prevt@gmail.com)
