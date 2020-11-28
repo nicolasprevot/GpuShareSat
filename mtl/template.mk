@@ -35,7 +35,7 @@ CCX       ?= g++
 NVCC      ?= nvcc
 
 CFLAGS    ?= -Wall -Wno-parentheses
-CUFLAGS   ?= -x cu -arch=sm_60
+CUFLAGS   ?= -x cu -arch=sm_52
 
 COPTIMIZE ?= -O3
 
