@@ -28,7 +28,9 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "GpuHelpedSolver.cuh"
 #include "ContigCopy.cuh"
 #include "utils/System.h"
+#include "utils/Options.h"
 #include <thread>
+#include <stdio.h>
 
 extern size_t maxPageLockedMem;
 
