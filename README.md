@@ -1,8 +1,19 @@
 # GpuShareSat
 
-GpuShareSat is a portfolio SAT solver based upon glucose-syrup using both the CPU and the GPU via CUDA. It solves 22 more instances of the SAT 2020 competition than glucose-syrup. The CPU runs a multithreaded portfolio conflict driven SAT solver (like glucose syrup). However, CPU threads do not export clauses they learn directly to each other. Instead, they export these clauses to the GPU. The GPU checks its clauses against past partial assignments coming from the CPU threads. This allows the GPU to notice when a clause would have been useful for a CPU thread. In this case, that CPU thread gets notified and imports the clause. 
+## General description
+
+GpuShareSat is a solver for the boolean satisfiability problem (SAT).
+It is a portfolio solver based upon glucose-syrup which uses both the CPU and the GPU via CUDA. It solves 22 more instances of the SAT 2020 competition than glucose-syrup. The CPU runs a multithreaded portfolio conflict driven SAT solver (like glucose syrup).
+
+In traditional portfolio SAT solvers, each CPU thread export clauses it learns directly to other threads. It uses a heuristic (size, lbd...) to determine which clauses are good enough to share. 
+
+In contrast, in GpuShareSat, a thead will only import a clause if this clause would have been useful in the past few milliseconds (in which case it is likely to be useful again soon).
+
+This is done by exporting all learned clauses to the GPU. The GPU checks its clauses against past partial assignments coming from the CPU threads. This allows the GPU to notice when a clause would have been useful for a CPU thread. In this case, that CPU thread gets notified and imports the clause. 
 
 The GPU repeatedly checks up to millions of clauses against up to 1024 assignments. Experiments show that the GPU is more than able to cope with assignments coming from the CPU (provided the CPU only sends the parent of a conflict).
+
+For more details, see [the whitepaper](./paper.pdf)
 
 ## Directory overview:
 
@@ -32,13 +43,5 @@ in simp directory: ./glucose --help
 
 in gpu directory: ./glucose-gpu --help
 
-## General design of the GPU version:
-Regarding threads: 
-I've tried to keep the cpu threads as separate as possible. That is, each one has data that only it will read / write.
-There are a few places where several threads can read / write. In this case, it will be protected by a lock. 
-
-There are two types:
-- the solver threads
-- the gpu caller thread: deals directly with the gpu, tells the solver threads about the reported clauses...
-
-To index: ctags **/*.cu **/*.cuh **/*.cc **/*.h
+## Contact
+[nicolas.prevt@gmail.com](mailto:nicolas.prevt@gmail.com)

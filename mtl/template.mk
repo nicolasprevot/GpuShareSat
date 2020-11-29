@@ -5,6 +5,7 @@
 ##        "make d"  for a debug version (no optimizations).
 ##        "make"    for the standard version (optimized, but with debug information and assertions active)
 MAKEFLAGS += --no-builtin-rules
+SMVER=52
 
 SHELL=/bin/bash
 
@@ -35,7 +36,7 @@ CCX       ?= g++
 NVCC      ?= nvcc
 
 CFLAGS    ?= -Wall -Wno-parentheses
-CUFLAGS   ?= -x cu -arch=sm_60
+CUFLAGS   ?= -x cu -arch=sm_$(SMVER)
 
 COPTIMIZE ?= -O3
 
