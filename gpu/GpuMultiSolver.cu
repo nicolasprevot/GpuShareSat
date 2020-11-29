@@ -28,6 +28,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "satUtils/Dimacs.h"
 #include <pthread.h>
 #include "utils/Periodic.h"
+#include "my_make_unique.h"
 
 namespace Glucose {
 
@@ -46,7 +47,7 @@ GpuMultiSolver::GpuMultiSolver(GpuRunner &_gpuRunner, Reported &_reported, Finis
                 initMemUsed(_initMemUsed),
                 maxMemory(_maxMemory),
                 hasTriedToLowerCpuMemoryUsage(false) {
-    periodicRunner = std::make_unique<PeriodicRunner>(realTimeSecSinceStart()); 
+    periodicRunner = my_make_unique<PeriodicRunner>(realTimeSecSinceStart()); 
     periodicRunner->add(5, std::function<void ()> ([&] () { 
         printStats();
     }));
@@ -90,7 +91,7 @@ lbool GpuMultiSolver::solve(int _cpuThreadCount) {
     cpuSolverCount = _cpuThreadCount;
     helpedSolvers.growTo(cpuSolverCount);
     for (int i = 1; i < cpuSolverCount; i++) {
-        helpedSolvers[i] = std::make_unique<GpuHelpedSolver>(*helpedSolvers[0], i, assigs.getAssigs(i));
+        helpedSolvers[i] = my_make_unique<GpuHelpedSolver>(*helpedSolvers[0], i, assigs.getAssigs(i));
     }
     configure();
 

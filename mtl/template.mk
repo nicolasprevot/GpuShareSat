@@ -5,7 +5,6 @@
 ##        "make d"  for a debug version (no optimizations).
 ##        "make"    for the standard version (optimized, but with debug information and assertions active)
 MAKEFLAGS += --no-builtin-rules
-SMVER=35
 
 SHELL=/bin/bash
 

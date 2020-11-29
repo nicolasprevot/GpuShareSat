@@ -25,6 +25,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "utils/System.h"
 #include "utils/Utils.h"
 #include "CorrespArr.cuh"
+#include "my_make_unique.h"
 #include <thread>         // std::this_thread::sleep_for
 
 // #define PRINT_ALOT 1
@@ -301,7 +302,7 @@ bool GpuRunner::startGpuRunAsync(cudaStream_t &stream, vec<AssigIdsPerSolver> &a
     exitIfError(cudaEventRecord(cpuToGpuCopyDone.get(), stream), POSITION);
 
     gpuToCpuContigCopier.clear(false);
-    reporter = std::make_unique<Reporter<ReportedClause>>(gpuToCpuContigCopier, stream, countPerCategory, categoryCount);
+    reporter = my_make_unique<Reporter<ReportedClause>>(gpuToCpuContigCopier, stream, countPerCategory, categoryCount);
     auto dReporter = reporter->getDReporter();
     DClauses dClauses = runInfo.getDClauses();
 

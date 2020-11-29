@@ -35,6 +35,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "gpu/GpuRunner.cuh"
 #include "testUtils/TestHelper.cuh"
 #include "utils/Utils.h"
+#include "my_make_unique.h"
 
 namespace Glucose {
 
@@ -43,7 +44,7 @@ int getDiffMicros(timespec begin, timespec end) {
 }
 
 std::unique_ptr<GpuOptions> getOptions(int clCount, int clMinSize, int clMaxSize) {
-    auto ptr = std::make_unique<GpuOptions>();
+    auto ptr = my_make_unique<GpuOptions>();
     ptr -> blockCount = 10;
 #ifndef NDEBUG
     ptr -> threadsPerBlock = 150;
