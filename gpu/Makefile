@@ -1,4 +1,4 @@
-SMVER=52
+SMVER=35
 EXEC = glucose-gpu
 DEPDIR    = mtl utils core simp satUtils
 MROOT = $(PWD)/..
