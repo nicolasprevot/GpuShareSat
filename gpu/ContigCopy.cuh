@@ -97,7 +97,7 @@ public:
     template<typename T>
     std::unique_ptr<ArrPair<T>> buildArrPairPtr(int size, cudaStream_t *stream) {
         int offSet = reserveMem<T>(size, stream);
-        return std::make_unique<ArrPair<T>>(offSet, size, *this);
+        return make_unique<ArrPair<T>>(offSet, size, *this);
     }
 
     template<typename T>

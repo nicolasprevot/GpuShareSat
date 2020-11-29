@@ -46,7 +46,7 @@ GpuMultiSolver::GpuMultiSolver(GpuRunner &_gpuRunner, Reported &_reported, Finis
                 initMemUsed(_initMemUsed),
                 maxMemory(_maxMemory),
                 hasTriedToLowerCpuMemoryUsage(false) {
-    periodicRunner = std::make_unique<PeriodicRunner>(realTimeSecSinceStart()); 
+    periodicRunner = make_unique<PeriodicRunner>(realTimeSecSinceStart()); 
     periodicRunner->add(5, std::function<void ()> ([&] () { 
         printStats();
     }));
@@ -90,7 +90,7 @@ lbool GpuMultiSolver::solve(int _cpuThreadCount) {
     cpuSolverCount = _cpuThreadCount;
     helpedSolvers.growTo(cpuSolverCount);
     for (int i = 1; i < cpuSolverCount; i++) {
-        helpedSolvers[i] = std::make_unique<GpuHelpedSolver>(*helpedSolvers[0], i, assigs.getAssigs(i));
+        helpedSolvers[i] = make_unique<GpuHelpedSolver>(*helpedSolvers[0], i, assigs.getAssigs(i));
     }
     configure();
 

@@ -372,7 +372,7 @@ void HostAssigs::growSolverAssigs(int solverCount, int &warpsPerBlock, int warpC
     int oldCount = solverAssigs.size();
     solverAssigs.growTo(solverCount);
     for (int i = oldCount; i < solverCount; i++) {
-        solverAssigs[i] = std::make_unique<OneSolverAssigs>(varCount, warpsPerBlock, warpCount);
+        solverAssigs[i] = make_unique<OneSolverAssigs>(varCount, warpsPerBlock, warpCount);
     }
 
     int bitsCount = sizeof(Vals) * 8;

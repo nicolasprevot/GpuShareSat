@@ -301,7 +301,7 @@ bool GpuRunner::startGpuRunAsync(cudaStream_t &stream, vec<AssigIdsPerSolver> &a
     exitIfError(cudaEventRecord(cpuToGpuCopyDone.get(), stream), POSITION);
 
     gpuToCpuContigCopier.clear(false);
-    reporter = std::make_unique<Reporter<ReportedClause>>(gpuToCpuContigCopier, stream, countPerCategory, categoryCount);
+    reporter = make_unique<Reporter<ReportedClause>>(gpuToCpuContigCopier, stream, countPerCategory, categoryCount);
     auto dReporter = reporter->getDReporter();
     DClauses dClauses = runInfo.getDClauses();
 

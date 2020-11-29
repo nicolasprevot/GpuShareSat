@@ -168,7 +168,7 @@ PerSizeKeeper::PerSizeKeeper(float _clauseActDecay):
         clauseActIncr(1.0),
         clauseActDecay(_clauseActDecay) {
     for (int clSize = 0; clSize <= MAX_CL_SIZE; clSize++) {
-        perSize[clSize] = std::make_unique<HOneSizeClauses>();
+        perSize[clSize] = make_unique<HOneSizeClauses>();
     }
 }
 

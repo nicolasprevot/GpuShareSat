@@ -99,14 +99,14 @@ CompositionRoot::CompositionRoot(GpuOptions ops, Finisher &finisher, int varCoun
     // don't page lock more than 10 % of memory in one go
     maxPageLockedMem = 1e6 * ops.maxMemory / 10;
     double initMemUsed = memUsed();
-    hostAssigs = std::make_unique<HostAssigs>(varCount, gpuDims);
-    hClauses = std::make_unique<HostClauses>(gpuDims, ops.gpuClauseActivityDecay,
+    hostAssigs = make_unique<HostAssigs>(varCount, gpuDims);
+    hClauses = make_unique<HostClauses>(gpuDims, ops.gpuClauseActivityDecay,
         ops.gpuFirstReduceDb, ops.gpuIncReduceDb, ops.gpuActOnly);
-    reported = std::make_unique<Reported>(*hClauses);
-    gpuRunner = std::make_unique<GpuRunner>(*hClauses, *hostAssigs, *reported, gpuDims, ops.quickProf, initRepCountPerCategory, ops.minGpuLatencyMicros, streamPointer.get());
-    gpuMultiSolver = std::make_unique<GpuMultiSolver>(*gpuRunner, *reported, finisher, *hostAssigs, *hClauses,
+    reported = make_unique<Reported>(*hClauses);
+    gpuRunner = make_unique<GpuRunner>(*hClauses, *hostAssigs, *reported, gpuDims, ops.quickProf, initRepCountPerCategory, ops.minGpuLatencyMicros, streamPointer.get());
+    gpuMultiSolver = make_unique<GpuMultiSolver>(*gpuRunner, *reported, finisher, *hostAssigs, *hClauses,
                 std::function<std::unique_ptr<GpuHelpedSolver> (int, OneSolverAssigs&)> ([&](int cpuThreadId, OneSolverAssigs &oneSolverAssigs) {
-                    return std::make_unique<GpuHelpedSolver>(*reported, finisher, *hClauses, cpuThreadId, ops.gpuHelpedSolverOptions.toParams(), oneSolverAssigs);
+                    return make_unique<GpuHelpedSolver>(*reported, finisher, *hClauses, cpuThreadId, ops.gpuHelpedSolverOptions.toParams(), oneSolverAssigs);
                 }), varCount, ops.writeClausesPeriodSec, initMemUsed, (double) ops.maxMemory);
 }
 

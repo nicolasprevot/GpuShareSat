@@ -43,7 +43,7 @@ int getDiffMicros(timespec begin, timespec end) {
 }
 
 std::unique_ptr<GpuOptions> getOptions(int clCount, int clMinSize, int clMaxSize) {
-    auto ptr = std::make_unique<GpuOptions>();
+    auto ptr = make_unique<GpuOptions>();
     ptr -> blockCount = 10;
 #ifndef NDEBUG
     ptr -> threadsPerBlock = 150;

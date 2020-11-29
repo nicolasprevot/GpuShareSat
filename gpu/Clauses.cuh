@@ -25,7 +25,6 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #define CLAUSES_H_
 
 #include <mutex>
-#include <shared_mutex>
 #include <memory>
 
 #include "satUtils/SolverTypes.h"
