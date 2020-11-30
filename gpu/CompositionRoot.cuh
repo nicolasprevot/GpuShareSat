@@ -38,6 +38,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "GpuRunner.cuh"
 #include "GpuHelpedSolver.cuh"
 #include "utils/Periodic.h"
+#include "my_make_unique.h"
 #include <memory>
 
 namespace Glucose {
