@@ -1,4 +1,5 @@
 # for GTX 940MX
+# NOTE: 52 is too high for this GPU
 SMVER=50
 
 #for Tesla K40
