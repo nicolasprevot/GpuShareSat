@@ -245,6 +245,12 @@ static inline int irand(double& seed, int min, int max) {
     return irand(seed, max - min) + min;
 }
 
+template<typename T, typename... Args>
+std::unique_ptr<T> make_unique(Args&&... args)
+{
+        return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
+}
+
 }
 
 

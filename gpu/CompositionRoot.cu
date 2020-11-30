@@ -29,7 +29,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "ContigCopy.cuh"
 #include "utils/System.h"
 #include "utils/Options.h"
-#include "my_make_unique.h"
+#include "my_my_make_unique.h"
 #include <thread>
 #include <stdio.h>
 

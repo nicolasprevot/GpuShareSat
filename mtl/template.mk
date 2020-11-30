@@ -39,7 +39,7 @@ CUFLAGS   ?= -x cu -arch=sm_$(SMVER)
 
 COPTIMIZE ?= -O3
 
-CU_AND_C_FLAGS    += -I$(MROOT) -D __STDC_LIMIT_MACROS -D __STDC_FORMAT_MACROS
+CU_AND_C_FLAGS    += -I$(MROOT) -D __STDC_LIMIT_MACROS -D __STDC_FORMAT_MACROS -std=c++11
 LFLAGS    += -lz
 
 .PHONY : s p d r rs grs clean
@@ -71,7 +71,6 @@ $(EXEC)_debug:		LFLAGS += -g
 #$(EXEC)_release:	LFLAGS += ...
 $(EXEC)_static:		LFLAGS += --static
 $(EXEC)_gstatic:	LFLAGS += -Xcompiler -static
-#$(EXEC)_gstatic:	LFLAGS += --cudart=static
 
 ## Dependencies
 $(EXEC):		$(COBJS)

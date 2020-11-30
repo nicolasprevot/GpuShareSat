@@ -198,7 +198,6 @@ class Clause {
       unsigned lbd : BITS_LBD;
 
       unsigned size       : BITS_REALSIZE;
-      unsigned watchCount : BITS_REALSIZE;
 
 #ifdef INCREMENTAL
       unsigned szWithoutSelectors : BITS_SIZEWITHOUTSEL;
@@ -232,7 +231,6 @@ class Clause {
             if (header.learned) data[header.size].act = 0; 
             else calcAbstraction();
         }
-        header.watchCount = 0;
     }
 
 public:
@@ -253,8 +251,6 @@ public:
     void         pop         ()              { shrink(1); }
     bool         learned     ()      const   { return header.learned; }
     bool         fromGpu     ()      const   { return header.fromGpu; }
-    int          watchCount  ()      const   { return header.watchCount; }
-    void         setWatchCount(int c)        { header.watchCount = c; }
     bool         permLearned ()      const   { return header.permLearned; }
     void         setPermLearned ()           { header.learned = false; header.permLearned = true; }
     bool         has_extra   ()      const   { return header.extra_size > 0; }
@@ -371,7 +367,6 @@ void printV(Clause& c);
                 to[cr].setSeen(c.getSeen());
                 if (to[cr].has_extra()) to[cr].calcAbstraction();
             }
-            to[cr].setWatchCount(c.watchCount());
         }
     };
 
