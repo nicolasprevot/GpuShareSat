@@ -39,7 +39,7 @@ CUFLAGS   ?= -x cu -arch=sm_$(SMVER)
 
 COPTIMIZE ?= -O3
 
-CU_AND_C_FLAGS    += -I$(MROOT) -D __STDC_LIMIT_MACROS -D __STDC_FORMAT_MACROS -std=c++11
+CU_AND_C_FLAGS    += -I$(MROOT) -D __STDC_LIMIT_MACROS -D __STDC_FORMAT_MACROS
 LFLAGS    += -lz
 
 .PHONY : s p d r rs grs clean
