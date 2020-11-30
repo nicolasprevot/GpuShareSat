@@ -27,6 +27,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "Helper.cuh"
 #include "CorrespArr.cuh"
 
+
 namespace Glucose {
 
 class ContigCopier;
@@ -97,7 +98,7 @@ public:
     template<typename T>
     std::unique_ptr<ArrPair<T>> buildArrPairPtr(int size, cudaStream_t *stream) {
         int offSet = reserveMem<T>(size, stream);
-        return make_unique<ArrPair<T>>(offSet, size, *this);
+        return my_make_unique<ArrPair<T>>(offSet, size, *this);
     }
 
     template<typename T>

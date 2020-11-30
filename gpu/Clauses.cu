@@ -32,6 +32,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "satUtils/SolverTypes.h"
 #include "GpuUtils.cuh"
 #include "BaseTypes.cuh"
+#include "my_make_unique.h"
 #include <limits>
 
 // #define LOG_MEM
@@ -168,7 +169,7 @@ PerSizeKeeper::PerSizeKeeper(float _clauseActDecay):
         clauseActIncr(1.0),
         clauseActDecay(_clauseActDecay) {
     for (int clSize = 0; clSize <= MAX_CL_SIZE; clSize++) {
-        perSize[clSize] = make_unique<HOneSizeClauses>();
+        perSize[clSize] = my_make_unique<HOneSizeClauses>();
     }
 }
 

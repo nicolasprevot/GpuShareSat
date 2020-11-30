@@ -5,7 +5,6 @@
 ##        "make d"  for a debug version (no optimizations).
 ##        "make"    for the standard version (optimized, but with debug information and assertions active)
 MAKEFLAGS += --no-builtin-rules
-SMVER=52
 
 SHELL=/bin/bash
 
@@ -40,16 +39,17 @@ CUFLAGS   ?= -x cu -arch=sm_$(SMVER)
 
 COPTIMIZE ?= -O3
 
-CU_AND_C_FLAGS    += -I$(MROOT) -D __STDC_LIMIT_MACROS -D __STDC_FORMAT_MACROS -std=c++11
+CU_AND_C_FLAGS    += -I$(MROOT) -D __STDC_LIMIT_MACROS -D __STDC_FORMAT_MACROS
 LFLAGS    += -lz
 
-.PHONY : s p d r rs clean 
+.PHONY : s p d r rs grs clean
 
 s:	$(EXEC)
 p:	$(EXEC)_profile
 d:	$(EXEC)_debug
 r:	$(EXEC)_release
 rs:	$(EXEC)_static
+grs:	$(EXEC)_gstatic
 
 libs:	lib$(LIB)_standard.a
 libp:	lib$(LIB)_profile.a
@@ -70,6 +70,7 @@ $(EXEC)_profile:	LFLAGS += -g -pg -l:libnvToolsExt.so -Xcompiler '-no-pie'
 $(EXEC)_debug:		LFLAGS += -g
 #$(EXEC)_release:	LFLAGS += ...
 $(EXEC)_static:		LFLAGS += --static
+$(EXEC)_gstatic:	LFLAGS += -Xcompiler -static
 
 ## Dependencies
 $(EXEC):		$(COBJS)
@@ -77,6 +78,7 @@ $(EXEC)_profile:	$(PCOBJS)
 $(EXEC)_debug:		$(DCOBJS)
 $(EXEC)_release:	$(RCOBJS)
 $(EXEC)_static:		$(RCOBJS)
+$(EXEC)_gstatic:	$(RCOBJS)
 
 lib$(LIB)_standard.a:	$(filter-out */Main.*.n.o,  $(COBJS))
 lib$(LIB)_profile.a:	$(filter-out */Main.*.p.o, $(PCOBJS))
@@ -93,7 +95,7 @@ lib$(LIB)_release.a:	$(filter-out */Main.*.r.o, $(RCOBJS))
 	@$(NVCC) $(CUFLAGS) $(CU_AND_C_FLAGS) -dc -o $@ $<
 
 ## Linking rules (standard/profile/debug/release)
-$(EXEC) $(EXEC)_profile $(EXEC)_debug $(EXEC)_release $(EXEC)_static:
+$(EXEC) $(EXEC)_profile $(EXEC)_debug $(EXEC)_release $(EXEC)_static $(EXEC)_gstatic:
 	@echo Linking: "$@ ( $(foreach f,$^,$(subst $(MROOT)/,,$f)) )"
 	@$(COMP) $^ $(LFLAGS) -o $@
 
@@ -112,7 +114,7 @@ allclean: clean
 	
 	@rm -f ../simp/*.o ../core/*.o
 clean:
-	rm -f $(EXEC) $(EXEC)_profile $(EXEC)_debug $(EXEC)_release $(EXEC)_static \
+	rm -f $(EXEC) $(EXEC)_profile $(EXEC)_debug $(EXEC)_release $(EXEC)_static $(EXEC)_gstatic\
 	  $(COBJS) $(PCOBJS) $(DCOBJS) $(RCOBJS) *.core depend.mk 
 
 FULLDEPDIRS	=	$(patsubst %, $(MROOT)/%, $(DEPDIR))

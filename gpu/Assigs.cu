@@ -21,6 +21,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "BaseTypes.cuh"
 #include "Assigs.cuh"
 #include "ContigCopy.cuh"
+#include "my_make_unique.h"
 
 #include <atomic>
 
@@ -372,7 +373,7 @@ void HostAssigs::growSolverAssigs(int solverCount, int &warpsPerBlock, int warpC
     int oldCount = solverAssigs.size();
     solverAssigs.growTo(solverCount);
     for (int i = oldCount; i < solverCount; i++) {
-        solverAssigs[i] = make_unique<OneSolverAssigs>(varCount, warpsPerBlock, warpCount);
+        solverAssigs[i] = my_make_unique<OneSolverAssigs>(varCount, warpsPerBlock, warpCount);
     }
 
     int bitsCount = sizeof(Vals) * 8;

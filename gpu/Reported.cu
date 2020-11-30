@@ -77,7 +77,7 @@ void Reported::setSolverCount(int solverCount) {
     repClauses.growTo(solverCount);
     for (int s = 0; s < solverCount; s++) {
         // There can be at most 3 sets of 32 assignments in flight for a given solver
-        repClauses[s] = make_unique<ConcurrentQueue<ClauseBatch>>(3);
+        repClauses[s] = my_make_unique<ConcurrentQueue<ClauseBatch>>(3);
     }
 }
 

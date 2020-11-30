@@ -28,7 +28,9 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "GpuHelpedSolver.cuh"
 #include "ContigCopy.cuh"
 #include "utils/System.h"
+#include "utils/Options.h"
 #include <thread>
+#include <stdio.h>
 
 extern size_t maxPageLockedMem;
 
@@ -99,14 +101,14 @@ CompositionRoot::CompositionRoot(GpuOptions ops, Finisher &finisher, int varCoun
     // don't page lock more than 10 % of memory in one go
     maxPageLockedMem = 1e6 * ops.maxMemory / 10;
     double initMemUsed = memUsed();
-    hostAssigs = make_unique<HostAssigs>(varCount, gpuDims);
-    hClauses = make_unique<HostClauses>(gpuDims, ops.gpuClauseActivityDecay,
+    hostAssigs = my_make_unique<HostAssigs>(varCount, gpuDims);
+    hClauses = my_make_unique<HostClauses>(gpuDims, ops.gpuClauseActivityDecay,
         ops.gpuFirstReduceDb, ops.gpuIncReduceDb, ops.gpuActOnly);
-    reported = make_unique<Reported>(*hClauses);
-    gpuRunner = make_unique<GpuRunner>(*hClauses, *hostAssigs, *reported, gpuDims, ops.quickProf, initRepCountPerCategory, ops.minGpuLatencyMicros, streamPointer.get());
-    gpuMultiSolver = make_unique<GpuMultiSolver>(*gpuRunner, *reported, finisher, *hostAssigs, *hClauses,
+    reported = my_make_unique<Reported>(*hClauses);
+    gpuRunner = my_make_unique<GpuRunner>(*hClauses, *hostAssigs, *reported, gpuDims, ops.quickProf, initRepCountPerCategory, ops.minGpuLatencyMicros, streamPointer.get());
+    gpuMultiSolver = my_make_unique<GpuMultiSolver>(*gpuRunner, *reported, finisher, *hostAssigs, *hClauses,
                 std::function<std::unique_ptr<GpuHelpedSolver> (int, OneSolverAssigs&)> ([&](int cpuThreadId, OneSolverAssigs &oneSolverAssigs) {
-                    return make_unique<GpuHelpedSolver>(*reported, finisher, *hClauses, cpuThreadId, ops.gpuHelpedSolverOptions.toParams(), oneSolverAssigs);
+                    return my_make_unique<GpuHelpedSolver>(*reported, finisher, *hClauses, cpuThreadId, ops.gpuHelpedSolverOptions.toParams(), oneSolverAssigs);
                 }), varCount, ops.writeClausesPeriodSec, initMemUsed, (double) ops.maxMemory);
 }
 
