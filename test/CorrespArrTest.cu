@@ -31,7 +31,7 @@ BOOST_AUTO_TEST_SUITE( CorrespArrTest )
 #define N 3
 #define ROW 3
 #define COL 3
-// serves as an assig that the gpu write to, and cpu then reads
+
 __device__ int copiedData[N];
 __device__ int copiedDataMat[ROW][COL];
 
@@ -201,6 +201,32 @@ BOOST_AUTO_TEST_CASE(testSetAllTo0) {
     exitIfError(cudaStreamSynchronize(sp.get()), POSITION);
     BOOST_CHECK_EQUAL(0, cro[0]);
 }
+
+// Commented because this test is expected to fail. It's used to make sure that the destr check code is failing when it should
+/*
+BOOST_AUTO_TEST_CASE(failIfUsingDeletedOnHost) {
+    MinHArr<int> minHArr;
+    {
+        CorrespArr<int> carr(4);
+        minHArr = carr.asMinHArr();
+    }
+    minHArr[2] = 3;
+}
+*/
+
+
+// Commented because this test is expected to fail. It's used to make sure that the destr check code is failing when it should
+/*
+BOOST_AUTO_TEST_CASE(failIfUsingDeletedOnDevice) {
+    DArr<int> dArr;
+    {
+        CorrespArr<int> carr(4, false);
+        dArr = carr.getDArr();
+    }
+    dTestIncrease<<<1,1>>>(dArr);
+    exitIfError(cudaDeviceSynchronize(), POSITION);
+}
+*/
 
 BOOST_AUTO_TEST_SUITE_END()
 

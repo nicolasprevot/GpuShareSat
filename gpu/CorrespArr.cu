@@ -77,9 +77,9 @@ DestrCheckPointer::DestrCheckPointer() {
 
 void DestrCheckPointer::check() {
 #ifdef __CUDA_ARCH__
-    assert(hostPtr == NULL || *hostPtr == val);
-#else
     assert(devPtr == NULL || *devPtr == val);
+#else
+    assert(hostPtr == NULL || *hostPtr == val);
 #endif
 }
 

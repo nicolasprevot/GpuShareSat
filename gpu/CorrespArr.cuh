@@ -442,6 +442,7 @@ class HArr : public MinHArr<T> {
             return MinHArr<T>(MinHArr<T>::_size, MinHArr<T>::getPtr()
 #ifndef NDEBUG
             , DestrCheckPointer(_destrCheck)
+            , NULL
 #endif
             );
         }
