@@ -51,20 +51,21 @@ exitIfError(cudaMemcpyAsync(addr1, addr2, amount, mode, stream), POSITION);
 class DestrCheck;
 class DestrCheckPointer {
     private:
-    int *ptr;
+    int *hostPtr;
+    int *devPtr;
     int val;
     public:
     __device__ __host__ DestrCheckPointer(const DestrCheck &destrCheck);
     __device__ __host__ DestrCheckPointer();
     __device__ __host__ void check();
-    __device__ __host__ bool pointsToSomething() { return ptr != NULL; }
-    __device__ __host__ void clear() { ptr = NULL; }
+    __device__ __host__ bool pointsToSomething() { return hostPtr != NULL; }
+    __device__ __host__ void clear() { hostPtr = NULL; devPtr = NULL; }
 };
 
 class DestrCheck {
     private:
-    // managed memory
-    int *ptr;
+    int *hostPtr;
+    int *devPtr;
     void allocMem();
 
     public:

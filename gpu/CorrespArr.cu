@@ -42,32 +42,45 @@ DestrCheck::DestrCheck() {
 void DestrCheck::change() {
     // this will invalidate all the destr check pointers currently pointing
     // to us
-    cudaFree(ptr);
+    free(hostPtr);
+    cudaFree(devPtr);
     allocMem();
 }
 
 void DestrCheck::allocMem() {
-    exitIfError(cudaMallocManaged(&ptr, sizeof(int)), POSITION);
-    *ptr = rand();
+    hostPtr = new int;
+    exitIfError(cudaMalloc(&devPtr, sizeof(int)), POSITION);
+    *hostPtr = rand();
+    exitIfError(cudaMemcpy(devPtr, hostPtr, sizeof(int), cudaMemcpyHostToDevice), POSITION);
+    exitIfError(cudaDeviceSynchronize(), POSITION);
 }
 
 DestrCheck::~DestrCheck() {
-    *ptr = -1;
-    cudaFree(ptr);
+    *hostPtr = -1;
+    exitIfError(cudaMemcpy(devPtr, hostPtr, sizeof(int), cudaMemcpyHostToDevice), POSITION);
+    exitIfError(cudaDeviceSynchronize(), POSITION);
+    free(hostPtr);
+    cudaFree(devPtr);
 }
 
 DestrCheckPointer::DestrCheckPointer(const DestrCheck &destrCheck) {
-    val = *destrCheck.ptr;
-    ptr = destrCheck.ptr;
+    val = *destrCheck.hostPtr;
+    hostPtr = destrCheck.hostPtr;
+    devPtr = destrCheck.devPtr;
 }
 
 DestrCheckPointer::DestrCheckPointer() {
     val = 0;
-    ptr = NULL;
+    hostPtr = NULL;
+    devPtr = NULL;
 }
 
 void DestrCheckPointer::check() {
-    assert(ptr == NULL || *ptr == val);
+#ifdef __CUDA_ARCH__
+    assert(hostPtr == NULL || *hostPtr == val);
+#else
+    assert(devPtr == NULL || *devPtr == val);
+#endif
 }
 
 #endif
