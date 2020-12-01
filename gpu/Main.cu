@@ -42,7 +42,8 @@ void SIGINT_exit(int signum) {
 
 int runGpuSolver(CompositionRoot &compRoot, GpuOptions &gpuOptions, CommonOptions &commonOpts, double memUsedOneSolver) {
     GpuMultiSolver& msolver = *compRoot.gpuMultiSolver;
-    msolver.setVerbosity(commonOpts.getVerbosity());
+    Verbosity verb = compRoot.verb;
+    msolver.setVerbosity(verb);
     lbool ret = l_Undef;
     if (commonOpts.doPreprocessing()) {
         ret = msolver.simplify();
@@ -50,14 +51,14 @@ int runGpuSolver(CompositionRoot &compRoot, GpuOptions &gpuOptions, CommonOption
     if (ret == l_Undef) {
         // We have an approximation of the memory used for one solver. We don't take into account the memory used for the gpu itself
         // or other things.
-        int cpuSolverCount = gpuOptions.getNumberOfCpuThreads(msolver.getVerbosity().global, memUsedOneSolver);
+        int cpuSolverCount = gpuOptions.getNumberOfCpuThreads(verb.global, memUsedOneSolver);
         int warpsPerBlock = compRoot.gpuDims.threadsPerBlock / WARP_SIZE;
         compRoot.hostAssigs->growSolverAssigs(cpuSolverCount, warpsPerBlock, compRoot.gpuDims.blockCount * warpsPerBlock);
         ret = msolver.solve(cpuSolverCount);
     }
     printResult(ret);
 
-    if (msolver.getVerbosity().showModel && ret==l_True) {
+    if (verb.showModel && ret==l_True) {
         printModel(stdout, msolver.getModel());
     }
     return getReturnCode(ret);
@@ -90,7 +91,7 @@ int main(int argc, char **argv)
         // but this flag needs to be set before the device starts to run, so it wouldn't work
         // this flag is good if there are few threads
         // exitIfError(cudaSetDeviceFlags(cudaDeviceBlockingSync), POSITION);
-        CompositionRoot compRoot(gpuOptions, finisher, parser.nVars());
+        CompositionRoot compRoot(gpuOptions, commonOptions, finisher, parser.nVars());
 
         // Note: cuda uses a gigantic amount (gigabytes) of virtual memory that is almost never used, to get the whole physical memory into virtual
         // memory. We'd like to not count that in the memory limits. But not easy to get just this one

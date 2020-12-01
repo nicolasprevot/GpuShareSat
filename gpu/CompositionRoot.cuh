@@ -39,6 +39,8 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "GpuHelpedSolver.cuh"
 #include "utils/Periodic.h"
 #include "my_make_unique.h"
+#include "satUtils/InitHelper.h"
+
 #include <memory>
 
 namespace Glucose {
@@ -51,6 +53,7 @@ public:
     IntOption gpuFirstReduceDb;
     IntOption gpuIncReduceDb;
     IntOption writeClausesPeriodSec;
+    IntOption writeStatsPeriodSec;
     IntOption minGpuLatencyMicros;
     BoolOption gpuActOnly;
     GpuHelpedSolverOptions gpuHelpedSolverOptions;
@@ -77,8 +80,9 @@ public:
     std::unique_ptr<GpuRunner> gpuRunner;
     vec<GpuHelpedSolver*> solvers;
     std::unique_ptr<GpuMultiSolver> gpuMultiSolver;
+    Verbosity verb;
 
-    CompositionRoot(GpuOptions ops, Finisher &finisher, int varCount, int initRepCountPerCategory = 10);
+    CompositionRoot(GpuOptions ops, CommonOptions commonOpts, Finisher &finisher, int varCount, int initRepCountPerCategory = 10);
 };
 
 } /* namespace Glucose */

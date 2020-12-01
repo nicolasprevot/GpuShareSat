@@ -31,7 +31,7 @@ void setDefaultOptions(GpuOptions &options) {
 }
 
 GpuFixture::GpuFixture(GpuOptions options, int varCount, int _solverCount, int initRepCountPerCategory) :
-        co(options, finisher, varCount, initRepCountPerCategory),
+        co(options, CommonOptions(), finisher, varCount, initRepCountPerCategory),
         solverCount(_solverCount)
 {
     int warpsPerBlock = co.gpuDims.threadsPerBlock / WARP_SIZE;

@@ -163,7 +163,6 @@ Solver::Solver(int _cpuThreadId, Finisher &_finisher) :
 , panicModeLastRemoved(0), panicModeLastRemovedShared(0)
 , conflictsRestarts(0)
 , conflicts(0)
-, verb {0, 0, 0}
 , curRestart(1)
 , finisher(_finisher)
 , glureduce(opt_glu_reduction)
@@ -1590,7 +1589,7 @@ lbool Solver::search(int nof_conflicts) {
             if (foundEmptyClause) return l_False;
 
             if (conflicts % 5000 == 0 && var_decay < max_var_decay) var_decay += 0.01;
-            if (verbosity() >= 1 && starts>0 && conflicts % verb.everyConflicts == 0) {
+            if (verbosity() >= 1 && starts>0 && verb.everyConflicts > 0 && conflicts % verb.everyConflicts == 0) {
                 printEncapsulatedStats();
             }
             if(adaptStrategies && conflicts == 100000) {
@@ -1655,7 +1654,7 @@ lbool Solver::search(int nof_conflicts) {
                 next = pickBranchLit();
                 if(next == lit_Undef) {
                     SyncOut so;
-                    printf("c last restart ## conflicts  :  %d %d \n", conflictC, decisionLevel());
+                    if (verb.global > 0) printf("c last restart ## conflicts  :  %d %d \n", conflictC, decisionLevel());
                     // Model found:
                     return l_True;
                 }

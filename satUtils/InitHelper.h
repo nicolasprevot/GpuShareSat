@@ -82,7 +82,6 @@ private:
     IntOption verb;
     BoolOption mod;
     BoolOption pre;
-    IntOption vv;
 public:
     CommonOptions();
     void applyMemLim(int additionalMemLim = 0);

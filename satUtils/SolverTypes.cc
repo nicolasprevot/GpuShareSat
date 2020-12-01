@@ -88,5 +88,12 @@ long clauseLengthSum(ClauseAllocator &ca, vec<CRef> &crefs) {
     return res;
 }
 
+Verbosity::Verbosity() {
+    global = 0;
+    everyConflicts = -1;
+    writeStatsPeriodSec = 0;
+    showAdjust = false;
+    showModel = false;
+}
 
 }

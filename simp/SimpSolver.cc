@@ -700,7 +700,7 @@ void SimpSolver::extendModel()
 
 bool SimpSolver::eliminate(bool turn_off_elim)
 {
-    printf("c running elimination\n");
+    if (verb.global > 0) printf("c running elimination\n");
     if (!simplify()) {
         ok = false;
         return false;
@@ -713,8 +713,8 @@ bool SimpSolver::eliminate(bool turn_off_elim)
 
     int toPerform = clauses.size()<=4800000;
     
-    if(!toPerform) {
-      printf("c Too many clauses... No preprocessing\n");
+    if(!toPerform && verb.global > 0) {
+        printf("c Too many clauses... No preprocessing\n");
     }
 
     while (toPerform && (n_touched > 0 || bwdsub_assigns < trail.size() || elim_heap.size() > 0)){
@@ -785,11 +785,11 @@ bool SimpSolver::eliminate(bool turn_off_elim)
         checkGarbage();
     }
 
-    if (verbosity() >= 0 && elimclauses.size() > 0)
+    if (verbosity() > 0 && elimclauses.size() > 0)
         printf("c |  Eliminated clauses:     %10.2f Mb                                                                |\n", 
                double(elimclauses.size() * sizeof(uint32_t)) / (1024*1024));
 
-    printf("c finished running elimination, %d variables were eliminated\n", eliminated_vars);
+    if (verbosity() > 0) printf("c finished running elimination, %d variables were eliminated\n", eliminated_vars);
     return ok;
 
     

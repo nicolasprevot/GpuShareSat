@@ -36,19 +36,19 @@ namespace Glucose {
 // This class synchronizes the work of several GpuHelpedSolver
 GpuMultiSolver::GpuMultiSolver(GpuRunner &_gpuRunner, Reported &_reported, Finisher &_finisher, HostAssigs &_assigs, HostClauses &_clauses,
         std::function<std::unique_ptr<GpuHelpedSolver> (int threadId, OneSolverAssigs&) > _solverFactory, int varCount, int writeClausesPeriodSec,
-        double _initMemUsed, double _maxMemory):
+        Verbosity _verb, double _initMemUsed, double _maxMemory):
                 gpuRunner(_gpuRunner),
                 reported(_reported),
                 finisher(_finisher),
                 assigs(_assigs),
                 clauses(_clauses),
                 solverFactory(_solverFactory),
-                verb(0, 0, 0),
+                verb(_verb),
                 initMemUsed(_initMemUsed),
                 maxMemory(_maxMemory),
                 hasTriedToLowerCpuMemoryUsage(false) {
     periodicRunner = my_make_unique<PeriodicRunner>(realTimeSecSinceStart()); 
-    periodicRunner->add(5, std::function<void ()> ([&] () { 
+    periodicRunner->add(verb.writeStatsPeriodSec, std::function<void ()> ([&] () { 
         printStats();
     }));
     periodicRunner->add(writeClausesPeriodSec, std::function<void ()> ([&] () {
@@ -95,8 +95,10 @@ lbool GpuMultiSolver::solve(int _cpuThreadCount) {
     }
     configure();
 
-    printf("c |  all clones generated. Memory = %6.2fMb.                                                             |\n", memUsed());
-    printf("c ========================================================================================================|\n");
+    if (verb.global > 0) {
+        printf("c |  all clones generated. Memory = %6.2fMb.                                                             |\n", memUsed());
+        printf("c ========================================================================================================|\n");
+    }
 
     reported.setSolverCount(_cpuThreadCount);
     pthread_attr_t thAttr;
@@ -109,12 +111,10 @@ lbool GpuMultiSolver::solve(int _cpuThreadCount) {
         threads.push(pt);
         pthread_create(pt, &thAttr, &launchSolver, (void *) helpedSolvers[i].get());
     }
-    printf("All solvers launched\n");
 
-    while (true) {
-        if (finisher.hasCanceledOrFinished()) {
-            break;
-        }
+    if (verb.global > 0) printf("All solvers launched\n");
+
+    while (!finisher.hasCanceledOrFinished()) {
         periodicRunner->maybeRun(realTimeSecSinceStart());
         gpuRunner.execute();
         double cpuMemUsed = actualCpuMemUsed();
@@ -123,7 +123,7 @@ lbool GpuMultiSolver::solve(int _cpuThreadCount) {
             // is that if we use more than physical memory, it will swap
             // It's very different for gpu memory usage where there's no swap
             // so it crashes if we go over the limit
-            printf("There is %lf megabytes of memory used on cpu which is higher than the limit of %lf, going to try reducing memory usage\n", cpuMemUsed, maxMemory);
+            if (verb.global > 0) printf("There is %lf megabytes of memory used on cpu which is higher than the limit of %lf, going to try reducing memory usage\n", cpuMemUsed, maxMemory);
             clauses.tryReduceCpuMemoryUsage();
             for (int i = 0; i < helpedSolvers.size(); i++) {
                 helpedSolvers[i]->tryReduceCpuMemoryUsage();
@@ -131,8 +131,10 @@ lbool GpuMultiSolver::solve(int _cpuThreadCount) {
             hasTriedToLowerCpuMemoryUsage = true;
         }
     }
-    printf("c printing final stats\n");
-    printStats();
+    if (verb.global > 0) {
+        printf("c printing final stats\n");
+        printStats();
+    }
 
     for(int i = 0; i < threads.size(); i++) { // Wait for all threads to finish
         pthread_join(*threads[i], NULL);

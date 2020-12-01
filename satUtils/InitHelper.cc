@@ -86,8 +86,7 @@ CommonOptions::CommonOptions():
     memLim("MAIN", "mem-lim","Limit on memory usage in megabytes.\n", 12000, IntRange(0, INT32_MAX)),
     verb("MAIN", "verb",   "Verbosity level (0=silent, 1=some, 2=more).", 1, IntRange(0, 2)),
     mod("MAIN", "model",   "show model.", false),
-    pre("MAIN", "pre", "Completely turn on/off any preprocessing.", true),
-    vv("MAIN", "vv",   "Verbosity every vv conflicts", 10000, IntRange(1,INT32_MAX))
+    pre("MAIN", "pre", "Completely turn on/off any preprocessing.", true)
     {
 
 }
@@ -124,7 +123,12 @@ void CommonOptions::applyTimeAndCpuLim() {
 }
 
 Verbosity CommonOptions::getVerbosity() {
-    return Verbosity(verb, vv, mod);
+    Verbosity v;
+    v.global = verb;
+    v.everyConflicts = 0;
+    v.showModel = mod;
+    v.showAdjust = verb > 0;
+    return v;
 }
 
 gzFile Glucose::getInputFile(int argc, char** argv) {

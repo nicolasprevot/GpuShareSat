@@ -106,6 +106,7 @@ int main(int argc, char** argv)
 
         BoolOption    opt_certified      (_certified, "certified",    "Certified UNSAT using DRUP format", false);
         StringOption  opt_certified_file      (_certified, "certified-output",    "Certified UNSAT output file", "NULL");
+        IntOption     opt_verb_every_conflicts("MAIN", "vv",   "Verbosity every vv conflicts", 10000, IntRange(1,INT32_MAX));
         BoolOption    opt_vbyte             (_certified, "vbyte",    "Emit proof in variable-byte encoding", false);
         CommonOptions commonOptions;
 
@@ -120,7 +121,9 @@ int main(int argc, char** argv)
         S.use_simplification = commonOptions.doPreprocessing();
 
         //if (!pre) S.eliminate(true);
-        S.setVerbosity(commonOptions.getVerbosity());
+        Verbosity verb = commonOptions.getVerbosity();
+        verb.everyConflicts = opt_verb_every_conflicts;
+        S.setVerbosity(verb);
 
         S.certifiedUNSAT = opt_certified;
         S.vbyte = opt_vbyte;

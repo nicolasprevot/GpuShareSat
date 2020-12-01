@@ -353,7 +353,7 @@ lbool GpuHelpedSolver::solve() {
             model[i] = value(i);
         extendModel();
         SyncOut so;
-        printf("c decision level when solution found: %d\n", decisionLevel());
+        if (verb.global > 0)  printf("c decision level when solution found: %d\n", decisionLevel());
     }
     finisher.iveFinished(cpuThreadId);
     return status;

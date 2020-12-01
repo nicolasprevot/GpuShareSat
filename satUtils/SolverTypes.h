@@ -509,21 +509,22 @@ inline void Clause::strengthen(Lit p)
     calcAbstraction();
 }
 #endif
+
+struct Verbosity {
+    int global;
+    // only used in single threaded
+    int everyConflicts;
+    // only used in parallel
+    int writeStatsPeriodSec;
+    bool showAdjust;
+    bool showModel;
+
+    Verbosity();
+};
  
 //=================================================================================================
 }
 
-struct Verbosity {
-    int global;
-    int everyConflicts;
-    int showModel;
-
-    Verbosity(int g, int evC, int show) {
-        global = g;
-        everyConflicts = evC;
-        showModel = show;
-    }
-};
 
  
 #endif

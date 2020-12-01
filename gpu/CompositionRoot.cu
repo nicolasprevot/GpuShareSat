@@ -45,6 +45,7 @@ GpuOptions::GpuOptions():
     gpuIncReduceDb("GPU", "gpu-inc-reduce-db", "Increase the reduce db count by this much each time we reduce",
             30000, IntRange(0, INT32_MAX)),
     writeClausesPeriodSec("GPU", "write-clauses-period-sec", "Each time this interval is passed, write all clauses", -1),
+    writeStatsPeriodSec("GPU", "write-stats-period-sec", "Each time this interval is passed, write all stats. Set to -1 to never write them", 5),
     minGpuLatencyMicros("GPU", "min-gpu-latency-micros", "If a gpu run takes less than this amount of time, wait for the remaining time", 50),
     gpuActOnly("GPU", "gpu-act-only", "Only consider activity (not lbd) when removing gpu clauses", true),
     solverCount("GPU", "thread-count", "Number of core CPU threads for syrup (0 for automatic)", 0),
@@ -83,18 +84,22 @@ int GpuOptions::getNumberOfCpuThreads(int verbosity, float mem) {
 // We don't know yet the number of solvers in this method
 // Reason is that we need to look at memory usage of one solver to decide how many solvers to use
 // And we need to already have one cpu solver for that 
-CompositionRoot::CompositionRoot(GpuOptions ops, Finisher &finisher, int varCount, int initRepCountPerCategory) :
+CompositionRoot::CompositionRoot(GpuOptions ops, CommonOptions commonOpts, Finisher &finisher, int varCount, int initRepCountPerCategory) :
     gpuDims((int32_t) ops.blockCount, (int32_t) ops.threadsPerBlock),
     clausesCountPerThread(gpuDims.blockCount * gpuDims.threadsPerBlock, false),
     varCount(varCount)
 {
+
+    verb = commonOpts.getVerbosity();
+    verb.writeStatsPeriodSec = (verb.global > 0) ? ops.writeStatsPeriodSec : -1;
+
     if (ops.blockCount > 0) {
         gpuDims.blockCount = ops.blockCount;
     } else {
         cudaDeviceProp props;
         exitIfError(cudaGetDeviceProperties(&props, 0), POSITION);
         gpuDims.blockCount = props.multiProcessorCount * 2;
-        printf("c Setting block count guideline to %d (twice the number of multiprocessors)\n", gpuDims.blockCount);
+        if (verb.global > 0) printf("c Setting block count guideline to %d (twice the number of multiprocessors)\n", gpuDims.blockCount);
     }
     gpuDims.threadsPerBlock = ops.threadsPerBlock;
     clausesCountPerThread.setAllTo(0);
@@ -109,7 +114,7 @@ CompositionRoot::CompositionRoot(GpuOptions ops, Finisher &finisher, int varCoun
     gpuMultiSolver = my_make_unique<GpuMultiSolver>(*gpuRunner, *reported, finisher, *hostAssigs, *hClauses,
                 std::function<std::unique_ptr<GpuHelpedSolver> (int, OneSolverAssigs&)> ([&](int cpuThreadId, OneSolverAssigs &oneSolverAssigs) {
                     return my_make_unique<GpuHelpedSolver>(*reported, finisher, *hClauses, cpuThreadId, ops.gpuHelpedSolverOptions.toParams(), oneSolverAssigs);
-                }), varCount, ops.writeClausesPeriodSec, initMemUsed, (double) ops.maxMemory);
+                }), varCount, ops.writeClausesPeriodSec, verb, initMemUsed, (double) ops.maxMemory);
 }
 
 } /* namespace Glucose */
