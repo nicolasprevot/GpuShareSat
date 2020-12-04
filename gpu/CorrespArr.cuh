@@ -139,7 +139,7 @@ public:
      {
         _d_ptr = d_ptr;
         _size = size;
-        ASSERT_OP(_size, <, 500000000);
+        ASSERT_OP(_size, <, 500000000000);
         if (size > 0) assert(_destrCheckPointer.pointsToSomething());
     }
 
@@ -686,8 +686,8 @@ class CorrespArr : public HArr<T> {
         // If the darr is already at the right size, this will just do nothing.
         // It may not be, though
         bool success = tryResizeDeviceToHostSize(careAboutCurrentDeviceValues);
-        dArr = _darrAllocator.getDArr();
         if (success) {
+            dArr = _darrAllocator.getDArr();
             ASSERT_OP(dArr.size(), ==, MinHArr<T>::_size);
         }
         return success;

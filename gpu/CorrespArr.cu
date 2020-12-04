@@ -129,7 +129,7 @@ bool allocMemoryDevice(void **pt, size_t amount) {
     size_t freeMem;
     size_t totalMem;
     exitIfError(cudaMemGetInfo(&freeMem, &totalMem), POSITION);
-    if (freeMem < 0.1 * totalMem + amount ) {
+    if (freeMem < 0.01 * totalMem + amount ) {
         printf("c Little memory left on gpu, refusing to allocate\n");
         printf("c There was %zu left out of %zu, wanted to allocate %zu\n",
             freeMem, totalMem, amount);
