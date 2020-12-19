@@ -297,8 +297,11 @@ public:
 
     void printStats();
     void printEncapsulatedStats(); 
+    long getApproximateMemAllocated() {return ca.getCap(); }
 
 protected:
+
+    Finisher &finisher;
     // it would be possible to make it a stats, but it's read from many places I think it's easier this way
     std::map<int, std::string> statNames;
 
@@ -307,7 +310,6 @@ protected:
     Verbosity verb;
 
     long curRestart;
-    Finisher &finisher;
 
     // Alpha variables
     bool glureduce;

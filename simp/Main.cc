@@ -74,7 +74,7 @@ static SimpSolver* solver;
 Finisher finisher;
 // Terminate by notifying the solver and back out gracefully. This is mainly to have a test-case
 // for this feature of the Solver as it may take longer than an immediate call to '_exit()'.
-static void SIGINT_interrupt(int signum) { finisher.cancel(); }
+static void SIGINT_interrupt(int signum) { finisher.stopAllThreads = true; }
 
 static void SIGINT_exit(int signum) {
     handleInterrupted(*solver);

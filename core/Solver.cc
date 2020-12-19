@@ -163,8 +163,8 @@ Solver::Solver(int _cpuThreadId, Finisher &_finisher) :
 , panicModeLastRemoved(0), panicModeLastRemovedShared(0)
 , conflictsRestarts(0)
 , conflicts(0)
-, curRestart(1)
 , finisher(_finisher)
+, curRestart(1)
 , glureduce(opt_glu_reduction)
 , restart_inc(opt_restart_inc)
 , luby_restart(opt_luby_restart)
@@ -249,9 +249,9 @@ Solver::Solver(const Solver &s, int _cpuThreadId) :
 //
 , conflictsRestarts(0)
 , conflicts(s.conflicts)
+, finisher(s.finisher)
 , verb(s.verb)
 , curRestart(s.curRestart)
-, finisher(s.finisher)
 , glureduce(s.glureduce)
 , restart_inc(s.restart_inc)
 , luby_restart(s.luby_restart)
@@ -1577,8 +1577,7 @@ lbool Solver::search(int nof_conflicts) {
 
     stats[starts]++;
     for(; ;) {
-        // Let's not call the finisher every conflict for performance, it involves locks...
-        if (conflicts % 100 == 0 && finisher.hasCanceledOrFinished()) {
+        if (finisher.shouldIStop(cpuThreadId)) {
             return l_Undef;
         }
         assertLearnedizeAndStats();
@@ -1778,7 +1777,7 @@ lbool Solver::solve_(bool do_simp, bool turn_off_simp) // Parameters are useless
         status = search(
                 luby_restart ? luby(restart_inc, curr_restarts) * luby_restart_factor : 0); // the parameter is useless in glucose, kept to allow modifications
 
-        if(!withinBudget() || finisher.hasCanceledOrFinished()) break;
+        if(!withinBudget() || finisher.shouldIStop(cpuThreadId)) break;
         curr_restarts++;
     }
 

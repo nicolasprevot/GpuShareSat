@@ -21,6 +21,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "utils/ParseUtils.h"
 #include <random>
 #include <assert.h>
+#include <limits.h>
 #include "utils/System.h"
 
 namespace Glucose {
@@ -162,43 +163,7 @@ JArr::~JArr() {
     needCommaJson = true;
 }
 
-Finisher::Finisher() {
-    finished = false;
-    oneWhoHasFinished = -1;
-    canceled = false;
-    assert(canceled.is_lock_free());
-}
-
-void Finisher::iveFinished(int id) {
-    {
-        SyncOut so;
-        printf("c thread %d has finished\n", id);
-    }
-    std::lock_guard<std::mutex> lockGuard(lock);
-    if (!finished && !canceled) {
-        finished = true;
-        oneWhoHasFinished = id;
-    }
-}
-
-int Finisher::getOneWhoHasFinished() {
-    std::lock_guard<std::mutex> lockGuard(lock);
-    assert(finished);
-    assert(!canceled.load());
-    assert(oneWhoHasFinished >= 0);
-    return oneWhoHasFinished;
-}
-
-void Finisher::cancel() {
-    canceled.store(true);
-}
-
-bool Finisher::hasCanceledOrFinished()  {
-    return canceled.load() || finished;
-}
-
-bool Finisher::isCanceled() {
-    return canceled.load();
+Finisher::Finisher(): oneThreadIdWhoFoundAnAnswer(-1), stopAllThreads(false), stopAllThreadsAfterId(std::numeric_limits<int>::max()) {
 }
 
 TimePrinter::TimePrinter(const char *_message) : message(_message) {

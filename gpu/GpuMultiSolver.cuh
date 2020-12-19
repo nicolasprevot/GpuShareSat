@@ -41,14 +41,14 @@ class PeriodicRunner;
 
 class GpuMultiSolver {
 private:
-    vec<std::unique_ptr<GpuHelpedSolver>> helpedSolvers;
+    std::mutex solversMutex;
+    vec<GpuHelpedSolver*> helpedSolvers;
     GpuRunner &gpuRunner;
     HostAssigs &assigs;
-    Finisher &finisher;
     Reported &reported;
     HostClauses &clauses;
     int cpuSolverCount;
-    std::function<std::unique_ptr<GpuHelpedSolver> (int threadId, OneSolverAssigs&)> solverFactory;
+    std::function<GpuHelpedSolver* (int threadId, OneSolverAssigs&)> solverFactory;
     Verbosity verb;
     float memUsedCreateOneSolver;
     std::unique_ptr<PeriodicRunner> periodicRunner;
@@ -66,7 +66,7 @@ private:
 
 public:
     GpuMultiSolver(GpuRunner &gpuRunner, Reported &reported, Finisher &finisher, HostAssigs &assigs, HostClauses &clauses,
-            std::function<std::unique_ptr<GpuHelpedSolver> (int threadId, OneSolverAssigs&) > solverFactory, int varCount, int writeClausesPeriodSec,
+            std::function<GpuHelpedSolver* (int threadId, OneSolverAssigs&) > solverFactory, int varCount, int writeClausesPeriodSec,
             Verbosity verb, double initMemUsed, double maxMemory);
     void addClause_(vec<Lit>& lits);
     lbool solve(int _cpuThreadCount);
@@ -79,6 +79,8 @@ public:
     void writeClauses();
     double actualCpuMemUsed();
     void printGlobalStats(double cpuTime);
+    Finisher &finisher;
+    ~GpuMultiSolver();
 };
 
 }

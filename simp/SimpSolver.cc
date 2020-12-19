@@ -449,7 +449,7 @@ bool SimpSolver::backwardSubsumptionCheck(bool verbose)
     while (subsumption_queue.size() > 0 || bwdsub_assigns < trail.size()){
 
         // Empty subsumption queue and return immediately on user-interrupt:
-        if (finisher.hasCanceledOrFinished()){
+        if (finisher.shouldIStop(cpuThreadId)){
             subsumption_queue.clear();
             bwdsub_assigns = trail.size();
             break; }
@@ -726,7 +726,7 @@ bool SimpSolver::eliminate(bool turn_off_elim)
             ok = false; goto cleanup; }
 
         // Empty elim_heap and return immediately on user-interrupt:
-        if (finisher.hasCanceledOrFinished()){
+        if (finisher.shouldIStop(cpuThreadId)){
             assert(bwdsub_assigns == trail.size());
             assert(subsumption_queue.size() == 0);
             assert(n_touched == 0);
@@ -737,7 +737,7 @@ bool SimpSolver::eliminate(bool turn_off_elim)
         for (int cnt = 0; !elim_heap.empty(); cnt++){
             Var elim = elim_heap.removeMin();
             
-            if (finisher.hasCanceledOrFinished()) break;
+            if (finisher.shouldIStop(cpuThreadId)) break;
 
             if (isEliminated(elim) || value(elim) != l_Undef) continue;
 

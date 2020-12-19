@@ -109,11 +109,11 @@ CompositionRoot::CompositionRoot(GpuOptions ops, CommonOptions commonOpts, Finis
     hostAssigs = my_make_unique<HostAssigs>(varCount, gpuDims);
     hClauses = my_make_unique<HostClauses>(gpuDims, ops.gpuClauseActivityDecay,
         ops.gpuFirstReduceDb, ops.gpuIncReduceDb, ops.gpuActOnly);
-    reported = my_make_unique<Reported>(*hClauses);
+    reported = std::make_unique<Reported>(*hClauses);
     gpuRunner = my_make_unique<GpuRunner>(*hClauses, *hostAssigs, *reported, gpuDims, ops.quickProf, initRepCountPerCategory, ops.minGpuLatencyMicros, streamPointer.get());
     gpuMultiSolver = my_make_unique<GpuMultiSolver>(*gpuRunner, *reported, finisher, *hostAssigs, *hClauses,
-                std::function<std::unique_ptr<GpuHelpedSolver> (int, OneSolverAssigs&)> ([&](int cpuThreadId, OneSolverAssigs &oneSolverAssigs) {
-                    return my_make_unique<GpuHelpedSolver>(*reported, finisher, *hClauses, cpuThreadId, ops.gpuHelpedSolverOptions.toParams(), oneSolverAssigs);
+                std::function<GpuHelpedSolver* (int, OneSolverAssigs&)> ([&](int cpuThreadId, OneSolverAssigs &oneSolverAssigs) {
+                    return new GpuHelpedSolver(*reported, finisher, *hClauses, cpuThreadId, ops.gpuHelpedSolverOptions.toParams(), oneSolverAssigs);
                 }), varCount, ops.writeClausesPeriodSec, verb, initMemUsed, (double) ops.maxMemory);
 }
 

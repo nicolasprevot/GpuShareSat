@@ -339,7 +339,7 @@ lbool GpuHelpedSolver::solve() {
 
     // Search:
     int curr_restarts = 0;
-    while (status == l_Undef && !finisher.hasCanceledOrFinished() && withinBudget()) {
+    while (status == l_Undef && !finisher.shouldIStop(cpuThreadId) && withinBudget()) {
         status = search(
                 luby_restart ?
                         luby(restart_inc, curr_restarts) * luby_restart_factor :
@@ -355,7 +355,10 @@ lbool GpuHelpedSolver::solve() {
         SyncOut so;
         if (verb.global > 0)  printf("c decision level when solution found: %d\n", decisionLevel());
     }
-    finisher.iveFinished(cpuThreadId);
+    if (status == l_True || status == l_False) { 
+        finisher.oneThreadIdWhoFoundAnAnswer = cpuThreadId;
+        finisher.stopAllThreads = true;
+    }
     return status;
 }
 

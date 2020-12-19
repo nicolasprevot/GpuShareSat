@@ -36,7 +36,7 @@ using namespace Glucose;
 Finisher finisher;
 
 void SIGINT_exit(int signum) {
-    finisher.cancel();
+    finisher.stopAllThreads = true;
 }
 
 
@@ -104,8 +104,10 @@ int main(int argc, char **argv)
         gzclose(in);
 
         // We only look at differentials of memory to get the memory per solver
-        return runGpuSolver(compRoot, gpuOptions, commonOptions, memUsedAfterClauses - memUsedBeforeClauses
+        int returnCode = runGpuSolver(compRoot, gpuOptions, commonOptions, memUsedAfterClauses - memUsedBeforeClauses
                 + compRoot.gpuMultiSolver->getMemUsedCreateOneSolver());
+        printf("c Return code %d\n", returnCode);
+        return returnCode;
     } catch (OutOfMemoryException&){
         printf("c ===================================================================================================\n");
         printf("INDETERMINATE. OutOfMemoryException\n");

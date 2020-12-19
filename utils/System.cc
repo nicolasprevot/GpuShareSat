@@ -70,6 +70,9 @@ static inline int memReadPeak(void)
 }
 
 double Glucose::memUsed() { return (double)memReadStat(0) * (double)getpagesize() / (1024*1024); }
+
+double Glucose::rssMemUsed() { return (double)memReadStat(1) * (double)getpagesize() / (1024*1024); }
+
 double Glucose::memUsedPeak() { 
     double peak = memReadPeak() / 1024;
     return peak == 0 ? memUsed() : peak; }

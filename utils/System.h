@@ -36,7 +36,9 @@ inline static double realTimeSec(void);
 inline static long realTimeMicros(void);
 inline static double realTimeSecSinceStart(void);
 extern double memUsed();            // Memory in mega bytes (returns 0 for unsupported architectures).
-extern double memUsedPeak();        // Peak-memory in mega bytes (returns 0 for unsupported architectures).
+
+extern double rssMemUsed();
+extern double memUsedPeak();
 
 }
 

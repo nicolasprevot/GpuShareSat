@@ -69,6 +69,8 @@ public:
     }
 };
 
+#define SYNCED_OUT(toRun) { SyncOut so; toRun;}
+
 inline void setOnMaskUint(uint &val, uint mask, uint cond) {
     if (cond) {
         val = val | mask;
@@ -161,31 +163,25 @@ public:
     ~JArr();
 };
 
-// Everything touching finished in this class is locked, except for the check if it's finished
-// It's fine because once another thread wants to check who finished,
-// it will have to acquire the mfinished lock, so it will read updates because the thread who
-// wrote them release the lock
-class Finisher {
-private:
-    int oneWhoHasFinished; // -1 is default;
-    // mutex on which main process may wait for... As soon as one process finishes it release the mutex
-    std::mutex lock;
+/* This struct is accessed by several threads but does not use locks */
+struct Finisher {
+    // It is fine not to guard this by a lock because:
+    // - When writing, even if several thread write to it, the result will be one of these threads, which is valid.
+    // - When readin, it is fine as long as the reader joins all the threads which may have written
+    int oneThreadIdWhoFoundAnAnswer; // -1 if no thread has found an aswer
 
-    // True if one thread has finished successfully
-    bool finished;
+    // This is used by signal handlers which cannot use locks
+    // It's fine not to guard by a lock because the initial value is false, and then it can only be set to true
+    // After setting to true, it is possible that threads won't read true immediately, but it's fine
+    volatile bool stopAllThreads;
 
-    // There's no lock around it. Reason is: so that it can be used 
-    // from the signal handler.
-    std::atomic<bool> canceled;
+    // It's fine not to guard by a lock because there's only one thread which changes it
+    // After the value changes, it's possible that threads won't read the updated value immediately, but it's fine
+    volatile int stopAllThreadsAfterId;
 
-public:
     Finisher();
-    int getOneWhoHasFinished();
-    bool hasCanceledOrFinished();
-    void iveFinished(int id);
-    // only safe method to call from signal handler
-    void cancel();
-    bool isCanceled();
+
+    bool shouldIStop(int threadId) { return stopAllThreads || threadId >= stopAllThreadsAfterId; }
 };
 
 class TimePrinter {
