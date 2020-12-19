@@ -109,7 +109,7 @@ CompositionRoot::CompositionRoot(GpuOptions ops, CommonOptions commonOpts, Finis
     hostAssigs = my_make_unique<HostAssigs>(varCount, gpuDims);
     hClauses = my_make_unique<HostClauses>(gpuDims, ops.gpuClauseActivityDecay,
         ops.gpuFirstReduceDb, ops.gpuIncReduceDb, ops.gpuActOnly);
-    reported = std::make_unique<Reported>(*hClauses);
+    reported = my_make_unique<Reported>(*hClauses);
     gpuRunner = my_make_unique<GpuRunner>(*hClauses, *hostAssigs, *reported, gpuDims, ops.quickProf, initRepCountPerCategory, ops.minGpuLatencyMicros, streamPointer.get());
     gpuMultiSolver = my_make_unique<GpuMultiSolver>(*gpuRunner, *reported, finisher, *hostAssigs, *hClauses,
                 std::function<GpuHelpedSolver* (int, OneSolverAssigs&)> ([&](int cpuThreadId, OneSolverAssigs &oneSolverAssigs) {
