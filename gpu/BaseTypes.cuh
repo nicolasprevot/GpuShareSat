@@ -26,7 +26,7 @@ namespace Glucose {
 
 #define MAX_CL_SIZE 100
 
-typedef uint64_t GpuClauseId;
+typedef int64_t GpuClauseId;
 
 typedef uint32_t Vals;
 
@@ -172,6 +172,8 @@ inline __host__ __device__ lbool mklbool(uint8_t v) {
 }
 
 __device__ void printVD(Lit l);
+
+__device__ void printVD(lbool lb);
 
 }
 

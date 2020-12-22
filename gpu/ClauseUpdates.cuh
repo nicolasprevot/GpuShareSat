@@ -71,7 +71,7 @@ private:
 
 public:
     HClauseUpdates();
-    void addNewClause(vec<Lit> &lits, ClMetadata clMetadata);
+    void addNewClause(MinHArr<Lit> &lits, ClMetadata clMetadata);
     HClauseUpdate getUpdate(int p) { return updates[p]; }
     MinHArr<Lit> getLits(int p);
     MinHArr<Lit> getAllVals() { return vals; }

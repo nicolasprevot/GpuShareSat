@@ -49,6 +49,7 @@ struct MultiAgg {
 };
 
 __device__ __host__ void printV(MultiAgg multiAgg);
+__device__ void printVD(MultiAgg multiAgg);
 
 struct DAssigAggregates {
     DArr<MultiAgg> multiAggs;
@@ -210,12 +211,14 @@ private:
     int solverCount() { return solverAssigs.size(); }
 
     DAssigAggregates getDAssigAggregates(Vals aggStartVals);
+    int warpsPerBlockForInit;
+    int warpCountForInit;
 
 public:
     HostAssigs(int varCount, GpuDims gpuDims);
     long getChangeCount();
 
-    void growSolverAssigs(int newCount, int &warpsPerBlock, int warpCount);
+    void growSolverAssigs(int newCount);
 
     int getVarCount() {return varCount;}
 

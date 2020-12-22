@@ -21,9 +21,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 
 namespace Glucose {
 
-struct GpuClauseShareOptions {
-    // Maximum number of cpu threads
-    int cpuThreadCount;
+struct GpuClauseSharerOptions {
     // A guideline (might not be exactly respected) of the number of blocks to use on the GPU. -1 to infer it from the machine specs.
     int gpuBlockCountGuideline;
     // A guideline (might not be exactly respected) of the number of threads per block to use on the GPU. -1 for the default.
@@ -32,50 +30,78 @@ struct GpuClauseShareOptions {
     int minGpuLatencyMicros;
     // 0 for no verbosity, 1 for some verbosity
     int verbosity;
-
+    // How quicly the activity of a clause decreases. The activity is bumped whenever a clause is reported.
     double clauseActivityDecay;
-}
+    // If true, will measure how much time some operations take.
+    bool quickProf;
+    
+    int initReportCountPerCategory;
+
+    GpuClauseSharerOptions() {
+        gpuBlockCountGuideline = -1;
+        gpuThreadsPerBlockGuideline = -1;
+        minGpuLatencyMicros = -1;
+        verbosity = 1;
+        clauseActivityDecay = 0.99999;
+        quickProf = true;
+        initReportCountPerCategory = 10;
+    }
+};
 
 class GpuClauseSharer {
-    private:
-    std::unique_ptr<HostAssigs> assigs;
-    std::unique_ptr<GpuRunner> gpuRunner;
-    std::unique_ptr<Reported> reported;
-    std::unique_ptr<HostClauses> clauses;
 
     public:
-    GpuClauseSharer(GpuClauseShareOptions options);
+
+    /* These methods have to be always be called from the same thread, or with proper locking */
 
     // Do one GPU run. This method is meant to be called repeatedly by a thread, this thread spending
     // most of this time just calling this method.
     // Once this method completes, it is not guaranteed that all clauses for all assignments ready have been reported.
-    void gpuRun();
+    virtual void gpuRun() = 0;
 
     // Delete half of the GPU clauses (those with the lowest activity).
-    void reduceDb();
+    virtual void reduceDb() = 0;
 
-    // Add a clause to the GPU. Calling this method will NOT free the lits pointer. This method is thread safe.
-    void addClause(int *lits, int count);
+    /* not thread safe with any other method in this class */
+    virtual void setCpuSolverCount(int count) = 0;
 
-    // Adds the passed literals to the assignment of the given thread.
+
+    /* Thread safe method */
+    // Add a clause to the GPU. Calling this method will NOT free the lits pointer.
+    virtual long addClause(int *lits, int count) = 0;
+
+
+    /* Invocations of these methods for a given solverId have to always be done from the same thread, or with proper locking */
+
+    // Attempts to add the passed literals to the assignment of the given thread.
     // Calling this method will NOT free the lits pointer. This method is thread safe.
-    void setThreadValues(int threadId, int *lits, int count);
+    // returns if succeeded. It is atomic in that either all will have been set, or none.
+    virtual bool trySetSolverValues(int cpuSolverId, int *lits, int count) = 0;
 
     // Unset the passed literals from the assignment of the given thread.
     // Calling this method will NOT free the lits pointer. This method is thread safe.
-    void unsetThreadValues(int threadId, int *lits, int count);
+    // Threads are meant to call this method whenever they unset from their trail
+    virtual void unsetSolverValues(int cpuSolverId, int *lits, int count) = 0;
 
-    // The assignment for this current thread will be sent to the GPU. All the clauses will be tested against it,
+    // Attempts to send the assignment for this thread to the GPU. All the clauses will be tested against it,
     // and those that trigger will be reported.
     // This method is thread safe.
-    void assignmentIsReadyToTest(int threadId);
+    virtual bool trySendAssignment(int cpuSolverId) = 0;
 
-    // Returns a clause reported to the given thread id. If there is no clause to report, lits will
-    // be set to NULL and count to -1. You should not free lits.
-    // Calling this method will invalidate the previously returned lits pointers for this threadId.
-    // This method may report the same clause to the same thread several times, but it avoids doing it too many times.
-    void getReportedClause(int threadId, int &*lits, int &count);
+    // Returns if there was a clause reported to the given solver id. You should not free lits.
+    // Calling this method will invalidate the previously returned lits pointers for this solver id.
+    // The same clause maybe trigger on successive assignments from the same solver.
+    // As long as a thread acts upon the reported clauses, and the clause does not trigger on future assignment,
+    // the same clause will not be reported twice to the same thread. If a thread removes a reported clause as part of its
+    // clause deletion policy, and this clause triggers again on an assignment from this thread, then it will
+    // be reported again.
+    // 
+    virtual bool popReportedClause(int cpuSolverId, int* &lits, int &count, long &gpuClauseId) = 0;
+
+    virtual void getGpuMemInfo(size_t &free, size_t &total) = 0;
+
+    virtual void writeClausesInCnf(FILE *file) = 0;
 };
-
+}
 
 #endif

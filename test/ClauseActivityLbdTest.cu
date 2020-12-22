@@ -33,11 +33,10 @@ __global__ void writeFirstLit(DClauses dClauses, Lit *ptr, int clSize) {
 
 struct TestFixture {
     StreamPointer sp;
-    ClauseAllocator ca;
     HostClauses hCls;
 
     TestFixture(bool actOnly, float actDecay):
-        hCls(GpuDims(1, 1), actDecay, 20, 0, actOnly) {
+        hCls(GpuDims(1, 1), actDecay, actOnly) {
     }
 
     cudaStream_t& getStream() {
@@ -57,44 +56,44 @@ GpuDims gpuDims(5, 5);
 
 BOOST_AUTO_TEST_CASE(testInitAct) {
     TestFixture tf(false, 1.0);
-    HostClauses &hcls = tf.hCls;
-    addClause(hcls, mkLit(0));
-    copyToDeviceAsync(hcls, tf.sp.get(), gpuDims);
+    HostClauses &hCls = tf.hCls;
+    addClause(hCls, {mkLit(0)});
+    copyToDeviceAsync(hCls, tf.sp.get(), gpuDims);
     GpuCref gpuCref { 1, 0};
 
-    BOOST_CHECK(fabs(1.0 - hcls.getClauseActivity(gpuCref)) < 0.01);
+    BOOST_CHECK(fabs(1.0 - hCls.getClauseActivity(gpuCref)) < 0.01);
 }
 
 BOOST_AUTO_TEST_CASE(testBumpAct) {
     TestFixture tf(false, 1.0);
-    HostClauses& hcls(tf.hCls);
+    HostClauses& hCls(tf.hCls);
 
-    addClause(hcls, mkLit(0));
+    addClause(hCls, {mkLit(0)});
     GpuCref gpuCref { 1, 0};
 
-    copyToDeviceAsync(hcls, tf.sp.get(), gpuDims);
+    copyToDeviceAsync(hCls, tf.sp.get(), gpuDims);
 
-    hcls.bumpClauseActivity(gpuCref);
-    BOOST_CHECK(fabs(2.0 - hcls.getClauseActivity(gpuCref)) < 0.01);
+    hCls.bumpClauseActivity(gpuCref);
+    BOOST_CHECK(fabs(2.0 - hCls.getClauseActivity(gpuCref)) < 0.01);
 }
 
 
 BOOST_AUTO_TEST_CASE(testDecay) {
     TestFixture tf(false, 0.5);
-    HostClauses& hcls(tf.hCls);
+    HostClauses& hCls(tf.hCls);
 
-    addClause(hcls, mkLit(0));
+    addClause(hCls, {mkLit(0)});
     GpuCref gpuCref { 1, 0};
 
-    copyToDeviceAsync(hcls, tf.sp.get(), gpuDims);
-    BOOST_CHECK(fabs(2.0 - hcls.getClauseActivity(gpuCref)) < 0.01);
+    copyToDeviceAsync(hCls, tf.sp.get(), gpuDims);
+    BOOST_CHECK(fabs(2.0 - hCls.getClauseActivity(gpuCref)) < 0.01);
 
     // clauseActIncr is now 2.0
-    hcls.decayClauseAct();
+    hCls.decayClauseAct();
     // clauseActIncr is now 4.0
 
-    hcls.bumpClauseActivity(gpuCref);
-    BOOST_CHECK(fabs(6.0 - hcls.getClauseActivity(gpuCref)) < 0.01);
+    hCls.bumpClauseActivity(gpuCref);
+    BOOST_CHECK(fabs(6.0 - hCls.getClauseActivity(gpuCref)) < 0.01);
 }
 
 struct LbdAndAct {
@@ -103,36 +102,36 @@ struct LbdAndAct {
     int act;
 };
 
-void setLbdAndAct(int lbd, int act, HostClauses &hcls, int &currentLit, cudaStream_t &stream) {
+void setLbdAndAct(int lbd, int act, HostClauses &hCls, int &currentLit, cudaStream_t &stream) {
     // A clause cannot have a size strictly smaller than lbd, so set the size to be the lbd
-    vec<Lit> lits(0);
+    HArr<Lit> lits(false);
     for (int j = 0; j < lbd; j++) {
-        lits.push(mkLit(currentLit++));
+        lits.add(mkLit(currentLit++));
     }
-    hcls.addClause(lits, lbd);
+    hCls.addClause(lits, lbd);
 
-    copyToDeviceAsync(hcls, stream, gpuDims);
+    copyToDeviceAsync(hCls, stream, gpuDims);
     for (int i = 0; i < act - 1; i++) {
-        hcls.bumpClauseActivity(GpuCref { lbd, hcls.getClauseCount(lbd) - 1 });
+        hCls.bumpClauseActivity(GpuCref { lbd, hCls.getClauseCount(lbd) - 1 });
     }
 }
 
-void setLbdsAndActs(vec<LbdAndAct> &lbdsAndActs, HostClauses &hcls, cudaStream_t &stream) {
+void setLbdsAndActs(vec<LbdAndAct> &lbdsAndActs, HostClauses &hCls, cudaStream_t &stream) {
     int currentLit = 0;
     for (int i = 0; i < lbdsAndActs.size(); i++) {
-        setLbdAndAct(lbdsAndActs[i].lbd, lbdsAndActs[i].act, hcls, currentLit, stream);
+        setLbdAndAct(lbdsAndActs[i].lbd, lbdsAndActs[i].act, hCls, currentLit, stream);
     }
 }
 
 void innerTestApproxNthLargestAct(vec<int> &act, float expMin, float expMax, int n) {
     TestFixture tf(false, 1.0);
-    HostClauses& hcls(tf.hCls);
+    HostClauses& hCls(tf.hCls);
     vec<LbdAndAct> lbdAndActs(0);
     for (int i = 0; i < act.size(); i++) {
         lbdAndActs.push(LbdAndAct {3, act[i]});
     }
-    setLbdsAndActs(lbdAndActs, hcls, tf.getStream());
-    float apprMedian = hcls.approxNthAct(3, 4, n);
+    setLbdsAndActs(lbdAndActs, hCls, tf.getStream());
+    float apprMedian = hCls.approxNthAct(3, 4, n);
     printf("appr median is %f\n", apprMedian);
     BOOST_CHECK(apprMedian > expMin);
     BOOST_CHECK(apprMedian <= expMax);
@@ -140,8 +139,8 @@ void innerTestApproxNthLargestAct(vec<int> &act, float expMin, float expMax, int
 
 void innerTestRemovingLbdActAct(vec<LbdAndAct> &lbdAndActs, float expMin, float expMax, int expMinLimLbd, int expMaxLimLbd, bool actOnly = false) {
     TestFixture tf(actOnly, 1.0);
-    HostClauses& hcls(tf.hCls);
-    setLbdsAndActs(lbdAndActs, hcls, tf.getStream());
+    HostClauses& hCls(tf.hCls);
+    setLbdsAndActs(lbdAndActs, hCls, tf.getStream());
     int minLimLbd;
     int maxLimLbd;
     float remAct;
@@ -235,72 +234,46 @@ BOOST_AUTO_TEST_CASE(testActOnly) {
 BOOST_AUTO_TEST_CASE(testActOnlyHugeDifferences) {
     float decay = 0.5;
     TestFixture tf(true, decay);
-    HostClauses& hcls(tf.hCls);
+    HostClauses& hCls(tf.hCls);
     vec<Lit> lits(0);
     int currentLit = 0;
     // will have an act of 2
-    setLbdAndAct(3, 1, hcls, currentLit, tf.getStream());
+    setLbdAndAct(3, 1, hCls, currentLit, tf.getStream());
     // will have an act of 4
-    setLbdAndAct(3, 2, hcls, currentLit, tf.getStream());
+    setLbdAndAct(3, 2, hCls, currentLit, tf.getStream());
     // we want to decay sufficiently to have a large difference but not enough for activities to drop to 0, which won't happen if we don't rescale
     int c = log(RESCALE_CONST / 100) / log ( 1 / decay);
     for (int i = 0; i < c; i++) {
-        hcls.decayClauseAct();
+        hCls.decayClauseAct();
     }
-    setLbdAndAct(3, 1, hcls, currentLit, tf.getStream());
+    setLbdAndAct(3, 1, hCls, currentLit, tf.getStream());
 
     int minLimLbd;
     int maxLimLbd;
     float remAct;
     tf.getRemovingLbdAndAct(minLimLbd, maxLimLbd, remAct);
-    printf("rem act is %g\n", remAct);
     BOOST_CHECK(remAct > 2);
     BOOST_CHECK(remAct <= 4);
 }
 
-BOOST_AUTO_TEST_CASE(testReduceDbLbd) {
-    TestFixture tf(false, 1.0);
-    HostClauses& hcls(tf.hCls);
-
-    addClause(hcls, mkLit(0), mkLit(1), mkLit(2), 4);
-    addClause(hcls, ~mkLit(0), ~mkLit(1), mkLit(2), 3);
-
-    copyToDeviceAsync(hcls, tf.sp.get(), gpuDims);
-    hcls.reduceDb(tf.getStream());
-    BOOST_CHECK_EQUAL(1, hcls.getClauseCount());
-
-    CorrespArr<Lit> lits(1, false);
-    
-    ContigCopier cc;
-    RunInfo runInfo = hcls.makeRunInfo(tf.getStream(), cc);
-    cc.tryCopyAsync(cudaMemcpyHostToDevice, tf.getStream());
-
-    writeFirstLit<<<1, 1, 0, tf.getStream()>>>(runInfo.getDClauses(), lits.getDevicePtr(), 3);
-    lits.copyAsync(cudaMemcpyDeviceToHost, tf.getStream());
-    exitIfError(cudaStreamSynchronize(tf.getStream()), POSITION);
-    // We could check the entire clause, but let's only check its first lit
-    BOOST_CHECK_EQUAL(toInt(~mkLit(0)), toInt(lits[0]));
-}
-
 BOOST_AUTO_TEST_CASE(testRescale) {
     StreamPointer sp;
-    ClauseAllocator ca;
 
     // each decays multiplies activity inc by RESCALE_CONST * 10
-    HostClauses hcls(GpuDims(1, 1), 1 / (RESCALE_CONST * 10), 20, 0, false);
-    addClause(hcls, mkLit(0));
+    HostClauses hCls(GpuDims(1, 1), 1 / (RESCALE_CONST * 10), false);
+    addClause(hCls, {mkLit(0)});
 
     GpuCref gpuCref { 1, 0};
 
-    copyToDeviceAsync(hcls, sp.get(), gpuDims);
-    BOOST_CHECK(fabs(10 - hcls.getClauseActivity(gpuCref)) < 0.1);
+    copyToDeviceAsync(hCls, sp.get(), gpuDims);
+    BOOST_CHECK(fabs(10 - hCls.getClauseActivity(gpuCref)) < 0.1);
 
-    hcls.decayClauseAct();
+    hCls.decayClauseAct();
     
-    hcls.bumpClauseActivity(gpuCref);
-    BOOST_CHECK(fabs(100 - hcls.getClauseActivity(gpuCref)) < 0.1);
-    hcls.bumpClauseActivity(gpuCref);
-    BOOST_CHECK(fabs(200 - hcls.getClauseActivity(gpuCref)) < 0.1);
+    hCls.bumpClauseActivity(gpuCref);
+    BOOST_CHECK(fabs(100 - hCls.getClauseActivity(gpuCref)) < 0.1);
+    hCls.bumpClauseActivity(gpuCref);
+    BOOST_CHECK(fabs(200 - hCls.getClauseActivity(gpuCref)) < 0.1);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

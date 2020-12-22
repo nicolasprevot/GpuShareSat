@@ -28,36 +28,36 @@ void setDefaultOptions(GpuOptions &options) {
     options.blockCount = 3;
     options.threadsPerBlock = 32;
     options.gpuActOnly = false;
+    options.minGpuLatencyMicros = 50;
 }
 
 GpuFixture::GpuFixture(GpuOptions options, int varCount, int _solverCount, int initRepCountPerCategory) :
-        co(options, CommonOptions(), finisher, varCount, initRepCountPerCategory),
-        solverCount(_solverCount)
+        gpuClauseSharer(options.toGpuClauseSharerOptions(2, initRepCountPerCategory), varCount)
 {
-    int warpsPerBlock = co.gpuDims.threadsPerBlock / WARP_SIZE;
-    co.hostAssigs->growSolverAssigs(_solverCount, warpsPerBlock, warpsPerBlock * co.gpuDims.blockCount);
+    gpuClauseSharer.setCpuSolverCount(_solverCount);
     for (int s = 0; s < _solverCount; s++) {
-        GpuHelpedSolver *solv = new GpuHelpedSolver(*co.reported, finisher, *co.hClauses,
-            s, options.gpuHelpedSolverOptions.toParams(), co.hostAssigs->getAssigs(s));
+        GpuHelpedSolver *solv = new GpuHelpedSolver(finisher, s, options.gpuHelpedSolverOptions.toParams(), gpuClauseSharer);
         solvers.push(solv);
         for (int i = 0; i < varCount; i++) {
             solv->newVar();
         }
     }
-    co.reported->setSolverCount(_solverCount);
 }
 
-void execute(GpuRunner &gpuRunner) {
+GpuClauseSharerForTests::GpuClauseSharerForTests(GpuClauseSharerOptions opts, int varCount): GpuClauseSharerImpl(opts, varCount) {
+}
+
+void execute(GpuClauseSharer &gpuClauseSharer) {
     // if we run execute just once, it will start the gpu run but won't 
     // get the results back
-    for (int i = 0; i < 2; i++) gpuRunner.execute();
+    for (int i = 0; i < 2; i++) gpuClauseSharer.gpuRun();
 }
 
 void GpuFixture::execute() {
     for (int i = 0; i < solvers.size(); i++) {
-        solvers[i] -> copyAssigsForGpu(solvers[i] -> decisionLevel());
+        solvers[i] -> tryCopyTrailForGpu(solvers[i] -> decisionLevel());
     }
-    Glucose::execute(*co.gpuRunner);
+    Glucose::execute(gpuClauseSharer);
 }
 
 CRef GpuFixture::executeAndImportClauses() {
@@ -92,27 +92,6 @@ GpuFixture::~GpuFixture() {
     }
 }
 
-void addClause(HostClauses &hcls, Lit lit, int lbd) {
-    vec<Lit> lits;
-    lits.push(lit);
-    return hcls.addClause(lits, lbd);
-}
-
-void addClause(HostClauses &hcls, Lit lit1, Lit lit2, int lbd) {
-    vec<Lit> lits;
-    lits.push(lit1);
-    lits.push(lit2);
-    return hcls.addClause(lits, lbd);
-}
-
-void addClause(HostClauses &hcls, Lit lit1, Lit lit2, Lit lit3, int lbd) {
-    vec<Lit> lits;
-    lits.push(lit1);
-    lits.push(lit2);
-    lits.push(lit3);
-    return hcls.addClause(lits, lbd);
-}
-
 __global__ void globalUpdateClauses(DClauseUpdates clUpdates, DClauses dClauses) {
     updateClauses(clUpdates, dClauses);
 }
@@ -121,6 +100,10 @@ __global__ void globalUpdateClauses(DClauseUpdates clUpdates, DClauses dClauses)
 void copyToDeviceAsync(HostClauses &hCls, cudaStream_t &stream, GpuDims gpuDims) {
     ContigCopier cc;
     copyToDeviceAsync(hCls, stream, cc, gpuDims);
+}
+
+void GpuFixture::addClause(const vec<Lit> &cl) {
+    gpuClauseSharer.addClause((int*) &cl[0], cl.size());
 }
 
 void copyToDeviceAsync(HostClauses &hCls, cudaStream_t &stream, ContigCopier &cc, GpuDims gpuDims) {
@@ -132,6 +115,10 @@ void copyToDeviceAsync(HostClauses &hCls, cudaStream_t &stream, ContigCopier &cc
     DClauses dClauses = runInfo.getDClauses();
     globalUpdateClauses<<<gpuDims.blockCount, gpuDims.threadsPerBlock, 0, stream>>>(updates.getDClauseUpdates(), dClauses);
     exitIfError(cudaStreamSynchronize(stream), POSITION);
+}
+
+void addClause(HostClauses &hostClauses, const vec<Lit> &cl) {
+    hostClauses.addClause(MinHArr<Lit>((size_t) cl.size(), (Lit*) &cl[0]), cl.size());
 }
 
 }

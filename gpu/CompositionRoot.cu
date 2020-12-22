@@ -25,10 +25,11 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 
 #include "Helper.cuh"
 #include "CompositionRoot.cuh"
-#include "GpuHelpedSolver.cuh"
+#include "GpuHelpedSolver.h"
 #include "ContigCopy.cuh"
 #include "utils/System.h"
 #include "utils/Options.h"
+#include "GpuClauseSharerImpl.cuh"
 #include <thread>
 #include <stdio.h>
 
@@ -54,6 +55,18 @@ GpuOptions::GpuOptions():
     quickProf("GPU", "quick-prof", "if we do some quick and simple profiling. It still makes things slower, but not by too much. It is meant to be used in release, with no additional external tools", false)
 {
 
+}
+
+GpuClauseSharerOptions GpuOptions::toGpuClauseSharerOptions(int verbosity, int initRepCountPerCategory) {
+    GpuClauseSharerOptions csOpts;
+    csOpts.gpuBlockCountGuideline = blockCount;
+    csOpts.gpuThreadsPerBlockGuideline = threadsPerBlock;
+    csOpts.minGpuLatencyMicros = minGpuLatencyMicros;
+    csOpts.verbosity = verbosity;
+    csOpts.clauseActivityDecay = gpuClauseActivityDecay;
+    csOpts.quickProf = quickProf;
+    csOpts.initReportCountPerCategory = initRepCountPerCategory;
+    return csOpts;
 }
 
 int GpuOptions::getNumberOfCpuThreads(int verbosity, float mem) {
@@ -84,37 +97,23 @@ int GpuOptions::getNumberOfCpuThreads(int verbosity, float mem) {
 // We don't know yet the number of solvers in this method
 // Reason is that we need to look at memory usage of one solver to decide how many solvers to use
 // And we need to already have one cpu solver for that 
-CompositionRoot::CompositionRoot(GpuOptions ops, CommonOptions commonOpts, Finisher &finisher, int varCount, int initRepCountPerCategory) :
-    gpuDims((int32_t) ops.blockCount, (int32_t) ops.threadsPerBlock),
-    clausesCountPerThread(gpuDims.blockCount * gpuDims.threadsPerBlock, false),
+CompositionRoot::CompositionRoot(GpuOptions opts, CommonOptions commonOpts, Finisher &finisher, int varCount) :
     varCount(varCount)
 {
-
     verb = commonOpts.getVerbosity();
-    verb.writeStatsPeriodSec = (verb.global > 0) ? ops.writeStatsPeriodSec : -1;
+    GpuClauseSharerOptions csOpts = opts.toGpuClauseSharerOptions(verb.global);
+    verb.writeStatsPeriodSec = (verb.global > 0) ? opts.writeStatsPeriodSec : -1;
 
-    if (ops.blockCount > 0) {
-        gpuDims.blockCount = ops.blockCount;
-    } else {
-        cudaDeviceProp props;
-        exitIfError(cudaGetDeviceProperties(&props, 0), POSITION);
-        gpuDims.blockCount = props.multiProcessorCount * 2;
-        if (verb.global > 0) printf("c Setting block count guideline to %d (twice the number of multiprocessors)\n", gpuDims.blockCount);
-    }
-    gpuDims.threadsPerBlock = ops.threadsPerBlock;
-    clausesCountPerThread.setAllTo(0);
     // don't page lock more than 10 % of memory in one go
-    maxPageLockedMem = 1e6 * ops.maxMemory / 10;
+    maxPageLockedMem = 1e6 * opts.maxMemory / 10;
     double initMemUsed = memUsed();
-    hostAssigs = my_make_unique<HostAssigs>(varCount, gpuDims);
-    hClauses = my_make_unique<HostClauses>(gpuDims, ops.gpuClauseActivityDecay,
-        ops.gpuFirstReduceDb, ops.gpuIncReduceDb, ops.gpuActOnly);
-    reported = std::make_unique<Reported>(*hClauses);
-    gpuRunner = my_make_unique<GpuRunner>(*hClauses, *hostAssigs, *reported, gpuDims, ops.quickProf, initRepCountPerCategory, ops.minGpuLatencyMicros, streamPointer.get());
-    gpuMultiSolver = my_make_unique<GpuMultiSolver>(*gpuRunner, *reported, finisher, *hostAssigs, *hClauses,
-                std::function<GpuHelpedSolver* (int, OneSolverAssigs&)> ([&](int cpuThreadId, OneSolverAssigs &oneSolverAssigs) {
-                    return new GpuHelpedSolver(*reported, finisher, *hClauses, cpuThreadId, ops.gpuHelpedSolverOptions.toParams(), oneSolverAssigs);
-                }), varCount, ops.writeClausesPeriodSec, verb, initMemUsed, (double) ops.maxMemory);
+
+    gpuClauseSharer = my_make_unique<GpuClauseSharerImpl>(csOpts, varCount);
+
+    gpuMultiSolver = my_make_unique<GpuMultiSolver>(finisher, *gpuClauseSharer,
+                std::function<GpuHelpedSolver* (int)> ([&](int cpuThreadId) {
+                    return new GpuHelpedSolver(finisher, cpuThreadId, opts.gpuHelpedSolverOptions.toParams(), *gpuClauseSharer);
+                }), varCount, opts.writeClausesPeriodSec, verb, initMemUsed, (double) opts.maxMemory);
 }
 
 } /* namespace Glucose */

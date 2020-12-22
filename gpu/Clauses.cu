@@ -33,6 +33,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "GpuUtils.cuh"
 #include "BaseTypes.cuh"
 #include "my_make_unique.h"
+#include "satUtils/Dimacs.h"
 #include <limits>
 
 // #define LOG_MEM
@@ -145,7 +146,7 @@ __device__ void DClauses::update(int clSize, int clIdInSize, DArr<Lit> lits) {
 }
 
 // Things that run on the host
-HostClauses::HostClauses(GpuDims gpuDimsGuideline, float _activityDecay, int firstReduceDb, int reduceDbInc, bool _actOnly) :
+HostClauses::HostClauses(GpuDims gpuDimsGuideline, float _activityDecay, bool _actOnly) :
     nextGpuClauseId(0),
     gpuThreadCountGuideline(gpuDimsGuideline.totalCount()),
     runInfo(),
@@ -153,9 +154,6 @@ HostClauses::HostClauses(GpuDims gpuDimsGuideline, float _activityDecay, int fir
     clauseUpdates(),
     perSizeKeeper(_activityDecay),
     clausesAddedCount(0),
-    nextReduceDb(firstReduceDb),
-    nextReduceDbInc(firstReduceDb),
-    nextReduceDbIncInc(reduceDbInc),
     actOnly(_actOnly),
     reduceDbCount(0),
     needToReduceCpuMemoryUsage(false)
@@ -299,12 +297,7 @@ void PerSizeKeeper::rescaleActivity() {
 }
 
 ArrPair<DOneSizeClauses> HostClauses::tryGetDClauses(ContigCopier &cc, cudaStream_t &stream) {
-    auto res = perSizeKeeper.tryGetDArr(cc, stream);
-    if (!res.pointsToSomething()) {
-        // we failed to allocate memory to the gpu: let's reduce db soon
-        nextReduceDb = clausesAddedCount;
-    }
-    return res;
+    return perSizeKeeper.tryGetDArr(cc, stream);
 }
 
 RunInfo HostClauses::makeRunInfo(cudaStream_t &stream, ContigCopier &cc) {
@@ -359,11 +352,13 @@ ClUpdateSet HostClauses::getUpdatesForDevice(cudaStream_t &stream, ContigCopier 
 }
 
 // just schedules the clause to be added
-void HostClauses::addClause(vec<Lit>& clause, int lbd) {
-    if (clause.size() > MAX_CL_SIZE) return;
+GpuClauseId HostClauses::addClause(MinHArr<Lit> clause, int lbd) {
+    if (clause.size() > MAX_CL_SIZE) return -1;
     std::lock_guard<std::mutex> lockGuard(writeClauseUpdates);
-    ClMetadata clMetadata { lbd, nextGpuClauseId++};
+    GpuClauseId clId = nextGpuClauseId++;
+    ClMetadata clMetadata { lbd, clId};
     clauseUpdates.addNewClause(clause, clMetadata);
+    return clId;
 }
 
 bool HostClauses::reallyNeedToCopyClausesToDevice() {
@@ -408,8 +403,7 @@ void HostClauses::getRemovingLbdAndAct(int &minLimLbd, int &maxLimLbd, float &ac
         printf("c Keeping clauses with act >= %g\n", act);
         return;
     } else {
-        getMedianLbd(minLimLbd, howManyUnder, howManyThisLbd, clauseCountsAtLbds);
-        // Never remove clauses with lbd <= 2
+        getMedianLbd(minLimLbd, howManyUnder, howManyThisLbd, clauseCountsAtLbds); // Never remove clauses with lbd <= 2
         if (minLimLbd <= 2) {
             printf("Keeping all clauses with lbd <= 2, there are %d of them\n", howManyUnder + howManyThisLbd);
             minLimLbd = 2;
@@ -435,21 +429,10 @@ void printMem() {
     printf("c There is %ld free memory out of %ld\n", freeMem, totalMem);
 }
 
-bool HostClauses::needToReduceDb() {
-    if (needToReduceCpuMemoryUsage) {
-        nextReduceDbIncInc = 0;
-        needToReduceCpuMemoryUsage = false;
-        // fine not to return true since cpu memory usage isn't clear cut like GPU's
-    }
-    if (clausesAddedCount >= nextReduceDb) {
-        return true;
-    }
-    return false;
-}
-
 void HostClauses::reduceDb(cudaStream_t &stream) {
     TimeGauge tg(profiler, "timeReduceDb", true);
     vec<int> clauseCountsAtLbds(MAX_CL_SIZE + 1, 0);
+    clausesAddedCountAtLastReduceDb = clausesAddedCount;
     fillClauseCountsAtLbds(clauseCountsAtLbds);
 
     reduceDbCount ++;
@@ -483,8 +466,6 @@ void HostClauses::reduceDb(cudaStream_t &stream) {
         }
     }
     exitIfError(cudaStreamSynchronize(stream), POSITION);
-    nextReduceDb = clausesAddedCount + nextReduceDbInc;
-    nextReduceDbInc += nextReduceDbIncInc;
     printf("c Done reducing gpu clause db, clause count is %d\n", perSizeKeeper.getClauseCount());
     printMem();
 }
@@ -553,6 +534,20 @@ void HostClauses::printStats() {
     writeAsJson("clausesAddedToGpu", clausesAddedCount);
     perSizeKeeper.printStats();
     profiler.printStats();
+}
+
+void HostClauses::writeClausesInCnf(FILE *file, int varCount) {
+    printf("p cnf %d %d\n", varCount, getClauseCount());
+    vec<Lit> lits;
+    int gpuAssigId;
+    for (int clSize = 1; clSize <= MAX_CL_SIZE; clSize++) {
+        int count = getClauseCount(clSize);
+        for (int clIdInSize = 0; clIdInSize < count; clIdInSize++) {
+            GpuCref gpuCref {clSize, clIdInSize};
+            getClause(lits, gpuAssigId, gpuCref);
+            writeClause(file, lits);
+        }
+    }
 }
 
 }

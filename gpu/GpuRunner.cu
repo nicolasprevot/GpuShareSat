@@ -150,6 +150,7 @@ __global__ void dFindClauses(DArr<DOneSolverAssigs> dOneSolverAssigs, DAssigAggr
             dClauses.assertInSize(clSize, litPt);
 #endif
             Lit lit = *litPt;
+
             Vals va = dVar(lit);
             ASSERT_OP_MSG(va, <, dAssigAggregates.multiAggs.size(), PRINT(lit); PRINT(clId); PRINT(clSize); PRINT(dClauses.getClCount(clSize)));
             MultiAgg &multiAgg = dAssigAggregates.multiAggs[va];
@@ -174,13 +175,13 @@ next: ;
     }
 }
 
-GpuRunner::GpuRunner(HostClauses &_hostClauses, HostAssigs &_hostAssigs, Reported &_reported, GpuDims gpuDimsGuideline, bool _quickProf, int _countPerCategory, int _minLatencyMicros, cudaStream_t &_stream) :
+GpuRunner::GpuRunner(HostClauses &_hostClauses, HostAssigs &_hostAssigs, Reported &_reported, GpuDims gpuDimsGuideline, bool _quickProf, int _countPerCategory, cudaStream_t &_stream) :
     warpsPerBlock(gpuDimsGuideline.threadsPerBlock / WARP_SIZE),
     blockCount(gpuDimsGuideline.blockCount),
     clauseChecks(0),
     assigClsChecked(0),
     assigsCopiedToGpu(0),
-    stream(_stream),
+    gpuReports(0),
     executeCount(0),
     lastInAssigIdsPerSolver(1),
     oneSolverChecks(false, false),
@@ -190,10 +191,9 @@ GpuRunner::GpuRunner(HostClauses &_hostClauses, HostAssigs &_hostAssigs, Reporte
     reported(_reported),
     categoryCount(gpuDimsGuideline.blockCount),
     countPerCategory(_countPerCategory), 
-    minLatencyMicros(_minLatencyMicros),
-    timeToWaitSec(0.001),
     cpuToGpuContigCopier(true),
-    gpuToCpuContigCopier(true) {
+    gpuToCpuContigCopier(true),
+    stream(_stream) {
 
 }
 
@@ -225,9 +225,12 @@ void GpuRunner::wholeRun(bool canStart) {
     int nextInAssigIdsPerSolver = -1;
     std::unique_ptr<Reporter<ReportedClause>> nextReporter;
     bool startingNew = false;
+    bool needToReduceDb = false;
     if (canStart) {
         nextInAssigIdsPerSolver = (lastInAssigIdsPerSolver + 1) % 2;
-        startingNew = startGpuRunAsync(stream, assigIdsPerSolver[nextInAssigIdsPerSolver], nextReporter);
+        if (startGpuRunAsync(stream, assigIdsPerSolver[nextInAssigIdsPerSolver], nextReporter)) startingNew = true;
+        // If we failed to start a GPU run, it's because there's not enough memory on the GPU
+        else needToReduceDb = true;
     }
     if (prevReporter) {
         gatherGpuRunResults(assigIdsPerSolver[lastInAssigIdsPerSolver], *prevReporter);
@@ -239,22 +242,7 @@ void GpuRunner::wholeRun(bool canStart) {
     } else {
         prevReporter.reset();
     }
-}
-
-void GpuRunner::execute() {
-    int timeMicrosBegining = realTimeMicros();
-    wholeRun(true);
-    int timePassedMicros = realTimeMicros() - timeMicrosBegining;
-    if (timePassedMicros < minLatencyMicros) {
-        // reason: at the beginning, there aren't many clauses
-        // we'd just loop burning cpu and copying clauses. So make sure that the loop takes at least
-        // a certain amount of time
-        std::this_thread::sleep_for(std::chrono::microseconds(minLatencyMicros - timePassedMicros));
-    }
-    if (hostClauses.needToReduceDb()) {
-        // we can't reduce db if there are runs in flight since what they return would not point to
-        // the right clause any more
-        wholeRun(false);
+    if (needToReduceDb) {
         hostClauses.reduceDb(stream);
     }
 }
@@ -355,6 +343,7 @@ void GpuRunner::gatherGpuRunResults(vec<AssigIdsPerSolver> &assigIdsPerSolver, R
     assigClsChecked += hostClauses.getClauseCount() * assigsCount;
     clauseChecks += hostClauses.getClauseCount();
     assigsCopiedToGpu += assigsCount;
+    gpuReports += reportedCls.size();
 #if PRINT_ALOT == 1
     printf("filling reported with %d assigs and %d clauses\n", assigsCount, reportedCls.size());
 #endif
@@ -374,8 +363,8 @@ void GpuRunner::printStats() {
     oneSolverChecks.copyAsync(cudaMemcpyDeviceToHost, stream);
     exitIfError(cudaStreamSynchronize(stream), POSITION);
     writeAsJson("oneSolverChecks", getSum(oneSolverChecks));
-    writeAsJson("timeToWaitSec", timeToWaitSec);
     writeAsJson("gpuExecuteCount", executeCount);
+    writeAsJson("gpuReports", gpuReports);
     profiler.printStats();
 }
 

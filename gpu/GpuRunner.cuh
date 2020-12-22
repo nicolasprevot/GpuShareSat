@@ -47,13 +47,12 @@ private:
     long clauseChecks;
     long assigClsChecked;
     long assigsCopiedToGpu;
+    long gpuReports;
     EventPointer beforeFindClauses;
     EventPointer afterFindClauses;
 
     EventPointer gpuToCpuCopyDone;
     EventPointer cpuToGpuCopyDone;
-
-    cudaStream_t &stream;
 
     int executeCount;
     vec<ReportedClause> reportedCls;
@@ -75,16 +74,16 @@ private:
     Profiler profiler;
 
     float timeToWaitSec;
+    cudaStream_t &stream;
 
     bool startGpuRunAsync(cudaStream_t &stream, vec<AssigIdsPerSolver> &assigIdsPerSolver, std::unique_ptr<Reporter<ReportedClause>> &reporter);
     void scheduleGpuToCpuCopyAsync(cudaStream_t &stream);
     void gatherGpuRunResults(vec<AssigIdsPerSolver> &assigIdsPerSolver, Reporter<ReportedClause> &reporter);
 
 public:
-    GpuRunner(HostClauses &hClauses, HostAssigs &hostAssigs, Reported &reported, GpuDims gpuDimsGuideline, bool quickProf, int countPerCategory, int minLatencyMicros, cudaStream_t &stream);
+    GpuRunner(HostClauses &_hostClauses, HostAssigs &_hostAssigs, Reported &_reported, GpuDims gpuDimsGuideline, bool _quickProf, int _countPerCategory, cudaStream_t &stream);
 
     void wholeRun(bool canStart);
-    void execute();
     void printStats();
 };
 

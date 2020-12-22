@@ -31,12 +31,12 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "CorrespArr.cuh"
 #include "Assigs.cuh"
 #include "Reported.cuh"
-#include "GpuMultiSolver.cuh"
+#include "GpuMultiSolver.h"
 #include "Reporter.cuh"
 #include "ContigCopy.cuh"
 #include "Clauses.cuh"
 #include "GpuRunner.cuh"
-#include "GpuHelpedSolver.cuh"
+#include "GpuHelpedSolver.h"
 #include "utils/Periodic.h"
 #include "my_make_unique.h"
 #include "satUtils/InitHelper.h"
@@ -64,6 +64,8 @@ public:
 
     GpuOptions();
     int getNumberOfCpuThreads(int verbosity, float mem);
+
+    GpuClauseSharerOptions toGpuClauseSharerOptions(int verbosity, int initRepCountPerCategory = 10);
 };
 
 class CompositionRoot {
@@ -71,18 +73,12 @@ public:
     // The reason for having them public is that they're used by the tests as well,
     // and the tests need to look at these individually
     int varCount;
-    GpuDims gpuDims;
     StreamPointer streamPointer;
-    CorrespArr<int> clausesCountPerThread;
-    std::unique_ptr<HostAssigs> hostAssigs;
-    std::unique_ptr<HostClauses> hClauses;
-    std::unique_ptr<Reported> reported;
-    std::unique_ptr<GpuRunner> gpuRunner;
-    vec<GpuHelpedSolver*> solvers;
+    std::unique_ptr<GpuClauseSharer> gpuClauseSharer;
     std::unique_ptr<GpuMultiSolver> gpuMultiSolver;
     Verbosity verb;
 
-    CompositionRoot(GpuOptions ops, CommonOptions commonOpts, Finisher &finisher, int varCount, int initRepCountPerCategory = 10);
+    CompositionRoot(GpuOptions ops, CommonOptions commonOpts, Finisher &finisher, int varCount);
 };
 
 } /* namespace Glucose */

@@ -22,9 +22,9 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "gpu/GpuUtils.cuh"
 #include "gpu/Assigs.cuh"
 #include "gpu/Clauses.cuh"
-#include "gpu/GpuHelpedSolver.cuh"
+#include "gpu/GpuHelpedSolver.h"
 #include "gpu/GpuRunner.cuh"
-#include "gpu/GpuMultiSolver.cuh"
+#include "gpu/GpuMultiSolver.h"
 #include "gpu/Reported.cuh"
 #include "satUtils/SolverTypes.h"
 #include "core/Solver.h"
@@ -76,8 +76,7 @@ BOOST_AUTO_TEST_CASE(testAssigsTwoSolvers) {
     GpuDims gpuDims {2, WARP_SIZE};
     ContigCopier cc; 
     HostAssigs hostAssigs(2, gpuDims);
-    int warpsPerBlock = 1;
-    hostAssigs.growSolverAssigs(2, warpsPerBlock, 1);
+    hostAssigs.growSolverAssigs(2);
 
     OneSolverAssigs& assig0 = hostAssigs.getAssigs(0);
     assig0.enterLock();
@@ -119,8 +118,7 @@ BOOST_AUTO_TEST_CASE(testAssigsTwoAssignments) {
     StreamPointer sp;
     GpuDims gpuDims {2, WARP_SIZE};
     HostAssigs hostAssigs(2, gpuDims);
-    int warpsPerBlock = 1;
-    hostAssigs.growSolverAssigs(1, warpsPerBlock, 1);
+    hostAssigs.growSolverAssigs(1);
 
     OneSolverAssigs& assig = hostAssigs.getAssigs(0);
     assig.enterLock();
@@ -158,8 +156,7 @@ BOOST_AUTO_TEST_CASE(testManyAssignments) {
     StreamPointer sp;
     GpuDims gpuDims {2, WARP_SIZE};
     HostAssigs hostAssigs(assigCount(), gpuDims);
-    int warpsPerBlock = 1;
-    hostAssigs.growSolverAssigs(1, warpsPerBlock, 1);
+    hostAssigs.growSolverAssigs(1);
 
     OneSolverAssigs& assig = hostAssigs.getAssigs(0);
     for (int i = 0; i < assigCount(); i++) {
@@ -175,7 +172,7 @@ BOOST_AUTO_TEST_CASE(testManyAssignments) {
     ContigCopier cc;
     vec<AssigIdsPerSolver> assigIdsPerSolver;
     auto assigsAndUpdates = fillAndUpdateAssigs(hostAssigs, gpuDims, cc, assigIdsPerSolver, sp.get());
-    setAllAssigsToLastAsync(warpsPerBlock, 1, assigsAndUpdates, sp.get());
+    setAllAssigsToLastAsync(1, 1, assigsAndUpdates, sp.get());
     exitIfError(cudaStreamSynchronize(sp.get()), POSITION);
 
     assig.enterLock();
@@ -207,8 +204,7 @@ BOOST_AUTO_TEST_CASE(testAssigAggregates) {
     StreamPointer sp;
     GpuDims gpuDims {2, WARP_SIZE};
     HostAssigs hostAssigs(1, gpuDims);
-    int warpsPerBlock = 1;
-    hostAssigs.growSolverAssigs(2, warpsPerBlock, 1);
+    hostAssigs.growSolverAssigs(2);
     int assigsPerSolver = sizeof(Vals) * 8;
     for (int solv = 0; solv < 2; solv++) {
         OneSolverAssigs& assig = hostAssigs.getAssigs(solv);
@@ -246,8 +242,8 @@ BOOST_AUTO_TEST_CASE(testAddClauseHost) {
     StreamPointer sp;
     CorrespArr<int> clausesCountPerThread(2, true);
     GpuDims gpuDims(2, WARP_SIZE);
-    HostClauses hClauses(gpuDims, 0.99, 20, 0, false);
-    addClause(hClauses, mkLit(4), mkLit(2));
+    HostClauses hClauses(gpuDims, 0.99, false);
+    addClause(hClauses, {mkLit(4), mkLit(2)});
     CorrespArr<Lit> cra(2, false);
 
     copyToDeviceAsync(hClauses, sp.get(), gpuDims);
@@ -276,11 +272,11 @@ BOOST_AUTO_TEST_CASE(testReported) {
     GpuOptions ops;
     setDefaultOptions(ops);
     GpuFixture fx(ops, 3, 10);
-    StreamPointer sp;
-
-    addClause(*fx.co.hClauses, mkLit(3));
-    copyToDeviceAsync(*fx.co.hClauses, sp.get(), fx.co.gpuDims);
-    BOOST_CHECK_EQUAL(1, fx.co.hClauses->getClauseCount(1));
+    cudaStream_t &stream = fx.gpuClauseSharer.sp.get();
+    
+    fx.addClause({mkLit(3)});
+    copyToDeviceAsync(*fx.gpuClauseSharer.clauses, stream, GpuDims {32, 1});
+    BOOST_CHECK_EQUAL(1, fx.gpuClauseSharer.clauses->getClauseCount(1));
 
     int solvId = 0;
 
@@ -290,33 +286,42 @@ BOOST_AUTO_TEST_CASE(testReported) {
     vec<AssigIdsPerSolver> assigIds(1, aips);
 
     ContigCopier gpuToCpuCc;
-    Reporter<ReportedClause> reporter(gpuToCpuCc, fx.sp.get(), 4, 4);
+    Reporter<ReportedClause> reporter(gpuToCpuCc, stream, 4, 4);
 
     auto dReporter = reporter.getDReporter();
-    dClear<<<1, 1, 0, fx.sp.get()>>>(dReporter);
-    dTestReporter<<< 1, 1, 0, fx.sp.get()>>>(dReporter);
+    dClear<<<1, 1, 0, stream>>>(dReporter);
+    dTestReporter<<< 1, 1, 0, stream>>>(dReporter);
 
-    exitIfFalse(gpuToCpuCc.tryCopyAsync(cudaMemcpyDeviceToHost, fx.sp.get()), POSITION);
-    exitIfError(cudaStreamSynchronize(fx.sp.get()), POSITION);
+    exitIfFalse(gpuToCpuCc.tryCopyAsync(cudaMemcpyDeviceToHost, stream), POSITION);
+    exitIfError(cudaStreamSynchronize(stream), POSITION);
    
     vec<ReportedClause> wcl; 
     reporter.getCopiedToHost(wcl);
 
-    fx.co.reported->fill(assigIds, wcl);
-
-    ClauseBatch *clBatch;
-    BOOST_CHECK(fx.co.reported->getIncrReportedClauses(solvId, clBatch));
+    fx.gpuClauseSharer.reported->fill(assigIds, wcl);
 
     MinHArr<Lit> lits;
     GpuClauseId gpuClauseId;
-    BOOST_CHECK(clBatch->popClause(lits, gpuClauseId));
+    BOOST_CHECK(fx.gpuClauseSharer.reported->popReportedClause(solvId, lits, gpuClauseId));
     BOOST_CHECK_EQUAL(1, lits.size());
     BOOST_CHECK(lits[0] == mkLit(3));
     BOOST_CHECK_EQUAL(0, gpuClauseId);
 
-    BOOST_CHECK(!clBatch->popClause(lits, gpuClauseId));
+    BOOST_CHECK(!fx.gpuClauseSharer.reported->popReportedClause(solvId, lits, gpuClauseId));
 
     exitIfLastError(POSITION);
+}
+
+int getReportedClausesCount(Reported &reported, int solverId) {
+    MinHArr<Lit> lits;
+    GpuClauseId gpuClauseId;
+    int count = 0;
+    while(reported.popReportedClause(solverId, lits, gpuClauseId)) count++;
+    return count;
+}
+
+GpuDims getGpuDims(GpuOptions opts) { 
+    return GpuDims {opts.blockCount, opts.threadsPerBlock};
 }
 
 // There's not a full solver in this test, but everything else
@@ -325,13 +330,13 @@ BOOST_AUTO_TEST_CASE(testClausesAssigsReported) {
     setDefaultOptions(ops);
     GpuFixture fx(ops, 3, 3);
 
-    addClause(*fx.co.hClauses, mkLit(0));
-    addClause(*fx.co.hClauses, mkLit(1));
-    addClause(*fx.co.hClauses, mkLit(2));
-    copyToDeviceAsync(*fx.co.hClauses, fx.sp.get(), fx.co.gpuDims);
+    addClause(*fx.gpuClauseSharer.clauses, {mkLit(0)});
+    addClause(*fx.gpuClauseSharer.clauses, {mkLit(1)});
+    addClause(*fx.gpuClauseSharer.clauses, {mkLit(2)});
+    copyToDeviceAsync(*fx.gpuClauseSharer.clauses, fx.gpuClauseSharer.sp.get(), getGpuDims(ops));
 
     // assigs for solver 0
-    OneSolverAssigs& assig0 = fx.co.hostAssigs->getAssigs(0);
+    OneSolverAssigs& assig0 = fx.gpuClauseSharer.assigs->getAssigs(0);
     assig0.enterLock();
     assig0.setVarLocked(0, l_False);
     assig0.setVarLocked(1, l_True);
@@ -347,49 +352,30 @@ BOOST_AUTO_TEST_CASE(testClausesAssigsReported) {
     assig0.exitLock();
 
     // assigs for solv 1
-    OneSolverAssigs& assig1 = fx.co.hostAssigs->getAssigs(1);
+    OneSolverAssigs& assig1 = fx.gpuClauseSharer.assigs->getAssigs(1);
     assig1.enterLock();
     assig1.setVarLocked(0, l_True);
     assig1.setVarLocked(1, l_False);
     assig1.setVarLocked(2, l_True);
     assig1.assignmentDoneLocked();
     assig1.exitLock();
-    execute(*fx.co.gpuRunner);
-    ASSERT_OP(4, ==, fx.co.reported->getTotalReported());
+    execute(fx.gpuClauseSharer);
+    ASSERT_OP(4, ==, fx.gpuClauseSharer.reported->getTotalReported());
 
-    ClauseBatch *clBatch;
+    BOOST_CHECK_EQUAL(3, getReportedClausesCount(*fx.gpuClauseSharer.reported, 0));
 
-    MinHArr<Lit> lits;
-    GpuClauseId gpuClauseId;
+    BOOST_CHECK_EQUAL(1, getReportedClausesCount(*fx.gpuClauseSharer.reported, 1));
 
-    // solver 0
-    BOOST_CHECK(fx.co.reported->getIncrReportedClauses(0, clBatch));
-    for (int i = 0 ; i < 3; i++) {
-        BOOST_CHECK(clBatch->popClause(lits, gpuClauseId));
-    }
-    BOOST_CHECK(!clBatch->popClause(lits, gpuClauseId));
-
-    fx.co.reported->removeOldestClauses(0);
-
-    // solver 1: only one clause reported
-    BOOST_CHECK(fx.co.reported->getIncrReportedClauses(1, clBatch));
-    BOOST_CHECK(clBatch->popClause(lits, gpuClauseId));
-    BOOST_CHECK(!clBatch->popClause(lits, gpuClauseId));
-    fx.co.reported->removeOldestClauses(1);
-   
-    // nothing for solver 2 
-    BOOST_CHECK(!fx.co.reported->getIncrReportedClauses(2, clBatch));
+    BOOST_CHECK_EQUAL(0, getReportedClausesCount(*fx.gpuClauseSharer.reported, 2));
 
     assig0.enterLock();
     assig0.setVarLocked(1, l_True);
     assig0.assignmentDoneLocked();
     assig0.exitLock();
-    execute(*fx.co.gpuRunner);
-    BOOST_CHECK(fx.co.reported->getIncrReportedClauses(0, clBatch));
-    BOOST_CHECK(clBatch->popClause(lits, gpuClauseId));
-    BOOST_CHECK(!clBatch->popClause(lits, gpuClauseId));
+    execute(fx.gpuClauseSharer);
+    BOOST_CHECK_EQUAL(1, getReportedClausesCount(*fx.gpuClauseSharer.reported, 0));
 
-    BOOST_CHECK(!fx.co.reported->getIncrReportedClauses(1, clBatch));
+    BOOST_CHECK_EQUAL(0, getReportedClausesCount(*fx.gpuClauseSharer.reported, 1));
 }
 
 // Test that the gpu can read assigs and report the appropriate wrong clause
@@ -398,9 +384,11 @@ BOOST_AUTO_TEST_CASE(testFindClausesMultiThread) {
     setDefaultOptions(ops);
     ops.blockCount = 1;
     ops.threadsPerBlock = 32;
+    GpuDims gpuDims {ops.blockCount, ops.threadsPerBlock};
     GpuFixture fx(ops, 3, 1);
+    cudaStream_t &stream = fx.gpuClauseSharer.sp.get();
 
-    OneSolverAssigs &oneSolverAssigs = fx.co.hostAssigs->getAssigs(0);
+    OneSolverAssigs &oneSolverAssigs = fx.gpuClauseSharer.assigs->getAssigs(0);
     oneSolverAssigs.enterLock();
     oneSolverAssigs.setVarLocked(0, l_False);
     oneSolverAssigs.setVarLocked(1, l_True);
@@ -409,39 +397,37 @@ BOOST_AUTO_TEST_CASE(testFindClausesMultiThread) {
     oneSolverAssigs.exitLock();
 
     // test copying the clauses several times
-    addClause(*fx.co.hClauses, mkLit(0), mkLit(1));
-    copyToDeviceAsync(*fx.co.hClauses, fx.sp.get(), fx.co.gpuDims);
-    addClause(*fx.co.hClauses, mkLit(0), ~mkLit(1));
-    copyToDeviceAsync(*fx.co.hClauses, fx.sp.get(), fx.co.gpuDims);
-    addClause(*fx.co.hClauses, ~mkLit(1), mkLit(2));
-    copyToDeviceAsync(*fx.co.hClauses, fx.sp.get(), fx.co.gpuDims);
+    addClause(*fx.gpuClauseSharer.clauses, {mkLit(0), mkLit(1)});
+    copyToDeviceAsync(*fx.gpuClauseSharer.clauses, stream, gpuDims);
+    addClause(*fx.gpuClauseSharer.clauses, {mkLit(0), ~mkLit(1)});
+    copyToDeviceAsync(*fx.gpuClauseSharer.clauses, stream, gpuDims);
+    addClause(*fx.gpuClauseSharer.clauses, {~mkLit(1), mkLit(2)});
+    copyToDeviceAsync(*fx.gpuClauseSharer.clauses, stream, gpuDims);
 
     ContigCopier cc;
     std::unique_ptr<AssigsAndUpdates> assigsAndUpdates;
     std::unique_ptr<Reporter<ReportedClause>> reporter;
 
     vec<AssigIdsPerSolver> assigIdsPerSolver;
-    execute(*fx.co.gpuRunner);
-    BOOST_CHECK_EQUAL(2, fx.co.reported->getTotalReported());
+    execute(fx.gpuClauseSharer);
+    BOOST_CHECK_EQUAL(2, fx.gpuClauseSharer.reported->getTotalReported());
 
-    ClauseBatch *clBatch;
-    BOOST_CHECK(fx.co.reported->getIncrReportedClauses(0, clBatch));
+    int *lits1, *lits2; 
+    int count1, count2; 
+    long gpuClauseId;
+    BOOST_CHECK(fx.gpuClauseSharer.popReportedClause(0, lits1, count1, gpuClauseId));
+    BOOST_CHECK(fx.gpuClauseSharer.popReportedClause(0, lits2, count2, gpuClauseId));
 
-    MinHArr<Lit> lits1;
-    MinHArr<Lit> lits2;
-    GpuClauseId gpuClauseId;
-    BOOST_CHECK(clBatch->popClause(lits1, gpuClauseId));
-    BOOST_CHECK(clBatch->popClause(lits2, gpuClauseId));
+    MinHArr<Lit> cl1 {(size_t) count1, (Lit*) lits1};
+    MinHArr<Lit> cl2 {(size_t) count2, (Lit*) lits2};
 
-    MinHArr<Lit> forCl2;
-    MinHArr<Lit> forCl3;
-
-    if (lits1[0] == mkLit(0)) {
-        forCl2 = lits1;
-        forCl3 = lits2;
+    MinHArr<Lit> forCl2, forCl3;
+    if (cl1[0] == mkLit(0)) {
+        forCl2 = cl1;
+        forCl3 = cl2;
     } else {
-        forCl2 = lits2;
-        forCl3 = lits1;
+        forCl2 = cl2;
+        forCl3 = cl1;
     }
 
     BOOST_CHECK_EQUAL(2, forCl2.size());
@@ -452,7 +438,7 @@ BOOST_AUTO_TEST_CASE(testFindClausesMultiThread) {
     BOOST_CHECK_EQUAL((~mkLit(1)).x, forCl3[0].x);
     BOOST_CHECK_EQUAL(mkLit(2).x, forCl3[1].x);
 
-    BOOST_CHECK(!clBatch->popClause(lits1, gpuClauseId));
+    BOOST_CHECK(!fx.gpuClauseSharer.popReportedClause(0, lits1, count1, gpuClauseId));
 }
 
 BOOST_AUTO_TEST_CASE(SolverImportBinary) {
@@ -468,7 +454,7 @@ BOOST_AUTO_TEST_CASE(SolverImportBinary) {
     BOOST_CHECK((l_True == solver.value(2)));
 
     // add gpu clause: 0 implies 1
-    addClause(*fx.co.hClauses, ~mkLit(0), mkLit(1));
+    addClause(*fx.gpuClauseSharer.clauses, {~mkLit(0), mkLit(1)});
     fx.executeAndImportClauses();
 
     solver.propagate();
@@ -489,23 +475,24 @@ BOOST_AUTO_TEST_CASE(testOneAssignmentThenTwo) {
     GpuOptions ops;
     setDefaultOptions(ops);
     GpuFixture fx(ops, 4, 1);
+    cudaStream_t &stream = fx.gpuClauseSharer.sp.get();
     GpuHelpedSolver& solver = *(fx.solvers[0]);
-    addClause(*fx.co.hClauses, ~mkLit(0), ~mkLit(1), mkLit(2));
-    copyToDeviceAsync(*fx.co.hClauses, fx.sp.get(), fx.co.gpuDims);
+    addClause(*fx.gpuClauseSharer.clauses, {~mkLit(0), ~mkLit(1), mkLit(2)});
+    copyToDeviceAsync(*fx.gpuClauseSharer.clauses, stream, getGpuDims(ops));
 
     solver.newDecisionLevel();
     solver.uncheckedEnqueue(mkLit(0));
-    solver.copyAssigsForGpu(solver.decisionLevel());
-    execute(*fx.co.gpuRunner);
+    solver.tryCopyTrailForGpu(solver.decisionLevel());
+    execute(fx.gpuClauseSharer);
 
     solver.newDecisionLevel();
     solver.uncheckedEnqueue(mkLit(3));
-    solver.copyAssigsForGpu(solver.decisionLevel());
+    solver.tryCopyTrailForGpu(solver.decisionLevel());
     solver.newDecisionLevel();
     solver.uncheckedEnqueue(mkLit(1));
-    solver.copyAssigsForGpu(solver.decisionLevel());
-    execute(*fx.co.gpuRunner);
-    BOOST_CHECK((1 == fx.co.reported->getTotalReported()));
+    solver.tryCopyTrailForGpu(solver.decisionLevel());
+    execute(fx.gpuClauseSharer);
+    BOOST_CHECK((1 == fx.gpuClauseSharer.reported->getTotalReported()));
 }
 
 
@@ -519,21 +506,21 @@ BOOST_AUTO_TEST_CASE(SolverDoesntImportSameClauseTwice) {
     // test that the solver only imports the clause once
     solver.newDecisionLevel();
     solver.uncheckedEnqueue(mkLit(0));
-    solver.copyAssigsForGpu(1);
+    solver.tryCopyTrailForGpu(1);
 
     solver.cancelUntil(0);
     solver.newDecisionLevel();
     solver.uncheckedEnqueue(~mkLit(1));
-    solver.copyAssigsForGpu(1);
-    addClause(*fx.co.hClauses, ~mkLit(0), mkLit(1));
+    solver.tryCopyTrailForGpu(1);
+    addClause(*fx.gpuClauseSharer.clauses, {~mkLit(0), mkLit(1)});
     // no need to call copyToDevice because execute does it
-    execute(*fx.co.gpuRunner);
+    execute(fx.gpuClauseSharer);
 
     bool foundEmptyClause = false;
 
     solver.gpuImportClauses(foundEmptyClause);
 
-    BOOST_CHECK_EQUAL(1, fx.co.reported->getTotalReported());
+    BOOST_CHECK_EQUAL(1, fx.gpuClauseSharer.reported->getTotalReported());
     BOOST_CHECK_EQUAL(1, solver.stats[nbImported]);
 }
 
@@ -547,8 +534,8 @@ BOOST_AUTO_TEST_CASE(SolverCanReimportClause) {
     GpuHelpedSolver& solver = *(fx.solvers[0]);
 
     // reason for having clauses of size 3: if they were of size 2, they'd be permanently learned so we couldn't test anything
-    addClause(*fx.co.hClauses, ~mkLit(0), ~mkLit(1), mkLit(4));
-    addClause(*fx.co.hClauses, ~mkLit(0), ~mkLit(1), mkLit(3));
+    addClause(*fx.gpuClauseSharer.clauses, {~mkLit(0), ~mkLit(1), mkLit(4)});
+    addClause(*fx.gpuClauseSharer.clauses, {~mkLit(0), ~mkLit(1), mkLit(3)});
 
     solver.newDecisionLevel();
     solver.uncheckedEnqueue(mkLit(0));
@@ -591,15 +578,16 @@ BOOST_AUTO_TEST_CASE(TwoSolverImportBinary) {
     BOOST_CHECK((l_Undef == fx.solvers[0]->value(1)));
     BOOST_CHECK((l_Undef == fx.solvers[1]->value(1)));
 
-    addClause(*fx.co.hClauses, ~mkLit(0), mkLit(1));
-    addClause(*fx.co.hClauses, mkLit(0), ~mkLit(1));
+    addClause(*fx.gpuClauseSharer.clauses, {~mkLit(0), mkLit(1)});
+    addClause(*fx.gpuClauseSharer.clauses, {mkLit(0), ~mkLit(1)});
 
     vec<CRef> v;
     fx.executeAndImportClauses(v);
 
     fx.solvers[0]->propagate();
     fx.solvers[1]->propagate();
-
+    BOOST_CHECK_EQUAL(1, fx.solvers[0]->stats[nbImported]);
+    BOOST_CHECK_EQUAL(1, fx.solvers[1]->stats[nbImported]);
     BOOST_CHECK((l_True == fx.solvers[0]->value(1)));
     BOOST_CHECK((l_False == fx.solvers[1]->value(1)));
 }
@@ -609,7 +597,7 @@ BOOST_AUTO_TEST_CASE(SolverUnsets) {
     GpuOptions ops;
     setDefaultOptions(ops);
     GpuFixture fx(ops, 2, 1);
-    addClause(*fx.co.hClauses, mkLit(0), mkLit(1));
+    // addClause(*fx.gpuClauseSharer.clauses, {mkLit(0), mkLit(1)});
     GpuHelpedSolver& solver = *fx.solvers[0];
     solver.newDecisionLevel();
     solver.uncheckedEnqueue(mkLit(1));
@@ -621,7 +609,7 @@ BOOST_AUTO_TEST_CASE(SolverUnsets) {
     solver.newDecisionLevel();
     solver.uncheckedEnqueue(mkLit(0));
 
-    addClause(*fx.co.hClauses, ~mkLit(0), mkLit(1));
+    addClause(*fx.gpuClauseSharer.clauses, {~mkLit(0), mkLit(1)});
     fx.executeAndImportClauses(v);
     // the clause just added should have been imported because 1 is unset
     fx.checkReportedImported(1, 0, false);
@@ -637,7 +625,7 @@ BOOST_AUTO_TEST_CASE(SolverImportUnary) {
 
     BOOST_CHECK((l_True == solver.value(1)));
 
-    addClause(*fx.co.hClauses, mkLit(0));
+    addClause(*fx.gpuClauseSharer.clauses, {mkLit(0)});
     fx.executeAndImportClauses();
     BOOST_CHECK_EQUAL(1, solver.stats[nbReported]);
     BOOST_CHECK_EQUAL(1, solver.stats[nbImportedUnit]);
@@ -659,7 +647,7 @@ BOOST_AUTO_TEST_CASE(SolverHasManyClausesReported) {
 
     for (int i = 0; i < varCount; i++) {
         // gpu clause: var is true
-        addClause(*fx.co.hClauses, mkLit(i));
+        addClause(*fx.gpuClauseSharer.clauses, {mkLit(i)});
         // solver learns clause
         fx.executeAndImportClauses();
         BOOST_CHECK((l_True == solver.value(i)));
@@ -683,15 +671,16 @@ BOOST_AUTO_TEST_CASE(SolverHasManyClausesReportedAllAtOnce) {
             solver.newDecisionLevel();
             solver.uncheckedEnqueue(mkLit(i));
         }
-        addClause(*fx.co.hClauses, mkLit(i));
+        addClause(*fx.gpuClauseSharer.clauses, {mkLit(i)});
     }
     // solver learns clause
     fx.executeAndImportClauses();
+    PRINT(solver.stats[nbReported]);
     for (int i = 0; i < varCount; i++) {
         // Those were set at the beginning, so their clauses haven't been imported, and they've
         // been unset because of the other literals added, so they're not set any more
         if (i % 3 == 0) BOOST_CHECK((l_Undef == solver.value(i)));
-        else BOOST_CHECK((l_True == solver.value(i)));
+        else ASSERT_OP_MSG(l_True, ==, solver.value(i), PRINT(i));
     }
     fx.checkReportedImported(varCount - getRequired(varCount, 3), 0, true);
 }
@@ -706,24 +695,24 @@ BOOST_AUTO_TEST_CASE(OneInstanceTwoAssignments) {
 
     GpuHelpedSolver& solver = *(fx.solvers[0]);
 
-    addClause(*fx.co.hClauses, ~mkLit(0), mkLit(2));
-    addClause(*fx.co.hClauses, ~mkLit(1), mkLit(3));
+    addClause(*fx.gpuClauseSharer.clauses, {~mkLit(0), mkLit(2)});
+    addClause(*fx.gpuClauseSharer.clauses, {~mkLit(1), mkLit(3)});
 
     solver.newDecisionLevel();
     solver.uncheckedEnqueue(mkLit(0));
 
-    solver.copyAssigsForGpu(solver.decisionLevel());
+    solver.tryCopyTrailForGpu(solver.decisionLevel());
     solver.cancelUntil(0);
     solver.newDecisionLevel();
     solver.uncheckedEnqueue(mkLit(1));
-    solver.copyAssigsForGpu(solver.decisionLevel());
+    solver.tryCopyTrailForGpu(solver.decisionLevel());
     solver.cancelUntil(0);
-    BOOST_CHECK_EQUAL(0, fx.co.reported->getTotalReported());
+    BOOST_CHECK_EQUAL(0, fx.gpuClauseSharer.reported->getTotalReported());
     fx.executeAndImportClauses();
 
     // at this point, both clauses should have been imported
     // check that when propagating, these clauses are actually used
-    BOOST_CHECK_EQUAL(2, fx.co.reported->getTotalReported());
+    BOOST_CHECK_EQUAL(2, fx.gpuClauseSharer.reported->getTotalReported());
     BOOST_CHECK_EQUAL(2, solver.stats[nbImported]);
     solver.newDecisionLevel();
     solver.uncheckedEnqueue(mkLit(0));
@@ -749,7 +738,7 @@ BOOST_AUTO_TEST_CASE(SolverClauseKeptAfterImport) {
     solver.newDecisionLevel();
     solver.uncheckedEnqueue(mkLit(1));
 
-    addClause(*fx.co.hClauses,  ~mkLit(0), ~mkLit(1), mkLit(2));
+    addClause(*fx.gpuClauseSharer.clauses, {~mkLit(0), ~mkLit(1), mkLit(2)});
     fx.executeAndImportClauses();
 
     BOOST_CHECK((l_True == solver.value(0)));
@@ -796,7 +785,7 @@ BOOST_AUTO_TEST_CASE(SolverImportFalseClauseDifferentLevel) {
     BOOST_CHECK((2 == solver.level(2)));
 
     // at this point, 0 and 1 have different levels. So 1 should now just be implied by 0
-    addClause(*fx.co.hClauses,  ~mkLit(0), ~mkLit(1));
+    addClause(*fx.gpuClauseSharer.clauses, {~mkLit(0), ~mkLit(1)});
     fx.executeAndImportClauses();
 
     BOOST_CHECK((l_True == solver.value(0)));
@@ -819,7 +808,7 @@ BOOST_AUTO_TEST_CASE(testDeduceEmptyClause) {
     solver.propagate();
     BOOST_CHECK((l_True == solver.value(0)));
 
-    addClause(*fx.co.hClauses, ~mkLit(0));
+    addClause(*fx.gpuClauseSharer.clauses, {~mkLit(0)});
 
     fx.execute();
     exitIfLastError(POSITION);
@@ -844,12 +833,12 @@ BOOST_AUTO_TEST_CASE(findConflict) {
     BOOST_CHECK_EQUAL(1, solver.level(0));
     BOOST_CHECK_EQUAL(1, solver.level(1));
 
-    addClause(*fx.co.hClauses, ~mkLit(0), ~mkLit(1));
+    addClause(*fx.gpuClauseSharer.clauses, {~mkLit(0), ~mkLit(1)});
     // we don't call executeAndImportClauses because the import has to be
     // done during solve()
     fx.execute();
-    BOOST_CHECK_EQUAL(1, fx.co.hClauses->getClauseCount());
-    BOOST_CHECK_EQUAL(1, fx.co.reported->getTimesReported());
+    BOOST_CHECK_EQUAL(1, fx.gpuClauseSharer.clauses->getClauseCount());
+    BOOST_CHECK_EQUAL(1, fx.gpuClauseSharer.reported->getTimesReported());
 
     BOOST_CHECK(l_True == solver.solve());
     BOOST_CHECK_EQUAL(1, solver.stats[nbReported]);
@@ -865,15 +854,16 @@ BOOST_AUTO_TEST_CASE(testReduceDb) {
     GpuOptions ops;
     setDefaultOptions(ops);
     GpuFixture fx(ops, 5, 1);
+    cudaStream_t &stream = fx.gpuClauseSharer.sp.get();
 
-    addClause(*fx.co.hClauses, ~mkLit(1), mkLit(3), mkLit(4));
+    addClause(*fx.gpuClauseSharer.clauses, {~mkLit(1), mkLit(3), mkLit(4)});
     // Adding this clause (the one which will be used) last so that it will have to
     // be passed from one thread to another
-    addClause(*fx.co.hClauses, ~mkLit(0), mkLit(2), mkLit(4));
+    addClause(*fx.gpuClauseSharer.clauses, {~mkLit(0), mkLit(2), mkLit(4)});
 
-    copyToDeviceAsync(*fx.co.hClauses, fx.sp.get(), fx.co.gpuDims);
-    BOOST_CHECK_EQUAL(2, fx.co.hClauses->getClauseCount());
-    BOOST_CHECK_EQUAL(6, fx.co.hClauses->getClauseLengthSum());
+    copyToDeviceAsync(*fx.gpuClauseSharer.clauses, stream, getGpuDims(ops));
+    BOOST_CHECK_EQUAL(2, fx.gpuClauseSharer.clauses->getClauseCount());
+    BOOST_CHECK_EQUAL(6, fx.gpuClauseSharer.clauses->getClauseLengthSum());
 
     GpuHelpedSolver& solver = *(fx.solvers[0]);
     solver.newDecisionLevel();
@@ -887,10 +877,10 @@ BOOST_AUTO_TEST_CASE(testReduceDb) {
     BOOST_CHECK(l_Undef == solver.value(3));
 
     printf("reduce db\n");
-    fx.co.hClauses->reduceDb(fx.sp.get());
+    fx.gpuClauseSharer.clauses->reduceDb(stream);
 
-    BOOST_CHECK_EQUAL(1, fx.co.hClauses->getClauseCount());
-    BOOST_CHECK_EQUAL(3, fx.co.hClauses->getClauseLengthSum());
+    BOOST_CHECK_EQUAL(1, fx.gpuClauseSharer.clauses->getClauseCount());
+    BOOST_CHECK_EQUAL(3, fx.gpuClauseSharer.clauses->getClauseLengthSum());
 
     // the second clause should have been removed because it wasn't used before
     solver.newDecisionLevel();
@@ -898,12 +888,12 @@ BOOST_AUTO_TEST_CASE(testReduceDb) {
     fx.executeAndImportClauses(ignored);
     BOOST_CHECK(l_Undef == solver.value(3));
 
-    int rep = fx.co.reported->getTotalReported();
+    int rep = fx.gpuClauseSharer.reported->getTotalReported();
     // now check that adding more clauses works fine after the reduce db
-    addClause(*fx.co.hClauses, ~mkLit(0), ~mkLit(3));
+    addClause(*fx.gpuClauseSharer.clauses, {~mkLit(0), ~mkLit(3)});
     fx.executeAndImportClauses(ignored);
 
-    BOOST_CHECK_EQUAL(rep + 1, fx.co.reported->getTotalReported());
+    BOOST_CHECK_EQUAL(rep + 1, fx.gpuClauseSharer.reported->getTotalReported());
 
     BOOST_CHECK(l_False == solver.value(3));
 }
@@ -927,17 +917,18 @@ BOOST_AUTO_TEST_CASE(testSolverPassesManyAssignments) {
 
     GpuHelpedSolver& solver = *(fx.solvers[0]);
     for (int i = 0; i < 32; i++) {
-        addClause(*fx.co.hClauses, ~mkLit(2 * i), mkLit(2 * i + 1));
+        addClause(*fx.gpuClauseSharer.clauses, {~mkLit(2 * i), mkLit(2 * i + 1)});
         solver.cancelUntil(0);
         solver.newDecisionLevel();
         solver.uncheckedEnqueue(mkLit(2 * i));
-        solver.copyAssigsForGpu(solver.decisionLevel());
+        solver.tryCopyTrailForGpu(solver.decisionLevel());
     }
-    execute(*fx.co.gpuRunner);
+    execute(fx.gpuClauseSharer);
 
     bool foundEmptyClause = false;
     solver.gpuImportClauses(foundEmptyClause);
 
+    BOOST_CHECK_EQUAL(0, solver.stats[nbFailureFindAssignment]);
     BOOST_CHECK_EQUAL(32, solver.stats[nbReported]);
     BOOST_CHECK_EQUAL(1, solver.stats[nbImportedValid]);
     BOOST_CHECK_EQUAL(32, solver.stats[nbImported]);
@@ -956,17 +947,14 @@ BOOST_AUTO_TEST_CASE(testSolverPassesManyAssignments) {
 BOOST_AUTO_TEST_CASE(testGpuMultiSolver) {
     GpuOptions ops;
     setDefaultOptions(ops);
-    GpuFixture fx(ops, 2, 1);
+    CommonOptions commonOpts;
+    Finisher finisher;
+    CompositionRoot co(ops, commonOpts, finisher, 2);
 
-    GpuMultiSolver &msolver = *fx.co.gpuMultiSolver;
+    GpuMultiSolver &msolver = *co.gpuMultiSolver;
 
-    vec<Lit> lits;
-    lits.push(mkLit(0));
-    msolver.addClause_(lits);
-    lits.clear();
-    lits.push(~mkLit(0));
-    lits.push(mkLit(1));
-    msolver.addClause_(lits);
+    msolver.addClause({mkLit(0)});
+    msolver.addClause({~mkLit(0), mkLit(1)});
     BOOST_CHECK((l_True == msolver.solve(1)));
 }
 
@@ -990,15 +978,15 @@ BOOST_AUTO_TEST_CASE(testSendClauseToGpu) {
     solver.propagateAndMaybeLearnFromConflict(b1, blocked, learned_clause, selectors);
     BOOST_CHECK_EQUAL(1, solver.conflicts);
     BOOST_CHECK_EQUAL(1, solver.stats[propagations]);
-    execute(*fx.co.gpuRunner);
+    execute(fx.gpuClauseSharer);
 
     solver.gpuImportClauses(b1);
     // if already present:
     // The gpu clauses don't need to learn the clause ~mkLit(0) that the solver has just found because the assignment mkLit(0) was
     // already know to be not useful (because the gpu clauses already have the clause ~mkLit(0)
-    copyToDeviceAsync(*fx.co.hClauses, fx.sp.get(), fx.co.gpuDims);
-    BOOST_CHECK_EQUAL(1, fx.co.hClauses->getClauseCount());
-    BOOST_CHECK_EQUAL(1, fx.co.hClauses->getClauseLengthSum());
+    copyToDeviceAsync(*fx.gpuClauseSharer.clauses, fx.gpuClauseSharer.sp.get(), getGpuDims(ops));
+    BOOST_CHECK_EQUAL(1, fx.gpuClauseSharer.clauses->getClauseCount());
+    BOOST_CHECK_EQUAL(1, fx.gpuClauseSharer.clauses->getClauseLengthSum());
 }
 
 BOOST_AUTO_TEST_CASE(testClauseBatch) {

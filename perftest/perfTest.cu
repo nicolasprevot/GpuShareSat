@@ -21,7 +21,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "gpu/Helper.cuh"
 #include "gpu/Assigs.cuh"
 #include "gpu/Clauses.cuh"
-#include "gpu/GpuHelpedSolver.cuh"
+#include "gpu/GpuHelpedSolver.h"
 #include "gpu/GpuRunner.cuh"
 #include "satUtils/SolverTypes.h"
 #include "core/Solver.h"

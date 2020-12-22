@@ -34,7 +34,11 @@ __device__ void printVD(MultiLBool multiLBool) {
 }
 
 __device__ void printV(MultiAgg multiAgg) {
-    PRINT(multiAgg.canBeTrue); PRINT(multiAgg.canBeFalse); PRINT(multiAgg.canBeUndef); NL;
+    printf("t: "); printBinaryDH(multiAgg.canBeTrue); printf(" f: "); printBinaryDH(multiAgg.canBeFalse); printf(" u: "); printBinaryDH(multiAgg.canBeUndef); NL;
+}
+
+__device__ void printVD(MultiAgg multiAgg) {
+    printV(multiAgg);
 }
 
 void printV(VarUpdate vu) {
@@ -284,13 +288,13 @@ HostAssigs::HostAssigs(int _varCount, GpuDims gpuDims) :
         varCount(_varCount),
         multiAggAlloc(_varCount)
 {
-    int warpsPerBlock = gpuDims.threadsPerBlock / WARP_SIZE; 
-    ASSERT_OP(warpsPerBlock, >, 0);
-    int warpCount = warpsPerBlock * gpuDims.blockCount;
+    warpsPerBlockForInit = gpuDims.threadsPerBlock / WARP_SIZE; 
+    ASSERT_OP(warpsPerBlockForInit, >, 0);
+    warpCountForInit = warpsPerBlockForInit * gpuDims.blockCount;
     dAssigAggregates.multiAggs = multiAggAlloc.getDArr();
-    growSolverAssigs(1, warpsPerBlock, warpCount);
+    growSolverAssigs(1);
     MultiAgg multiAgg {0, ~((Vals) 0), 0};
-    initDArr(multiAggAlloc.getDArr(), multiAgg, warpsPerBlock, warpCount);
+    initDArr(multiAggAlloc.getDArr(), multiAgg, warpsPerBlockForInit, warpCountForInit);
 }
 
 OneSolverAssigs& HostAssigs::getAssigs(int solverId) { 
@@ -369,11 +373,11 @@ void assignAggBitsToSolver(int &currentBit, OneSolverAssigs &solverAssig, int bi
     solverAssig.setAggBits(start, currentBit);
 }
 
-void HostAssigs::growSolverAssigs(int solverCount, int &warpsPerBlock, int warpCount) {
+void HostAssigs::growSolverAssigs(int solverCount) {
     int oldCount = solverAssigs.size();
     solverAssigs.growTo(solverCount);
     for (int i = oldCount; i < solverCount; i++) {
-        solverAssigs[i] = my_make_unique<OneSolverAssigs>(varCount, warpsPerBlock, warpCount);
+        solverAssigs[i] = my_make_unique<OneSolverAssigs>(varCount, warpsPerBlockForInit, warpCountForInit);
     }
 
     int bitsCount = sizeof(Vals) * 8;

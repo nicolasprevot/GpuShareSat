@@ -220,13 +220,9 @@ private:
     Profiler profiler;
 
     // only increases
-    int clausesAddedCount;
-    // We wait for clausesAddedCount to reach this before reducing the db
-    int nextReduceDb;
+    long clausesAddedCount;
 
-    int nextReduceDbInc; // We remove half of the clauses (the least useful ones) once we've added that many more clauses
-
-    int nextReduceDbIncInc; // We increase nextReduceDb by this much each time we reduce
+    volatile long clausesAddedCountAtLastReduceDb;
 
     bool addClauseNowLocked(vec<Lit>& lits);
 
@@ -242,7 +238,7 @@ private:
     volatile bool needToReduceCpuMemoryUsage;
 
 public:
-    HostClauses(GpuDims gpuDimsGuideline, float clauseActDecay, int firstReduceDb, int reduceDbInc, bool actOnly);
+    HostClauses(GpuDims gpuDimsGuideline, float clauseActDecay, bool actOnly);
 
     RunInfo makeRunInfo(cudaStream_t &stream, ContigCopier &cc);
 
@@ -251,8 +247,8 @@ public:
     bool needToReduceDb();
     void reduceDb(cudaStream_t &stream);
 
-    // These two method can be called by other threads. they're the only ones
-    void addClause(vec<Lit> &clause, int lbd);
+    // This method can be called by other threads.
+    GpuClauseId addClause(MinHArr<Lit> clause, int lbd);
 
     void tryReduceCpuMemoryUsage() { needToReduceCpuMemoryUsage = true; }
     
@@ -280,12 +276,15 @@ public:
 
     void getRemovingLbdAndAct(int &minLimLbd, int &maxLimLbd, float &act, vec<int> &clauseCountsAtLbds);
 
+    long getClausesAddedAtLastReduceDb() {return clausesAddedCountAtLastReduceDb; }
     int getReduceDbCount() {
         return reduceDbCount;
     }
 
     void bumpClauseActivity(GpuCref gpuCref) { perSizeKeeper.bumpClauseActivity(gpuCref.clSize, gpuCref.clIdInSize); }
     float getClauseActivity(GpuCref gpuCref) { return perSizeKeeper.getClauseActivity(gpuCref.clSize, gpuCref.clIdInSize); }
+
+    void writeClausesInCnf(FILE *file, int varCount);
 
 };
 

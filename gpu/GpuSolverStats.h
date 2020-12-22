@@ -22,5 +22,5 @@ X(nbExportedUnit)
 X(nbImportedUnit)
 X(nbReported) // number of clauses reported by the gpu. It may have been reported for several assignments
 X(nbImportedValid) // number of reported clauses valid (values haven't changed)
-X(nbAssigNoReport) // number of assignments which) when sent to gpu, didn't have any clauses reported to them
 X(nbFailureFindAssignment)
+X(nbAssignmentsSent)
