@@ -35,9 +35,9 @@ GpuMultiSolver::GpuMultiSolver(Finisher &_finisher, GpuClauseSharer &_gpuClauseS
                 gpuClauseSharer(_gpuClauseSharer),
                 solverFactory(_solverFactory),
                 verb(_verb),
-                initMemUsed(_initMemUsed),
                 gpuReduceDbPeriod(_gpuReduceDbPeriod),
                 gpuReduceDbPeriodInc(_gpuReduceDbPeriodInc),
+                initMemUsed(_initMemUsed),
                 maxMemory(_maxMemory),
                 hasTriedToLowerCpuMemoryUsage(false),
                 finisher(_finisher) {
@@ -120,8 +120,8 @@ lbool GpuMultiSolver::solve(int _cpuThreadCount) {
     while (!finisher.stopAllThreads) {
         periodicRunner->maybeRun(realTimeSecSinceStart());
         gpuClauseSharer.gpuRun();
-        // PRINT(gpuClauseSharer.getAddedClauseCount()); PRINT(gpuClauseSharer.getAddedClauseCountAtLastReduceDb()); PRINT(gpuReduceDbPeriod); NL;
         if (gpuClauseSharer.getAddedClauseCount() - gpuClauseSharer.getAddedClauseCountAtLastReduceDb() >= gpuReduceDbPeriod) {
+            PRINT(gpuClauseSharer.getAddedClauseCount()); PRINT(gpuClauseSharer.getAddedClauseCountAtLastReduceDb()); PRINT(gpuReduceDbPeriod); NL;
             gpuClauseSharer.reduceDb();
             if (!gpuClauseSharer.hasRunOutOfGpuMemoryOnce()) {
                 gpuReduceDbPeriod += gpuReduceDbPeriodInc;

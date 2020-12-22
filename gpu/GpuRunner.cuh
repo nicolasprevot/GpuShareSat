@@ -77,7 +77,7 @@ private:
     float timeToWaitSec;
     cudaStream_t &stream;
 
-    bool startGpuRunAsync(cudaStream_t &stream, vec<AssigIdsPerSolver> &assigIdsPerSolver, std::unique_ptr<Reporter<ReportedClause>> &reporter);
+    void startGpuRunAsync(cudaStream_t &stream, vec<AssigIdsPerSolver> &assigIdsPerSolver, std::unique_ptr<Reporter<ReportedClause>> &reporter, bool &started, bool &notEnoughGpuMemory);
     void scheduleGpuToCpuCopyAsync(cudaStream_t &stream);
     void gatherGpuRunResults(vec<AssigIdsPerSolver> &assigIdsPerSolver, Reporter<ReportedClause> &reporter);
 

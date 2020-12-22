@@ -226,15 +226,10 @@ void GpuRunner::wholeRun(bool canStart) {
     int nextInAssigIdsPerSolver = -1;
     std::unique_ptr<Reporter<ReportedClause>> nextReporter;
     bool startingNew = false;
-    bool needToReduceDb = false;
+    bool notEnoughGpuMemory = false;
     if (canStart) {
         nextInAssigIdsPerSolver = (lastInAssigIdsPerSolver + 1) % 2;
-        if (startGpuRunAsync(stream, assigIdsPerSolver[nextInAssigIdsPerSolver], nextReporter)) startingNew = true;
-        // If we failed to start a GPU run, it's because there's not enough memory on the GPU
-        else { 
-            needToReduceDb = true;
-            hasRunOutOfGpuMemoryOnce = true;
-        }
+        startGpuRunAsync(stream, assigIdsPerSolver[nextInAssigIdsPerSolver], nextReporter, startingNew, notEnoughGpuMemory);
     }
     if (prevReporter) {
         gatherGpuRunResults(assigIdsPerSolver[lastInAssigIdsPerSolver], *prevReporter);
@@ -246,8 +241,9 @@ void GpuRunner::wholeRun(bool canStart) {
     } else {
         prevReporter.reset();
     }
-    if (needToReduceDb) {
+    if (notEnoughGpuMemory) {
         hostClauses.reduceDb(stream);
+        hasRunOutOfGpuMemoryOnce = true;
     }
 }
 
@@ -262,7 +258,7 @@ struct InitParams {
 }
 
 */
-bool GpuRunner::startGpuRunAsync(cudaStream_t &stream, vec<AssigIdsPerSolver> &assigIdsPerSolver, std::unique_ptr<Reporter<ReportedClause>> &reporter) {
+void GpuRunner::startGpuRunAsync(cudaStream_t &stream, vec<AssigIdsPerSolver> &assigIdsPerSolver, std::unique_ptr<Reporter<ReportedClause>> &reporter, bool &started, bool &notEnoughGpuMemory) {
 #ifdef PRINT_ALOT
     printf("startGpuRunAsync\n");
 #endif
@@ -274,14 +270,20 @@ bool GpuRunner::startGpuRunAsync(cudaStream_t &stream, vec<AssigIdsPerSolver> &a
 
     ClUpdateSet clUpdateSet = hostClauses.getUpdatesForDevice(stream, cpuToGpuContigCopier);
     // getClauseCount at this point includes clauses that are about to be copied to the device
-    if (hostClauses.getClauseCount() == 0) return false;
+    if (hostClauses.getClauseCount() == 0) {
+        started = false;
+        notEnoughGpuMemory = false;
+        return;
+    }
     RunInfo runInfo = hostClauses.makeRunInfo(stream, cpuToGpuContigCopier);
 
     if (!runInfo.succeeded()) {
         // Failed to allocate the memory 
         // it's fine not to call initClauses since the next thing we'll do is reduceDb which will
         // sync device and host anyway
-        return false;
+        started = false;
+        notEnoughGpuMemory = true;
+        return;
     }
 
     TimeGauge tg(profiler, "timeFillAssigs", quickProf);
@@ -319,7 +321,8 @@ bool GpuRunner::startGpuRunAsync(cudaStream_t &stream, vec<AssigIdsPerSolver> &a
     });
     exitIfError(cudaEventRecord(afterFindClauses.get(), stream), POSITION);
     setAllAssigsToLastAsync(warpsPerBlock, warpsPerBlock * blockCount, assigsAndUpdates, stream);
-    return true;
+    started = true;
+    notEnoughGpuMemory = false;
 }
 
 void GpuRunner::scheduleGpuToCpuCopyAsync(cudaStream_t &stream) {
