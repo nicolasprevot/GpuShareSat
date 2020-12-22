@@ -77,6 +77,7 @@ class Reported {
 private:
     vec<std::unique_ptr<ConcurrentQueue<ClauseBatch>>> repClauses; // first index: solver
 
+    // only used from the solver threads
     vec<std::set<GpuClauseId>> clausesToNotImportAgain;
     // this is only accessed from the solver threads
     vec<ClauseBatch*> currentClauseBatches;

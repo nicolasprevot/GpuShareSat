@@ -104,25 +104,30 @@ bool Reported::popReportedClause(int solverId, MinHArr<Lit> &lits, GpuClauseId &
         ClauseBatch *current = currentClauseBatches[solverId];
         if (current != NULL) {
             if (current->popClause(lits, gpuClauseId)) {
-                return true;
-            } else {
-                // We've received all reported clauses for all assignments up to this one
-                long seenAllReportsUntil = current->assigIds.startAssigId + current->assigIds.assigCount;
-                ClauseBatch *clBatch;
-                // There is a possibility that a clause will trigger again on an assignment if this assignment did not know
-                // about the clause. For a clause batch, once we've handled all the assignments which didn't know yet about
-                // the clauses reported in this clause batch: these clauses won't trigger on future assignments (unless the
-                // solver deleted this clause).
-                while (getOldestClauses(solverId, clBatch)
-                        && clBatch->assigWhichKnowsAboutThese <= seenAllReportsUntil) {
-                    auto &clDatas = clBatch->getClauseDatas();
-                    for (int i = 0; i < clDatas.size(); i++) {
-                        clausesToNotImportAgain[solverId].erase(clDatas[i].gpuClauseId);
-                    }
-                    removeOldestClauses(solverId);
+                // The same clause may trigger for several assignments, since an assignment may not have known about 
+                // clauses reported to previous assignments. This is also true for assignments in different clause batches
+                // We don't want to report the same clause several times in this case
+                if (clausesToNotImportAgain[solverId].find(gpuClauseId) == clausesToNotImportAgain[solverId].end()) {
+                    clausesToNotImportAgain[solverId].insert(gpuClauseId);
+                    return true;
                 }
-                currentClauseBatches[solverId] = NULL;
             }
+            // We've received all reported clauses for all assignments up to this one
+            long seenAllReportsUntil = current->assigIds.startAssigId + current->assigIds.assigCount;
+            ClauseBatch *clBatch;
+            // There is a possibility that a clause will trigger again on an assignment if this assignment did not know
+            // about the clause. For a clause batch, once we've handled all the assignments which didn't know yet about
+            // the clauses reported in this clause batch: these clauses won't trigger on future assignments (unless the
+            // solver deleted this clause).
+            while (getOldestClauses(solverId, clBatch)
+                    && clBatch->assigWhichKnowsAboutThese <= seenAllReportsUntil) {
+                auto &clDatas = clBatch->getClauseDatas();
+                for (int i = 0; i < clDatas.size(); i++) {
+                    clausesToNotImportAgain[solverId].erase(clDatas[i].gpuClauseId);
+                }
+                removeOldestClauses(solverId);
+            }
+            currentClauseBatches[solverId] = NULL;
         } else {
             return false;
         }
@@ -162,7 +167,6 @@ void Reported::fill(vec<AssigIdsPerSolver> &solvAssigIds, vec<ReportedClause> &w
 
 void Reported::addClause(ClauseBatch &clauseBatch, ReportedClause wc) {
     int gpuClId;
-    int solverId = wc.solverId;
 
     // The lits are copied twice here
     // HostClauses has a weird representation of lits, not contiguous in memory
@@ -170,20 +174,9 @@ void Reported::addClause(ClauseBatch &clauseBatch, ReportedClause wc) {
     // but does it matter?
     hostClauses.getClause(tempLits, gpuClId, wc.gpuCref);
 
-    // The same clause may trigger for several assignments, since an assignment may not have known about 
-    // clauses reported to previous assignments. This is also true for assignments in different clause batches
-    // We don't want to report the same clause several times in this case
-    bool canAdd = true;
-    if (clausesToNotImportAgain[solverId].find(gpuClId) != clausesToNotImportAgain[solverId].end()) {
-        canAdd = false;
-    } else {
-        clausesToNotImportAgain[solverId].insert(gpuClId);
-    }
-    if (canAdd) {
-        clauseBatch.addClause(gpuClId);
-        for (int i = 0; i < tempLits.size(); i++) {
-            clauseBatch.addLit(tempLits[i]);
-        }
+    clauseBatch.addClause(gpuClId);
+    for (int i = 0; i < tempLits.size(); i++) {
+        clauseBatch.addLit(tempLits[i]);
     }
     clauseBatch.hadSomeReported |= wc.reportedAssignments;
     totalReported++;
