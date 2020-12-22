@@ -62,6 +62,16 @@ class GpuClauseSharer {
     // Delete half of the GPU clauses (those with the lowest activity).
     virtual void reduceDb() = 0;
 
+    // Number of clauses that have been added, whether or not they have been deleted
+    virtual long getAddedClauseCount() = 0;
+
+    virtual long getAddedClauseCountAtLastReduceDb() = 0;
+
+
+    virtual bool hasRunOutOfGpuMemoryOnce() = 0;
+
+    virtual void getGpuMemInfo(size_t &free, size_t &total) = 0;
+
     /* not thread safe with any other method in this class */
     virtual void setCpuSolverCount(int count) = 0;
 
@@ -98,9 +108,8 @@ class GpuClauseSharer {
     // 
     virtual bool popReportedClause(int cpuSolverId, int* &lits, int &count, long &gpuClauseId) = 0;
 
-    virtual void getGpuMemInfo(size_t &free, size_t &total) = 0;
-
     virtual void writeClausesInCnf(FILE *file) = 0;
+
 };
 }
 

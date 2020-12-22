@@ -113,7 +113,7 @@ CompositionRoot::CompositionRoot(GpuOptions opts, CommonOptions commonOpts, Fini
     gpuMultiSolver = my_make_unique<GpuMultiSolver>(finisher, *gpuClauseSharer,
                 std::function<GpuHelpedSolver* (int)> ([&](int cpuThreadId) {
                     return new GpuHelpedSolver(finisher, cpuThreadId, opts.gpuHelpedSolverOptions.toParams(), *gpuClauseSharer);
-                }), varCount, opts.writeClausesPeriodSec, verb, initMemUsed, (double) opts.maxMemory);
+                }), varCount, opts.writeClausesPeriodSec, verb, initMemUsed, (double) opts.maxMemory, opts.gpuFirstReduceDb, opts.gpuIncReduceDb);
 }
 
 } /* namespace Glucose */

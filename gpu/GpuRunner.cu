@@ -182,6 +182,7 @@ GpuRunner::GpuRunner(HostClauses &_hostClauses, HostAssigs &_hostAssigs, Reporte
     assigClsChecked(0),
     assigsCopiedToGpu(0),
     gpuReports(0),
+    hasRunOutOfGpuMemoryOnce(false),
     executeCount(0),
     lastInAssigIdsPerSolver(1),
     oneSolverChecks(false, false),
@@ -230,7 +231,10 @@ void GpuRunner::wholeRun(bool canStart) {
         nextInAssigIdsPerSolver = (lastInAssigIdsPerSolver + 1) % 2;
         if (startGpuRunAsync(stream, assigIdsPerSolver[nextInAssigIdsPerSolver], nextReporter)) startingNew = true;
         // If we failed to start a GPU run, it's because there's not enough memory on the GPU
-        else needToReduceDb = true;
+        else { 
+            needToReduceDb = true;
+            hasRunOutOfGpuMemoryOnce = true;
+        }
     }
     if (prevReporter) {
         gatherGpuRunResults(assigIdsPerSolver[lastInAssigIdsPerSolver], *prevReporter);

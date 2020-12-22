@@ -69,7 +69,7 @@ private:
 public:
     GpuMultiSolver(Finisher &finisher, GpuClauseSharer &gpuClauseSharer,
             std::function<GpuHelpedSolver* (int threadId) > solverFactory, int varCount, int writeClausesPeriodSec,
-            Verbosity verb, double initMemUsed, double maxMemory);
+            Verbosity verb, double initMemUsed, double maxMemory, int gpuReduceDbPeriod, int gpuReduceDbPeriodInc);
     void addClause_(vec<Lit>& lits);
     void addClause(const vec<Lit>& lits);
     lbool solve(int _cpuThreadCount);

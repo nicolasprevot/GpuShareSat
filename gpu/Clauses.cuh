@@ -220,9 +220,9 @@ private:
     Profiler profiler;
 
     // only increases
-    long clausesAddedCount;
+    long addedClauseCount;
 
-    volatile long clausesAddedCountAtLastReduceDb;
+    long addedClauseCountAtLastReduceDb;
 
     bool addClauseNowLocked(vec<Lit>& lits);
 
@@ -276,7 +276,8 @@ public:
 
     void getRemovingLbdAndAct(int &minLimLbd, int &maxLimLbd, float &act, vec<int> &clauseCountsAtLbds);
 
-    long getClausesAddedAtLastReduceDb() {return clausesAddedCountAtLastReduceDb; }
+    long getAddedClauseCount() {return addedClauseCount; }
+    long getAddedClauseCountAtLastReduceDb() {return addedClauseCountAtLastReduceDb; }
     int getReduceDbCount() {
         return reduceDbCount;
     }

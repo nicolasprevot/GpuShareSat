@@ -55,6 +55,18 @@ void GpuClauseSharerImpl::reduceDb() {
     clauses->reduceDb(sp.get());
 }
 
+bool GpuClauseSharerImpl::hasRunOutOfGpuMemoryOnce() {
+    return gpuRunner->getHasRunOutOfGpuMemoryOnce();
+}
+
+long GpuClauseSharerImpl::getAddedClauseCount() {
+    return clauses->getAddedClauseCount();
+}
+
+long GpuClauseSharerImpl::getAddedClauseCountAtLastReduceDb() {
+    return clauses->getAddedClauseCountAtLastReduceDb();
+}
+
 long GpuClauseSharerImpl::addClause(int *lits, int count) {
     return clauses->addClause(MinHArr<Lit>(count, (Lit*) lits), count);
 }

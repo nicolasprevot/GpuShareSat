@@ -153,7 +153,8 @@ HostClauses::HostClauses(GpuDims gpuDimsGuideline, float _activityDecay, bool _a
     limWarpPerSize(MAX_CL_SIZE + 1, true),
     clauseUpdates(),
     perSizeKeeper(_activityDecay),
-    clausesAddedCount(0),
+    addedClauseCount(0),
+    addedClauseCountAtLastReduceDb(0),
     actOnly(_actOnly),
     reduceDbCount(0),
     needToReduceCpuMemoryUsage(false)
@@ -342,7 +343,7 @@ ClUpdateSet HostClauses::getUpdatesForDevice(cudaStream_t &stream, ContigCopier 
         dClUpdates[i].clIdInSize = perSizeKeeper.addClause(up.clSize, clauseUpdates.getLits(i), up.clMetadata);
         dClUpdates[i].clSize = up.clSize;
         dClUpdates[i].updatePosStart = up.updatePosStart;
-        clausesAddedCount++;
+        addedClauseCount++;
         i++;
     }
     // At this point, clauseUpdatesDVals will be valid and won't change until clauseUpdates.getDValsAsync is called again
@@ -432,7 +433,7 @@ void printMem() {
 void HostClauses::reduceDb(cudaStream_t &stream) {
     TimeGauge tg(profiler, "timeReduceDb", true);
     vec<int> clauseCountsAtLbds(MAX_CL_SIZE + 1, 0);
-    clausesAddedCountAtLastReduceDb = clausesAddedCount;
+    addedClauseCountAtLastReduceDb = addedClauseCount;
     fillClauseCountsAtLbds(clauseCountsAtLbds);
 
     reduceDbCount ++;
@@ -531,7 +532,7 @@ float HostClauses::approxNthAct(int minLimLbd, int maxLimLbd, int n) {
 }
 
 void HostClauses::printStats() {
-    writeAsJson("clausesAddedToGpu", clausesAddedCount);
+    writeAsJson("clausesAddedToGpu", addedClauseCount);
     perSizeKeeper.printStats();
     profiler.printStats();
 }

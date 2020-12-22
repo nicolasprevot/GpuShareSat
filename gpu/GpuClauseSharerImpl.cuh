@@ -38,6 +38,12 @@ class GpuClauseSharerImpl : public GpuClauseSharer {
 
     void reduceDb();
 
+    long getAddedClauseCount();
+
+    long getAddedClauseCountAtLastReduceDb();
+
+    bool hasRunOutOfGpuMemoryOnce();
+
     void setCpuSolverCount(int solverCount);
 
     long addClause(int *lits, int count);

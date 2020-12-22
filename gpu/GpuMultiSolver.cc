@@ -31,11 +31,13 @@ namespace Glucose {
 // This class synchronizes the work of several GpuHelpedSolver
 GpuMultiSolver::GpuMultiSolver(Finisher &_finisher, GpuClauseSharer &_gpuClauseSharer, 
         std::function<GpuHelpedSolver* (int threadId) > _solverFactory, int varCount, int writeClausesPeriodSec,
-        Verbosity _verb, double _initMemUsed, double _maxMemory):
+        Verbosity _verb, double _initMemUsed, double _maxMemory, int _gpuReduceDbPeriod, int _gpuReduceDbPeriodInc):
                 gpuClauseSharer(_gpuClauseSharer),
                 solverFactory(_solverFactory),
                 verb(_verb),
                 initMemUsed(_initMemUsed),
+                gpuReduceDbPeriod(_gpuReduceDbPeriod),
+                gpuReduceDbPeriodInc(_gpuReduceDbPeriodInc),
                 maxMemory(_maxMemory),
                 hasTriedToLowerCpuMemoryUsage(false),
                 finisher(_finisher) {
@@ -118,6 +120,14 @@ lbool GpuMultiSolver::solve(int _cpuThreadCount) {
     while (!finisher.stopAllThreads) {
         periodicRunner->maybeRun(realTimeSecSinceStart());
         gpuClauseSharer.gpuRun();
+        // PRINT(gpuClauseSharer.getAddedClauseCount()); PRINT(gpuClauseSharer.getAddedClauseCountAtLastReduceDb()); PRINT(gpuReduceDbPeriod); NL;
+        if (gpuClauseSharer.getAddedClauseCount() - gpuClauseSharer.getAddedClauseCountAtLastReduceDb() >= gpuReduceDbPeriod) {
+            gpuClauseSharer.reduceDb();
+            if (!gpuClauseSharer.hasRunOutOfGpuMemoryOnce()) {
+                gpuReduceDbPeriod += gpuReduceDbPeriodInc;
+            }
+        }
+
         double cpuMemUsed = actualCpuMemUsed();
         if (!hasTriedToLowerCpuMemoryUsage && cpuMemUsed > 0.9 * maxMemory) {
             // We're not very strict about memory usage on the cpu. Reason

@@ -48,6 +48,7 @@ private:
     long assigClsChecked;
     long assigsCopiedToGpu;
     long gpuReports;
+    bool hasRunOutOfGpuMemoryOnce;
     EventPointer beforeFindClauses;
     EventPointer afterFindClauses;
 
@@ -85,6 +86,7 @@ public:
 
     void wholeRun(bool canStart);
     void printStats();
+    bool getHasRunOutOfGpuMemoryOnce() { return hasRunOutOfGpuMemoryOnce; }
 };
 
 }
