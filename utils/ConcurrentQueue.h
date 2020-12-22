@@ -178,7 +178,7 @@ public:
     bool getMin(T*& t) {
         std::lock_guard<std::mutex> lockGuard(lock);
         long minIndex = RingQueue<T*>::getMinIndex();
-        if (maxInd != minIndex) {
+        if (interIndex != minIndex) {
             t = &(*(*this)[minIndex]);
             return true;
         }
