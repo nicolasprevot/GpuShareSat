@@ -121,7 +121,6 @@ lbool GpuMultiSolver::solve(int _cpuThreadCount) {
         periodicRunner->maybeRun(realTimeSecSinceStart());
         gpuClauseSharer.gpuRun();
         if (gpuClauseSharer.getAddedClauseCount() - gpuClauseSharer.getAddedClauseCountAtLastReduceDb() >= gpuReduceDbPeriod) {
-            PRINT(gpuClauseSharer.getAddedClauseCount()); PRINT(gpuClauseSharer.getAddedClauseCountAtLastReduceDb()); PRINT(gpuReduceDbPeriod); NL;
             gpuClauseSharer.reduceDb();
             if (!gpuClauseSharer.hasRunOutOfGpuMemoryOnce()) {
                 gpuReduceDbPeriod += gpuReduceDbPeriodInc;
