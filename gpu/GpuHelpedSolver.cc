@@ -295,6 +295,10 @@ GpuHelpedSolverParams GpuHelpedSolverOptions::toParams() {
 void GpuHelpedSolver::printStats() {
     JObj jo;
     Solver::printStats();
+    for (int i = 0; i < gpuClauseSharer.getOneSolverStatCount(); i++) {
+        OneSolverStats oss = static_cast<OneSolverStats>(i);
+        writeAsJson(gpuClauseSharer.getOneSolverStatName(oss), gpuClauseSharer.getOneSolverStat(cpuThreadId, oss));
+    }
 }
 
 } /* namespace Glucose */
