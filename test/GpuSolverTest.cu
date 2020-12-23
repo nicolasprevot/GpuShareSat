@@ -36,6 +36,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "utils/Utils.h"
 
 #include "gpu/GpuRunner.cuh"
+#include "gpu/GpuClauseSharer.h"
 
 using namespace std;
 
@@ -360,12 +361,9 @@ BOOST_AUTO_TEST_CASE(testClausesAssigsReported) {
     assig1.assignmentDoneLocked();
     assig1.exitLock();
     execute(fx.gpuClauseSharer);
-    ASSERT_OP(4, ==, fx.gpuClauseSharer.reported->getTotalReported());
 
     BOOST_CHECK_EQUAL(3, getReportedClausesCount(*fx.gpuClauseSharer.reported, 0));
-
     BOOST_CHECK_EQUAL(1, getReportedClausesCount(*fx.gpuClauseSharer.reported, 1));
-
     BOOST_CHECK_EQUAL(0, getReportedClausesCount(*fx.gpuClauseSharer.reported, 2));
 
     assig0.enterLock();
@@ -410,7 +408,6 @@ BOOST_AUTO_TEST_CASE(testFindClausesMultiThread) {
 
     vec<AssigIdsPerSolver> assigIdsPerSolver;
     execute(fx.gpuClauseSharer);
-    BOOST_CHECK_EQUAL(2, fx.gpuClauseSharer.reported->getTotalReported());
 
     int *lits1, *lits2; 
     int count1, count2; 
@@ -492,7 +489,7 @@ BOOST_AUTO_TEST_CASE(testOneAssignmentThenTwo) {
     solver.uncheckedEnqueue(mkLit(1));
     solver.tryCopyTrailForGpu(solver.decisionLevel());
     execute(fx.gpuClauseSharer);
-    BOOST_CHECK((1 == fx.gpuClauseSharer.reported->getTotalReported()));
+    BOOST_CHECK_EQUAL(1, getReportedClausesCount(*fx.gpuClauseSharer.reported, 0));
 }
 
 
@@ -520,8 +517,7 @@ BOOST_AUTO_TEST_CASE(SolverDoesntImportSameClauseTwice) {
 
     solver.gpuImportClauses(foundEmptyClause);
 
-    BOOST_CHECK_EQUAL(1, fx.gpuClauseSharer.reported->getTotalReported());
-    BOOST_CHECK_EQUAL(1, solver.stats[nbImported]);
+    BOOST_CHECK_EQUAL(1, fx.gpuClauseSharer.getOneSolverStat(0, reportedClauses));
 }
 
 // Test that if a clause has been imported and then deleted, it can be imported again
@@ -627,8 +623,8 @@ BOOST_AUTO_TEST_CASE(SolverImportUnary) {
 
     addClause(*fx.gpuClauseSharer.clauses, {mkLit(0)});
     fx.executeAndImportClauses();
-    BOOST_CHECK_EQUAL(1, solver.stats[nbReported]);
     BOOST_CHECK_EQUAL(1, solver.stats[nbImportedUnit]);
+    BOOST_CHECK_EQUAL(1, solver.stats[nbImported]);
     solver.propagate();
 
     BOOST_CHECK((l_True == solver.value(0)));
@@ -675,7 +671,6 @@ BOOST_AUTO_TEST_CASE(SolverHasManyClausesReportedAllAtOnce) {
     }
     // solver learns clause
     fx.executeAndImportClauses();
-    PRINT(solver.stats[nbReported]);
     for (int i = 0; i < varCount; i++) {
         // Those were set at the beginning, so their clauses haven't been imported, and they've
         // been unset because of the other literals added, so they're not set any more
@@ -707,12 +702,12 @@ BOOST_AUTO_TEST_CASE(OneInstanceTwoAssignments) {
     solver.uncheckedEnqueue(mkLit(1));
     solver.tryCopyTrailForGpu(solver.decisionLevel());
     solver.cancelUntil(0);
-    BOOST_CHECK_EQUAL(0, fx.gpuClauseSharer.reported->getTotalReported());
+    BOOST_CHECK_EQUAL(0, fx.gpuClauseSharer.getOneSolverStat(0, reportedClauses));
     fx.executeAndImportClauses();
 
     // at this point, both clauses should have been imported
     // check that when propagating, these clauses are actually used
-    BOOST_CHECK_EQUAL(2, fx.gpuClauseSharer.reported->getTotalReported());
+    BOOST_CHECK_EQUAL(2, fx.gpuClauseSharer.getOneSolverStat(0, reportedClauses));
     BOOST_CHECK_EQUAL(2, solver.stats[nbImported]);
     solver.newDecisionLevel();
     solver.uncheckedEnqueue(mkLit(0));
@@ -838,10 +833,8 @@ BOOST_AUTO_TEST_CASE(findConflict) {
     // done during solve()
     fx.execute();
     BOOST_CHECK_EQUAL(1, fx.gpuClauseSharer.clauses->getClauseCount());
-    BOOST_CHECK_EQUAL(1, fx.gpuClauseSharer.reported->getTimesReported());
 
     BOOST_CHECK(l_True == solver.solve());
-    BOOST_CHECK_EQUAL(1, solver.stats[nbReported]);
     BOOST_CHECK_EQUAL(1, solver.stats[nbImported]);
 
     BOOST_CHECK(l_False == solver.modelValue(0));
@@ -888,12 +881,12 @@ BOOST_AUTO_TEST_CASE(testReduceDb) {
     fx.executeAndImportClauses(ignored);
     BOOST_CHECK(l_Undef == solver.value(3));
 
-    int rep = fx.gpuClauseSharer.reported->getTotalReported();
+    int rep = fx.gpuClauseSharer.getOneSolverStat(0, reportedClauses);
     // now check that adding more clauses works fine after the reduce db
     addClause(*fx.gpuClauseSharer.clauses, {~mkLit(0), ~mkLit(3)});
     fx.executeAndImportClauses(ignored);
 
-    BOOST_CHECK_EQUAL(rep + 1, fx.gpuClauseSharer.reported->getTotalReported());
+    BOOST_CHECK_EQUAL(rep + 1, fx.gpuClauseSharer.getOneSolverStat(0, reportedClauses));
 
     BOOST_CHECK(l_False == solver.value(3));
 }
@@ -929,7 +922,6 @@ BOOST_AUTO_TEST_CASE(testSolverPassesManyAssignments) {
     solver.gpuImportClauses(foundEmptyClause);
 
     BOOST_CHECK_EQUAL(0, solver.stats[nbFailureFindAssignment]);
-    BOOST_CHECK_EQUAL(32, solver.stats[nbReported]);
     BOOST_CHECK_EQUAL(1, solver.stats[nbImportedValid]);
     BOOST_CHECK_EQUAL(32, solver.stats[nbImported]);
 

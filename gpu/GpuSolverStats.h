@@ -20,7 +20,6 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 X(nbImported)
 X(nbExportedUnit)
 X(nbImportedUnit)
-X(nbReported) // number of clauses reported by the gpu. It may have been reported for several assignments
 X(nbImportedValid) // number of reported clauses valid (values haven't changed)
 X(nbFailureFindAssignment)
 X(nbAssignmentsSent)

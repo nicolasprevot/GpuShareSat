@@ -77,7 +77,7 @@ void GpuFixture::executeAndImportClauses(vec<CRef> &res) {
 }
 
 void GpuFixture::checkReportedImported(int count, int instance, bool unit) {
-    BOOST_CHECK_EQUAL(solvers[instance]->stats[nbReported], count);
+    BOOST_CHECK_EQUAL(gpuClauseSharer.getOneSolverStat(instance, reportedClauses), count);
     BOOST_CHECK_EQUAL(solvers[instance]->stats[nbImportedValid], count);
     if (unit) {
         BOOST_CHECK_EQUAL(solvers[instance]->stats[nbImportedUnit], count);

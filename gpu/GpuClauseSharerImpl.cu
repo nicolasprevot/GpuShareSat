@@ -11,6 +11,17 @@
 
 namespace Glucose {
 GpuClauseSharerImpl::GpuClauseSharerImpl(GpuClauseSharerOptions _opts, /* TODO: we should be able to increase it */ int _varCount) {
+// assumes the enum values start at 0
+#define X(v) globalStatNames.push(#v);
+#include "GlobalStats.h"
+#undef X
+
+// assumes the enum values start at 0
+#define X(v) oneSolverStatNames.push(#v);
+#include "OneSolverStats.h"
+#undef X
+    globalStats.resize(globalStatNames.size());
+
     opts = _opts;
     varCount = _varCount;
     GpuDims gpuDims {0, 0};
@@ -25,7 +36,7 @@ GpuClauseSharerImpl::GpuClauseSharerImpl(GpuClauseSharerOptions _opts, /* TODO: 
     gpuDims.threadsPerBlock = opts.gpuThreadsPerBlockGuideline;
     assigs = my_make_unique<HostAssigs>(varCount, gpuDims);  
     clauses = my_make_unique<HostClauses>(gpuDims, opts.clauseActivityDecay, true);
-    reported = my_make_unique<Reported>(*clauses);
+    reported = my_make_unique<Reported>(*clauses, oneSolverStats);
     gpuRunner = my_make_unique<GpuRunner>(*clauses, *assigs, *reported, gpuDims, opts.quickProf, _opts.initReportCountPerCategory, sp.get());
 
 }
@@ -46,6 +57,9 @@ void GpuClauseSharerImpl::setCpuSolverCount(int solverCount) {
     assigs->growSolverAssigs(solverCount);
     reported->setSolverCount(solverCount);
     toUnset.resize(solverCount);
+    int c = oneSolverStats.size();
+    oneSolverStats.resize(solverCount);
+    for (int i = c; i < solverCount; i++) oneSolverStats[i].growToInit(oneSolverStatNames.size(), 0);
 }
 
 void GpuClauseSharerImpl::reduceDb() {
@@ -143,6 +157,30 @@ void GpuClauseSharerImpl::getGpuMemInfo(size_t &free, size_t &total) {
 
 void GpuClauseSharerImpl::writeClausesInCnf(FILE *file) {
     clauses->writeClausesInCnf(file, varCount);
+}
+
+int GpuClauseSharerImpl::getGlobalStatCount() {
+    return globalStatNames.size();
+}
+
+long GpuClauseSharerImpl::getGlobalStat(GlobalStats stat) {
+    return globalStats[stat];
+}
+
+const char* GpuClauseSharerImpl::getGlobalStatName(GlobalStats stat) {
+    return globalStatNames[stat];
+}
+
+int GpuClauseSharerImpl::getOneSolverStatCount() {
+    return oneSolverStatNames.size();
+}
+
+long GpuClauseSharerImpl::getOneSolverStat(int solverId, OneSolverStats stat) {
+    return oneSolverStats[solverId][stat];
+}
+
+const char* GpuClauseSharerImpl::getOneSolverStatName(OneSolverStats stat) {
+    return oneSolverStatNames[stat];
 }
 
 }

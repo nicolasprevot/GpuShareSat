@@ -95,7 +95,6 @@ void GpuHelpedSolver::sendClauseToGpu(vec<Lit> &lits, int lbd) {
 }
 
 void GpuHelpedSolver::handleReportedClause(MinClause lits, CRef &conflict, int &decisionLevelAtConflict, bool &foundEmptyClause) {
-    stats[nbReported] ++;
     CRef cr = insertAndLearnClause(lits, foundEmptyClause);
     if (cr != CRef_Undef) {
         decisionLevelAtConflict = decisionLevel();
@@ -166,6 +165,7 @@ void GpuHelpedSolver::findLargestLevel(MinClause cl, int start) {
 // than the current level
 // returns a non-undef cref if this clause is in conflict
 CRef GpuHelpedSolver::insertAndLearnClause(MinClause cl, bool &foundEmptyClause) {
+    stats[nbImported]++;
     Lit *lits = cl.lits;
     int count = cl.count;
     // if only one literal isn't false, it will be in 0 of lits
@@ -234,7 +234,6 @@ CRef GpuHelpedSolver::insertAndLearnClause(MinClause cl, bool &foundEmptyClause)
 }
 
 CRef GpuHelpedSolver::addLearnedClause(MinClause cl) {
-    stats[nbImported]++;
     // at this point, we could change the solver learnClause code to take a MinHArr instead, that would make it a bit faster
     tempLits.clear(false);
     for (int i = 0; i < cl.count; i++) {

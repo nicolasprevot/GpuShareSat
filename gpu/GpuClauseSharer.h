@@ -48,6 +48,19 @@ struct GpuClauseSharerOptions {
     }
 };
 
+enum GlobalStats {
+#define X(v) v,
+#include "GlobalStats.h"
+#undef X
+};
+
+enum OneSolverStats {
+#define X(v) v,
+#include "OneSolverStats.h"
+#undef X
+};
+
+
 class GpuClauseSharer {
 
     public:
@@ -109,6 +122,18 @@ class GpuClauseSharer {
     virtual bool popReportedClause(int cpuSolverId, int* &lits, int &count, long &gpuClauseId) = 0;
 
     virtual void writeClausesInCnf(FILE *file) = 0;
+
+    virtual int getGlobalStatCount() = 0; 
+
+    virtual long getGlobalStat(GlobalStats stat) = 0;
+
+    virtual const char* getGlobalStatName(GlobalStats stat) = 0;
+
+    virtual int getOneSolverStatCount() = 0; 
+
+    virtual long getOneSolverStat(int solverId, OneSolverStats stat) = 0;
+
+    virtual const char* getOneSolverStatName(OneSolverStats stat) = 0;
 
 };
 }

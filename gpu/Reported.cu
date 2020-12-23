@@ -26,6 +26,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "gpu/Reporter.cuh"
 #include "gpu/Clauses.cuh"
 #include "utils/ConcurrentQueue.h"
+#include "GpuClauseSharer.h"
 
 // #define PRINT_DETAILS_CLAUSES
 
@@ -67,11 +68,9 @@ const vec<ClauseData>& ClauseBatch::getClauseDatas() {
     return clauseDatas;
 }
 
-// maxAssigsPerSolver: the maximum number of simultaneous assignments for one solver
-Reported::Reported(HostClauses &_hostClauses) :
-        timesReported(0),
-        totalReported(0),
-        hostClauses(_hostClauses) {
+Reported::Reported(HostClauses &_hostClauses,  vec<vec<long>> &_oneSolverStats) :
+        hostClauses(_hostClauses),
+        oneSolverStats(_oneSolverStats) {
 }
 
 void Reported::setSolverCount(int solverCount) {
@@ -109,6 +108,7 @@ bool Reported::popReportedClause(int solverId, MinHArr<Lit> &lits, GpuClauseId &
                 // We don't want to report the same clause several times in this case
                 if (clausesToNotImportAgain[solverId].find(gpuClauseId) == clausesToNotImportAgain[solverId].end()) {
                     clausesToNotImportAgain[solverId].insert(gpuClauseId);
+                    oneSolverStats[solverId][reportedClauses]++;
                     return true;
                 }
             }
@@ -162,7 +162,6 @@ void Reported::fill(vec<AssigIdsPerSolver> &solvAssigIds, vec<ReportedClause> &w
             repClauses[s]->addNew();
         }
     }
-    timesReported ++;
 }
 
 void Reported::addClause(ClauseBatch &clauseBatch, ReportedClause wc) {
@@ -179,7 +178,6 @@ void Reported::addClause(ClauseBatch &clauseBatch, ReportedClause wc) {
         clauseBatch.addLit(tempLits[i]);
     }
     clauseBatch.hadSomeReported |= wc.reportedAssignments;
-    totalReported++;
 }
 
 bool Reported::getIncrReportedClauses(int solvId, ClauseBatch*& clBatch) {
@@ -196,7 +194,6 @@ void Reported::removeOldestClauses(int solvId) {
 
 
 void Reported::printStats() {
-    writeAsJson("times_reported_gpu", timesReported);
 }
 
 Reported::~Reported() {

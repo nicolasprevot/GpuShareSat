@@ -77,13 +77,12 @@ class Reported {
 private:
     vec<std::unique_ptr<ConcurrentQueue<ClauseBatch>>> repClauses; // first index: solver
 
+    vec<vec<long>> &oneSolverStats;
     // only used from the solver threads
     vec<std::set<GpuClauseId>> clausesToNotImportAgain;
     // this is only accessed from the solver threads
     vec<ClauseBatch*> currentClauseBatches;
     vec<long> lastSentAssigId;
-    long totalReported; // total number of reported clauses
-    int timesReported;
     vec<Lit> tempLits;
     HostClauses &hostClauses;
 
@@ -96,7 +95,7 @@ private:
     void removeOldestClauses(int solvId);
 
 public:
-    Reported(HostClauses &hostClauses);
+    Reported(HostClauses &hostClauses, vec<vec<long>> &oneSolverStats);
 
     // This isn't known yet when the object is created which is why we have to set it later
     void setSolverCount(int solverCount);
@@ -104,14 +103,11 @@ public:
     // solvAssigs tell us the solver id / and solverAssigId for a given position in the reported clauses
     void fill(vec<AssigIdsPerSolver> &solvAssigs, vec<ReportedClause> &wrongClauses);
 
-    int getTimesReported() {return timesReported; }
-
     void assigWasSent(int solverId, long solverAssigId) { lastSentAssigId[solverId] = solverAssigId; }
     // called by the solver threads
     bool popReportedClause(int solverId, MinHArr<Lit> &lits, GpuClauseId &gpuClauseId);
 
     void printStats();
-    long getTotalReported() {return totalReported;}
     ~Reported();
 };
 

@@ -23,6 +23,12 @@ class GpuClauseSharerImpl : public GpuClauseSharer {
     std::unique_ptr<Reported> reported;
     std::unique_ptr<HostClauses> clauses;
 
+    vec<long> globalStats;
+    vec<vec<long>> oneSolverStats;
+
+    vec<const char*> globalStatNames;
+    vec<const char*> oneSolverStatNames;
+
     vec<vec<Lit>> toUnset;
     GpuClauseSharerOptions opts;
 
@@ -60,6 +66,17 @@ class GpuClauseSharerImpl : public GpuClauseSharer {
 
     void writeClausesInCnf(FILE *file);
 
+    int getGlobalStatCount(); 
+
+    long getGlobalStat(GlobalStats stat);
+
+    const char* getGlobalStatName(GlobalStats stat);
+
+    int getOneSolverStatCount(); 
+
+    long getOneSolverStat(int solverId, OneSolverStats stat);
+
+    const char* getOneSolverStatName(OneSolverStats stat);
 };
 }
 
