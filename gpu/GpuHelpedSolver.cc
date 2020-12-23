@@ -129,7 +129,19 @@ bool GpuHelpedSolver::tryCopyTrailForGpu(int level) {
     }
     if (result) result = gpuClauseSharer.trySendAssignment(cpuThreadId);
 
-    if (result) stats[nbAssignmentsSent]++;
+    if (result) {
+        stats[nbAssignmentsSent]++;
+#ifdef CHECK_ASSIG_ON_GPU_IS_RIGHT
+        tempAssig.resize(nVars());
+        gpuClauseSharer.getCurrentAssignment(cpuThreadId, (uint8_t*) &tempAssig[0]);
+        for (int i = 0; i < nVars(); i++) {
+            lbool exp;
+            if (this->level(i) <= level) exp = value(i);
+            else exp = l_Undef;
+            ASSERT_OP_MSG(exp, ==, tempAssig[i], PRINT(i));
+        }
+#endif
+    }
     else stats[nbFailureFindAssignment]++;
 
     return result;

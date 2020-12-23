@@ -190,6 +190,7 @@ public:
     void exitLock() { lock.unlock(); }
     bool isAssignmentAvailableLocked();
     void assignmentDoneLocked();
+    void getCurrentAssignment(uint8_t* assig);
     long getUpdatesSent() { return updatesSent; }
     DOneSolverAssigs copyUpdatesLocked(ArrPair<VarUpdate> &varUpdates, AssigIdsPerSolver &assigIds, HArr<AggCorresp> &aggCorresps);
 

@@ -91,7 +91,7 @@ bool GpuClauseSharerImpl::trySetSolverValues(int solverId, int *lits, int count)
     bool success = false;
     sAssigs.enterLock();
     if (sAssigs.isAssignmentAvailableLocked()) {
-        unsetPending(solverId);
+        unsetPendingLocked(solverId);
         for (int i = 0; i < litsToSet.size(); i++) {
             sAssigs.setVarLocked(var(litsToSet[i]), sign(litsToSet[i]) ? l_False : l_True);
         }
@@ -104,7 +104,7 @@ bool GpuClauseSharerImpl::trySetSolverValues(int solverId, int *lits, int count)
     return success;
 }
 
-void GpuClauseSharerImpl::unsetPending(int solverId) {
+void GpuClauseSharerImpl::unsetPendingLocked(int solverId) {
     vec<Lit> &unset = toUnset[solverId];
     OneSolverAssigs& sAssigs = assigs->getAssigs(solverId);
     for (int i = 0; i < unset.size(); i++) {
@@ -119,15 +119,16 @@ void GpuClauseSharerImpl::unsetSolverValues(int solverId, int *lits, int count) 
     MinHArr<Lit> litsToUnset(count, (Lit*) lits);
     sAssigs.enterLock();
     if (sAssigs.isAssignmentAvailableLocked()) {
-        unsetPending(solverId);
+        unsetPendingLocked(solverId);
         for (int i = 0; i < litsToUnset.size(); i++) {
             sAssigs.setVarLocked(var(litsToUnset[i]), l_Undef);
         }
         oneSolverStats[solverId][varUpdatesSentToGpu] += litsToUnset.size();
     } else {
         vec<Lit> &unset = toUnset[solverId];
-        unset.resize(litsToUnset.size());
-        memcpy(&unset[0], &litsToUnset[0], sizeof(Lit) * litsToUnset.size());
+        int start = unset.size();
+        unset.resize(start + litsToUnset.size());
+        memcpy(&unset[start], &litsToUnset[0], sizeof(Lit) * litsToUnset.size());
     }
     sAssigs.exitLock();
 }
@@ -190,6 +191,10 @@ long GpuClauseSharerImpl::getOneSolverStat(int solverId, OneSolverStats stat) {
 
 const char* GpuClauseSharerImpl::getOneSolverStatName(OneSolverStats stat) {
     return oneSolverStatNames[stat];
+}
+
+void GpuClauseSharerImpl::getCurrentAssignment(int solverId, uint8_t *assig) { 
+    assigs->getAssigs(solverId).getCurrentAssignment(assig);
 }
 
 }

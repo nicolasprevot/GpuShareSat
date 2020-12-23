@@ -176,7 +176,7 @@ void OneSolverAssigs::setVarLocked(Var var, lbool val) {
         updates.resize(updates.size() + 1);
         VarUpdate& vu = updates[updates.size() - 1];
         // For the not completed ones: set the new values
-        // For the already completed ones: set the values they had, which we can get from lastVarVal
+        // For the already completed ones: set the values they had already on the gpu, which we can get from lastVarVal
         vu.newMultiLBool.isDef = setOnMask(vu.newMultiLBool.isDef, notCompletedMask, isSet, lastVarVal[var] != l_Undef);
         vu.newMultiLBool.isTrue = setOnMask(vu.newMultiLBool.isTrue, notCompletedMask, isTrue, lastVarVal[var] == l_True);
         vu.var = var;
@@ -227,6 +227,9 @@ void OneSolverAssigs::setAggCorresp(AggCorresp &aggCorresp, int &aggBitPos, int 
     id += bitsCount;
 }
 
+void OneSolverAssigs::getCurrentAssignment(uint8_t *assig) {
+    memcpy(assig, &lastVarVal[0], sizeof(uint8_t) * lastVarVal.size());
+}
 
 // Note: the reason why this method changes an ArrPair rather than a DArr is that if the contig copier gets resized,
 // it would invalidate the DArr

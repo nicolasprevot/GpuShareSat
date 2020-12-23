@@ -60,7 +60,6 @@ enum OneSolverStats {
 #undef X
 };
 
-
 class GpuClauseSharer {
 
     public:
@@ -85,14 +84,26 @@ class GpuClauseSharer {
 
     virtual void getGpuMemInfo(size_t &free, size_t &total) = 0;
 
+    virtual int getGlobalStatCount() = 0; 
+
+    virtual long getGlobalStat(GlobalStats stat) = 0;
+
+    virtual void writeClausesInCnf(FILE *file) = 0;
+
+
     /* not thread safe with any other method in this class */
     virtual void setCpuSolverCount(int count) = 0;
 
 
-    /* Thread safe method */
+    /* Thread safe methods */
     // Add a clause to the GPU. Calling this method will NOT free the lits pointer.
     virtual long addClause(int *lits, int count) = 0;
 
+    virtual const char* getOneSolverStatName(OneSolverStats stat) = 0;
+
+    virtual const char* getGlobalStatName(GlobalStats stat) = 0;
+
+    virtual int getOneSolverStatCount() = 0; 
 
     /* Invocations of these methods for a given solverId have to always be done from the same thread, or with proper locking */
 
@@ -118,22 +129,17 @@ class GpuClauseSharer {
     // the same clause will not be reported twice to the same thread. If a thread removes a reported clause as part of its
     // clause deletion policy, and this clause triggers again on an assignment from this thread, then it will
     // be reported again.
-    // 
     virtual bool popReportedClause(int cpuSolverId, int* &lits, int &count, long &gpuClauseId) = 0;
 
-    virtual void writeClausesInCnf(FILE *file) = 0;
+    // Gets the current assignment of the given cpu solver. This method is mostly intended for debugging and making sure that the GPU
+    // representation of a solver assignment is the right one. The values for assig are: 0 -> true, 1 -> false, 2 -> undef
+    virtual void getCurrentAssignment(int cpuSolverId, uint8_t* assig) = 0;
 
-    virtual int getGlobalStatCount() = 0; 
+    /* Invocation of these methods can be done from any thread, but the result may not be completely up to date if is is not done
+       from the thread which called the method for this cpu solver id */
+    virtual long getOneSolverStat(int cpuSolverId, OneSolverStats stat) = 0;
 
-    virtual long getGlobalStat(GlobalStats stat) = 0;
 
-    virtual const char* getGlobalStatName(GlobalStats stat) = 0;
-
-    virtual int getOneSolverStatCount() = 0; 
-
-    virtual long getOneSolverStat(int solverId, OneSolverStats stat) = 0;
-
-    virtual const char* getOneSolverStatName(OneSolverStats stat) = 0;
 
 };
 }

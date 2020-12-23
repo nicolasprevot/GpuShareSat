@@ -35,7 +35,7 @@ class GpuClauseSharerImpl : public GpuClauseSharer {
     StreamPointer sp;
     int varCount;
 
-    void unsetPending(int threadId);
+    void unsetPendingLocked(int threadId);
 
     public:
     GpuClauseSharerImpl(GpuClauseSharerOptions opts, /* TODO: we should be able to increase it */ int varCount);
@@ -77,6 +77,8 @@ class GpuClauseSharerImpl : public GpuClauseSharer {
     long getOneSolverStat(int solverId, OneSolverStats stat);
 
     const char* getOneSolverStatName(OneSolverStats stat);
+
+    void getCurrentAssignment(int solverId, uint8_t *assig);
 };
 }
 

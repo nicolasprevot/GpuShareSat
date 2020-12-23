@@ -82,6 +82,9 @@ private:
 
     // It could be in a method but having it here avoids reallocating at each run
     vec<Lit> tempLits;
+#ifdef CHECK_ASSIG_ON_GPU_IS_RIGHT
+    vec<lbool> tempAssig;
+#endif
     lbool status;
     int changedCount;
 
