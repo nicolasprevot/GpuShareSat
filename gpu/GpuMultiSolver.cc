@@ -69,14 +69,15 @@ void GpuMultiSolver::addClause(const vec<Lit>& lits) {
     helpedSolvers[0]->addClause(lits);
 }
 
-void launchSolver(std::mutex &mutex, GpuHelpedSolver*& solver) {
+void launchSolver(std::mutex &mutex, GpuHelpedSolver*& solver, Finisher &finisher) {
     solver->solve();
     lbool status = solver->getStatus();
-    if (status == l_Undef) {
+    // solvers which didn't find an answer are no longer useful, destroy them to free memory
+    // But, if stopAllThreads is set, we probably still want to print stats for all solvers, so keep it
+    if (status == l_Undef && !finisher.stopAllThreads) {
         GpuHelpedSolver *copy = solver;
         {
             std::lock_guard<std::mutex> lock(mutex);
-            // solvers which didn't find an answer are no longer useful, destroy them to free memory
             solver = NULL;
         }
         delete copy;
@@ -113,7 +114,7 @@ lbool GpuMultiSolver::solve(int _cpuThreadCount) {
     // Launching all solvers
     threads.growTo(helpedSolvers.size());
     for(int i = 0; i < helpedSolvers.size(); i++) {
-        threads[i] = std::thread(launchSolver, std::ref(solversMutex), std::ref(helpedSolvers[i]));
+        threads[i] = std::thread(launchSolver, std::ref(solversMutex), std::ref(helpedSolvers[i]), std::ref(finisher));
     }
     if (verb.global > 0) SYNCED_OUT(printf("All solvers launched\n"));
 
