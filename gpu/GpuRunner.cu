@@ -27,6 +27,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "CorrespArr.cuh"
 #include "my_make_unique.h"
 #include <thread>         // std::this_thread::sleep_for
+#include "GpuClauseSharer.h"
 
 // #define PRINT_ALOT 1
 
@@ -114,7 +115,7 @@ __device__ void dGetFirstBitPosFast(Vals &val, int &pos) {
 }
 
 __device__ void dCheckOneClauseAllSolvers(DArr<DOneSolverAssigs> dOneSolverAssigs, DAssigAggregates dAssigAggregates,
-        Lit* startLitPt, Lit*endLitPt, DReporter<ReportedClause> dReporter, GpuCref gpuCref, Vals bits, long &oneSolverChecks) {
+        Lit* startLitPt, Lit*endLitPt, DReporter<ReportedClause> dReporter, GpuCref gpuCref, Vals bits, long &clauseTestsOnAssigs) {
     int pos = 0;
     while (true) {
         if (bits == 0) {
@@ -126,7 +127,7 @@ __device__ void dCheckOneClauseAllSolvers(DArr<DOneSolverAssigs> dOneSolverAssig
         int newPos = dAssigAggregates.getEndBitPos(solver);
         bits = bits >> (newPos - pos);
         pos = newPos;
-        oneSolverChecks++;
+        clauseTestsOnAssigs++;
     }
 }
 
@@ -175,17 +176,13 @@ next: ;
     }
 }
 
-GpuRunner::GpuRunner(HostClauses &_hostClauses, HostAssigs &_hostAssigs, Reported &_reported, GpuDims gpuDimsGuideline, bool _quickProf, int _countPerCategory, cudaStream_t &_stream) :
+GpuRunner::GpuRunner(HostClauses &_hostClauses, HostAssigs &_hostAssigs, Reported &_reported, GpuDims gpuDimsGuideline, bool _quickProf,
+        int _countPerCategory, cudaStream_t &_stream, vec<long> &_globalStats) :
     warpsPerBlock(gpuDimsGuideline.threadsPerBlock / WARP_SIZE),
     blockCount(gpuDimsGuideline.blockCount),
-    clauseChecks(0),
-    assigClsChecked(0),
-    assigsCopiedToGpu(0),
-    gpuReports(0),
     hasRunOutOfGpuMemoryOnce(false),
-    executeCount(0),
     lastInAssigIdsPerSolver(1),
-    oneSolverChecks(false, false),
+    clauseTestsOnAssigs(false, false),
     quickProf(_quickProf),
     hostAssigs(_hostAssigs),
     hostClauses(_hostClauses),
@@ -194,19 +191,20 @@ GpuRunner::GpuRunner(HostClauses &_hostClauses, HostAssigs &_hostAssigs, Reporte
     countPerCategory(_countPerCategory), 
     cpuToGpuContigCopier(true),
     gpuToCpuContigCopier(true),
-    stream(_stream) {
+    stream(_stream),
+    globalStats(_globalStats) {
 
 }
 
 void GpuRunner::prepareOneSolverChecksAsync(int threadCount, cudaStream_t &stream) {
-    int oldSize = oneSolverChecks.size();
+    int oldSize = clauseTestsOnAssigs.size();
     // gpuThreadCount can change with every run
     if (oldSize < threadCount) {
-        oneSolverChecks.resize(threadCount, false);
+        clauseTestsOnAssigs.resize(threadCount, false);
         for (int i = oldSize; i < threadCount; i++) {
-            oneSolverChecks[i] = 0;
+            clauseTestsOnAssigs[i] = 0;
         }
-        oneSolverChecks.copyAsync(cudaMemcpyHostToDevice, stream, oldSize, threadCount);
+        clauseTestsOnAssigs.copyAsync(cudaMemcpyHostToDevice, stream, oldSize, threadCount);
     }
 }
 
@@ -269,8 +267,8 @@ void GpuRunner::startGpuRunAsync(cudaStream_t &stream, vec<AssigIdsPerSolver> &a
     cpuToGpuContigCopier.clear(false);
 
     ClUpdateSet clUpdateSet = hostClauses.getUpdatesForDevice(stream, cpuToGpuContigCopier);
-    // getClauseCount at this point includes clauses that are about to be copied to the device
-    if (hostClauses.getClauseCount() == 0) {
+    // globalStats[gpuClauses] at this point includes clauses that are about to be copied to the device
+    if (globalStats[gpuClauses] == 0) {
         started = false;
         notEnoughGpuMemory = false;
         return;
@@ -317,7 +315,7 @@ void GpuRunner::startGpuRunAsync(cudaStream_t &stream, vec<AssigIdsPerSolver> &a
     // Only this run uses runInfo.warpCount for the dimensions
     runGpuAdjustingDims(warpsPerBlock, runInfo.warpCount, [&] (int blockCount, int threadsPerBlock) {
         dFindClauses<<<blockCount, threadsPerBlock, 0, stream>>>(assigsAndUpdates.assigSet.dSolverAssigs.getDArr(),
-            assigsAndUpdates.assigSet.dAssigAggregates, dClauses, dReporter, oneSolverChecks.getDArr());
+            assigsAndUpdates.assigSet.dAssigAggregates, dClauses, dReporter, clauseTestsOnAssigs.getDArr());
     });
     exitIfError(cudaEventRecord(afterFindClauses.get(), stream), POSITION);
     setAllAssigsToLastAsync(warpsPerBlock, warpsPerBlock * blockCount, assigsAndUpdates, stream);
@@ -340,17 +338,17 @@ int getTotalAssigCount(vec<AssigIdsPerSolver> &assigIdsPerSolver) {
 }
 
 void GpuRunner::gatherGpuRunResults(vec<AssigIdsPerSolver> &assigIdsPerSolver, Reporter<ReportedClause> &reporter) {
-    executeCount++;
+    globalStats[gpuRuns]++;
     exitIfError(cudaEventSynchronize(gpuToCpuCopyDone.get()), POSITION);
     if (reporter.getCopiedToHost(reportedCls)) {
         countPerCategory *= 2;
     }
 
     int assigsCount = getTotalAssigCount(assigIdsPerSolver);
-    assigClsChecked += hostClauses.getClauseCount() * assigsCount;
-    clauseChecks += hostClauses.getClauseCount();
-    assigsCopiedToGpu += assigsCount;
-    gpuReports += reportedCls.size();
+    int clCount = globalStats[gpuClauses];
+    globalStats[totalAssigClauseTested] += clCount * assigsCount;
+    globalStats[clauseTestsOnGroups] += clCount;
+    globalStats[gpuReports] += reportedCls.size();
 #if PRINT_ALOT == 1
     printf("filling reported with %d assigs and %d clauses\n", assigsCount, reportedCls.size());
 #endif
@@ -364,15 +362,10 @@ void GpuRunner::gatherGpuRunResults(vec<AssigIdsPerSolver> &assigIdsPerSolver, R
     }
 }
 
-void GpuRunner::printStats() {
-    writeAsJson("assigClauseChecks", assigClsChecked);
-    writeAsJson("clauseChecks", clauseChecks);
-    oneSolverChecks.copyAsync(cudaMemcpyDeviceToHost, stream);
+long GpuRunner::getClauseTestsOnAssigs() {
+    clauseTestsOnAssigs.copyAsync(cudaMemcpyDeviceToHost, stream);
     exitIfError(cudaStreamSynchronize(stream), POSITION);
-    writeAsJson("oneSolverChecks", getSum(oneSolverChecks));
-    writeAsJson("gpuExecuteCount", executeCount);
-    writeAsJson("gpuReports", gpuReports);
-    profiler.printStats();
+    return getSum(clauseTestsOnAssigs);
 }
 
 }

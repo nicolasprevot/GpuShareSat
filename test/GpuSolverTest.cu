@@ -243,7 +243,8 @@ BOOST_AUTO_TEST_CASE(testAddClauseHost) {
     StreamPointer sp;
     CorrespArr<int> clausesCountPerThread(2, true);
     GpuDims gpuDims(2, WARP_SIZE);
-    HostClauses hClauses(gpuDims, 0.99, false);
+    vec<long> globalStats(100, 0);
+    HostClauses hClauses(gpuDims, 0.99, false, globalStats);
     addClause(hClauses, {mkLit(4), mkLit(2)});
     CorrespArr<Lit> cra(2, false);
 
@@ -832,7 +833,7 @@ BOOST_AUTO_TEST_CASE(findConflict) {
     // we don't call executeAndImportClauses because the import has to be
     // done during solve()
     fx.execute();
-    BOOST_CHECK_EQUAL(1, fx.gpuClauseSharer.clauses->getClauseCount());
+    BOOST_CHECK_EQUAL(1, fx.gpuClauseSharer.getGlobalStat(gpuClauses));
 
     BOOST_CHECK(l_True == solver.solve());
     BOOST_CHECK_EQUAL(1, solver.stats[nbImported]);
@@ -855,8 +856,8 @@ BOOST_AUTO_TEST_CASE(testReduceDb) {
     addClause(*fx.gpuClauseSharer.clauses, {~mkLit(0), mkLit(2), mkLit(4)});
 
     copyToDeviceAsync(*fx.gpuClauseSharer.clauses, stream, getGpuDims(ops));
-    BOOST_CHECK_EQUAL(2, fx.gpuClauseSharer.clauses->getClauseCount());
-    BOOST_CHECK_EQUAL(6, fx.gpuClauseSharer.clauses->getClauseLengthSum());
+    BOOST_CHECK_EQUAL(2, fx.gpuClauseSharer.getGlobalStat(gpuClauses));
+    BOOST_CHECK_EQUAL(6, fx.gpuClauseSharer.getGlobalStat(gpuClauseLengthSum));
 
     GpuHelpedSolver& solver = *(fx.solvers[0]);
     solver.newDecisionLevel();
@@ -872,8 +873,8 @@ BOOST_AUTO_TEST_CASE(testReduceDb) {
     printf("reduce db\n");
     fx.gpuClauseSharer.clauses->reduceDb(stream);
 
-    BOOST_CHECK_EQUAL(1, fx.gpuClauseSharer.clauses->getClauseCount());
-    BOOST_CHECK_EQUAL(3, fx.gpuClauseSharer.clauses->getClauseLengthSum());
+    BOOST_CHECK_EQUAL(1, fx.gpuClauseSharer.getGlobalStat(gpuClauses));
+    BOOST_CHECK_EQUAL(3, fx.gpuClauseSharer.getGlobalStat(gpuClauseLengthSum));
 
     // the second clause should have been removed because it wasn't used before
     solver.newDecisionLevel();
@@ -977,8 +978,8 @@ BOOST_AUTO_TEST_CASE(testSendClauseToGpu) {
     // The gpu clauses don't need to learn the clause ~mkLit(0) that the solver has just found because the assignment mkLit(0) was
     // already know to be not useful (because the gpu clauses already have the clause ~mkLit(0)
     copyToDeviceAsync(*fx.gpuClauseSharer.clauses, fx.gpuClauseSharer.sp.get(), getGpuDims(ops));
-    BOOST_CHECK_EQUAL(1, fx.gpuClauseSharer.clauses->getClauseCount());
-    BOOST_CHECK_EQUAL(1, fx.gpuClauseSharer.clauses->getClauseLengthSum());
+    BOOST_CHECK_EQUAL(1, fx.gpuClauseSharer.getGlobalStat(gpuClauses));
+    BOOST_CHECK_EQUAL(1, fx.gpuClauseSharer.getGlobalStat(gpuClauseLengthSum));
 }
 
 BOOST_AUTO_TEST_CASE(testClauseBatch) {

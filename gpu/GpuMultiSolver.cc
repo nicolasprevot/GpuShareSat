@@ -226,13 +226,10 @@ void GpuMultiSolver::printStats() {
                 printStatSum("conflict impl count sum", sumConflictImplying);
 #endif
                 writeAsJson("approximateMemAllocated_megabytes", apprMemAllocated / 1.0e6);
-                // TODO: re-add
-                /*
-                gpuRunner.printStats();
-                reported.printStats();
-                clauses.printStats();
-                assigs.printStats();
-                */
+                for (int i = 0; i < gpuClauseSharer.getGlobalStatCount(); i++) {
+                    GlobalStats gs = static_cast<GlobalStats>(i);
+                    writeAsJson(gpuClauseSharer.getGlobalStatName(gs), gpuClauseSharer.getGlobalStat(gs));
+                }
             }
         }
     } 

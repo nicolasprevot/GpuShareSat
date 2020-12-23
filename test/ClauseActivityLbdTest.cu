@@ -32,11 +32,13 @@ __global__ void writeFirstLit(DClauses dClauses, Lit *ptr, int clSize) {
 }
 
 struct TestFixture {
+    vec<long> globalStats;
     StreamPointer sp;
     HostClauses hCls;
 
     TestFixture(bool actOnly, float actDecay):
-        hCls(GpuDims(1, 1), actDecay, actOnly) {
+        globalStats(100, 0),
+        hCls(GpuDims(1, 1), actDecay, actOnly, globalStats) {
     }
 
     cudaStream_t& getStream() {
@@ -260,7 +262,8 @@ BOOST_AUTO_TEST_CASE(testRescale) {
     StreamPointer sp;
 
     // each decays multiplies activity inc by RESCALE_CONST * 10
-    HostClauses hCls(GpuDims(1, 1), 1 / (RESCALE_CONST * 10), false);
+    vec<long> globalStats(100, 0);
+    HostClauses hCls(GpuDims(1, 1), 1 / (RESCALE_CONST * 10), false, globalStats);
     addClause(hCls, {mkLit(0)});
 
     GpuCref gpuCref { 1, 0};

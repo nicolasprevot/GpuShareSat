@@ -35,9 +35,9 @@ GpuClauseSharerImpl::GpuClauseSharerImpl(GpuClauseSharerOptions _opts, /* TODO: 
     }
     gpuDims.threadsPerBlock = opts.gpuThreadsPerBlockGuideline;
     assigs = my_make_unique<HostAssigs>(varCount, gpuDims);  
-    clauses = my_make_unique<HostClauses>(gpuDims, opts.clauseActivityDecay, true);
+    clauses = my_make_unique<HostClauses>(gpuDims, opts.clauseActivityDecay, true, globalStats);
     reported = my_make_unique<Reported>(*clauses, oneSolverStats);
-    gpuRunner = my_make_unique<GpuRunner>(*clauses, *assigs, *reported, gpuDims, opts.quickProf, _opts.initReportCountPerCategory, sp.get());
+    gpuRunner = my_make_unique<GpuRunner>(*clauses, *assigs, *reported, gpuDims, opts.quickProf, _opts.initReportCountPerCategory, sp.get(), globalStats);
 
 }
 
@@ -95,7 +95,10 @@ bool GpuClauseSharerImpl::trySetSolverValues(int solverId, int *lits, int count)
         for (int i = 0; i < litsToSet.size(); i++) {
             sAssigs.setVarLocked(var(litsToSet[i]), sign(litsToSet[i]) ? l_False : l_True);
         }
+        oneSolverStats[solverId][varUpdatesSentToGpu] += litsToSet.size();
         success = true;
+    } else {
+        oneSolverStats[solverId][failuresToFindAssig]++;
     }
     sAssigs.exitLock();
     return success;
@@ -107,6 +110,7 @@ void GpuClauseSharerImpl::unsetPending(int solverId) {
     for (int i = 0; i < unset.size(); i++) {
         sAssigs.setVarLocked(var(unset[i]), l_Undef);
     }
+    oneSolverStats[solverId][varUpdatesSentToGpu] += unset.size();
     unset.clear();
 }
 
@@ -119,6 +123,7 @@ void GpuClauseSharerImpl::unsetSolverValues(int solverId, int *lits, int count) 
         for (int i = 0; i < litsToUnset.size(); i++) {
             sAssigs.setVarLocked(var(litsToUnset[i]), l_Undef);
         }
+        oneSolverStats[solverId][varUpdatesSentToGpu] += litsToUnset.size();
     } else {
         vec<Lit> &unset = toUnset[solverId];
         unset.resize(litsToUnset.size());
@@ -133,7 +138,10 @@ bool GpuClauseSharerImpl::trySendAssignment(int solverId) {
     sAssigs.enterLock();
     if (sAssigs.isAssignmentAvailableLocked()) {
         sAssigs.assignmentDoneLocked();
+        oneSolverStats[solverId][assigsSentToGpu]++;
         success = true;
+    } else {
+        oneSolverStats[solverId][failuresToFindAssig]++;
     }
     sAssigs.exitLock();
     return success;
@@ -164,6 +172,7 @@ int GpuClauseSharerImpl::getGlobalStatCount() {
 }
 
 long GpuClauseSharerImpl::getGlobalStat(GlobalStats stat) {
+    if (stat == clauseTestsOnAssigs) return gpuRunner->getClauseTestsOnAssigs();
     return globalStats[stat];
 }
 
