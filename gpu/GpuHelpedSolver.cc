@@ -26,6 +26,8 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include <sstream>
 #include <mutex>
 
+#define CHECK_ASSIG_ON_GPU_IS_RIGHT
+
 #define PRINT_ALOT 0
 
 namespace Glucose {
