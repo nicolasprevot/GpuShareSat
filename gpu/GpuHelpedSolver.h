@@ -32,6 +32,8 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 
 #include <set>
 
+#define CHECK_ASSIG_ON_GPU_IS_RIGHT
+
 namespace Glucose {
 
 class Reported;
