@@ -32,7 +32,7 @@ __global__ void writeFirstLit(DClauses dClauses, Lit *ptr, int clSize) {
 }
 
 struct TestFixture {
-    vec<long> globalStats;
+    vec<unsigned long> globalStats;
     StreamPointer sp;
     HostClauses hCls;
 
@@ -262,7 +262,7 @@ BOOST_AUTO_TEST_CASE(testRescale) {
     StreamPointer sp;
 
     // each decays multiplies activity inc by RESCALE_CONST * 10
-    vec<long> globalStats(100, 0);
+    vec<unsigned long> globalStats(100, 0);
     HostClauses hCls(GpuDims(1, 1), 1 / (RESCALE_CONST * 10), false, globalStats);
     addClause(hCls, {mkLit(0)});
 

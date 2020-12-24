@@ -165,10 +165,10 @@ private:
 
     bool tryCopyHeadersToDeviceIfNecessaryAsync(cudaStream_t &stream);
     void rescaleActivity();
-    vec<long> &globalStats;
+    vec<unsigned long> &globalStats;
 
 public:
-    PerSizeKeeper(float clauseActDecay, vec<long> &globalStats);
+    PerSizeKeeper(float clauseActDecay, vec<unsigned long> &globalStats);
 
     ArrPair<DOneSizeClauses> tryGetDArr(ContigCopier &cc, cudaStream_t &stream);
     // modifiers
@@ -223,10 +223,10 @@ private:
     // howManyThisLbd: number of clauses with medLbd
     void getMedianLbd(int &medLbd, int &howManyUnder, int &howManyThisLbd, vec<int> &clauseCountsAtLbds);
 
-    vec<long> &globalStats;
+    vec<unsigned long> &globalStats;
 
 public:
-    HostClauses(GpuDims gpuDimsGuideline, float clauseActDecay, bool actOnly, vec<long> &globalStats);
+    HostClauses(GpuDims gpuDimsGuideline, float clauseActDecay, bool actOnly, vec<unsigned long> &globalStats);
 
     RunInfo makeRunInfo(cudaStream_t &stream, ContigCopier &cc);
 

@@ -26,11 +26,11 @@ namespace Glucose {
 
 class TimeGauge {
     private:
-    long &toBump;
+    unsigned long &toBump;
     long timeStartedMicros;
 
     public:
-    TimeGauge(long &toBump, bool enabled);
+    TimeGauge(unsigned long &toBump, bool enabled);
     void complete();
     ~TimeGauge();
 };

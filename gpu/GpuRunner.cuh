@@ -69,14 +69,14 @@ private:
 
     float timeToWaitSec;
     cudaStream_t &stream;
-    vec<long> &globalStats;
+    vec<unsigned long> &globalStats;
 
     void startGpuRunAsync(cudaStream_t &stream, vec<AssigIdsPerSolver> &assigIdsPerSolver, std::unique_ptr<Reporter<ReportedClause>> &reporter, bool &started, bool &notEnoughGpuMemory);
     void scheduleGpuToCpuCopyAsync(cudaStream_t &stream);
     void gatherGpuRunResults(vec<AssigIdsPerSolver> &assigIdsPerSolver, Reporter<ReportedClause> &reporter);
 
 public:
-    GpuRunner(HostClauses &_hostClauses, HostAssigs &_hostAssigs, Reported &_reported, GpuDims gpuDimsGuideline, bool _quickProf, int _countPerCategory, cudaStream_t &stream, vec<long> &globalStats);
+    GpuRunner(HostClauses &_hostClauses, HostAssigs &_hostAssigs, Reported &_reported, GpuDims gpuDimsGuideline, bool _quickProf, int _countPerCategory, cudaStream_t &stream, vec<unsigned long> &globalStats);
 
     void wholeRun(bool canStart);
     void printStats();

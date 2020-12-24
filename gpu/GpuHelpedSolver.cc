@@ -19,6 +19,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 
 #include "GpuHelpedSolver.h"
 #include "utils/Utils.h"
+#include "utils/Profiler.h"
 
 #include <chrono>
 #include <thread>
@@ -32,15 +33,15 @@ namespace Glucose {
 GpuHelpedSolver::GpuHelpedSolver(const GpuHelpedSolver &other, int _cpuThreadId) :
         SimpSolver(other, _cpuThreadId), params(other.params),
         needToReduceCpuMemoryUsage(other.needToReduceCpuMemoryUsage), 
-        status(other.status), changedCount(other.changedCount),
+        status(other.status), changedCount(other.changedCount), quickProf(other.quickProf),
         gpuClauseSharer(other.gpuClauseSharer), 
         trailCopiedUntil(other.trailCopiedUntil) {
 
 }
 
-GpuHelpedSolver::GpuHelpedSolver(Finisher &_finisher, int _cpuThreadId, GpuHelpedSolverParams _params, GpuClauseSharer &_gpuClauseSharer) :
+GpuHelpedSolver::GpuHelpedSolver(Finisher &_finisher, int _cpuThreadId, GpuHelpedSolverParams _params, GpuClauseSharer &_gpuClauseSharer, bool _quickProf) :
         SimpSolver(_cpuThreadId, _finisher), params(_params),
-        needToReduceCpuMemoryUsage(false), status(l_Undef), changedCount(0), 
+        needToReduceCpuMemoryUsage(false), status(l_Undef), changedCount(0), quickProf(_quickProf),
         gpuClauseSharer(_gpuClauseSharer), trailCopiedUntil(0) {
         // for the first gpu stat
         stats.push(0);
@@ -64,6 +65,7 @@ void GpuHelpedSolver::insertStatNames() {
 // Even if the gpu doesn't have the empty clause: it may have the clause ~a when we know a to be true
 // In this case, we can't return a cref conflict for ~a because a clause with a cref can't have a size of 1
 CRef GpuHelpedSolver::gpuImportClauses(bool& foundEmptyClause) {
+    TimeGauge tg(stats[timeSpentImportingClauses], quickProf);
     foundEmptyClause = false;
 
     CRef confl = CRef_Undef;

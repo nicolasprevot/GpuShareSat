@@ -177,7 +177,7 @@ next: ;
 }
 
 GpuRunner::GpuRunner(HostClauses &_hostClauses, HostAssigs &_hostAssigs, Reported &_reported, GpuDims gpuDimsGuideline, bool _quickProf,
-        int _countPerCategory, cudaStream_t &_stream, vec<long> &_globalStats) :
+        int _countPerCategory, cudaStream_t &_stream, vec<unsigned long> &_globalStats) :
     warpsPerBlock(gpuDimsGuideline.threadsPerBlock / WARP_SIZE),
     blockCount(gpuDimsGuideline.blockCount),
     hasRunOutOfGpuMemoryOnce(false),

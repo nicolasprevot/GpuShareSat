@@ -36,7 +36,7 @@ GpuFixture::GpuFixture(GpuOptions options, int varCount, int _solverCount, int i
 {
     gpuClauseSharer.setCpuSolverCount(_solverCount);
     for (int s = 0; s < _solverCount; s++) {
-        GpuHelpedSolver *solv = new GpuHelpedSolver(finisher, s, options.gpuHelpedSolverOptions.toParams(), gpuClauseSharer);
+        GpuHelpedSolver *solv = new GpuHelpedSolver(finisher, s, options.gpuHelpedSolverOptions.toParams(), gpuClauseSharer, options.quickProf);
         solvers.push(solv);
         for (int i = 0; i < varCount; i++) {
             solv->newVar();

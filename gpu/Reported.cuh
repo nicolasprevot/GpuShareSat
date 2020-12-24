@@ -77,7 +77,7 @@ class Reported {
 private:
     vec<std::unique_ptr<ConcurrentQueue<ClauseBatch>>> repClauses; // first index: solver
 
-    vec<vec<long>> &oneSolverStats;
+    vec<vec<unsigned long>> &oneSolverStats;
     // only used from the solver threads
     vec<std::set<GpuClauseId>> clausesToNotImportAgain;
     // this is only accessed from the solver threads
@@ -95,7 +95,7 @@ private:
     void removeOldestClauses(int solvId);
 
 public:
-    Reported(HostClauses &hostClauses, vec<vec<long>> &oneSolverStats);
+    Reported(HostClauses &hostClauses, vec<vec<unsigned long>> &oneSolverStats);
 
     // This isn't known yet when the object is created which is why we have to set it later
     void setSolverCount(int solverCount);

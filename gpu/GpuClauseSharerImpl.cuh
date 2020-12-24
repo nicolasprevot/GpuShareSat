@@ -23,8 +23,8 @@ class GpuClauseSharerImpl : public GpuClauseSharer {
     std::unique_ptr<Reported> reported;
     std::unique_ptr<HostClauses> clauses;
 
-    vec<long> globalStats;
-    vec<vec<long>> oneSolverStats;
+    vec<unsigned long> globalStats;
+    vec<vec<unsigned long>> oneSolverStats;
 
     vec<const char*> globalStatNames;
     vec<const char*> oneSolverStatNames;

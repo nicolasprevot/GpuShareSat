@@ -147,7 +147,7 @@ __device__ void DClauses::update(int clSize, int clIdInSize, DArr<Lit> lits) {
 }
 
 // Things that run on the host
-HostClauses::HostClauses(GpuDims gpuDimsGuideline, float _activityDecay, bool _actOnly, vec<long> &_globalStats) :
+HostClauses::HostClauses(GpuDims gpuDimsGuideline, float _activityDecay, bool _actOnly, vec<unsigned long> &_globalStats) :
     nextGpuClauseId(0),
     gpuThreadCountGuideline(gpuDimsGuideline.totalCount()),
     runInfo(),
@@ -160,7 +160,7 @@ HostClauses::HostClauses(GpuDims gpuDimsGuideline, float _activityDecay, bool _a
 {
 }
 
-PerSizeKeeper::PerSizeKeeper(float _clauseActDecay, vec<long> &_globalStats):
+PerSizeKeeper::PerSizeKeeper(float _clauseActDecay, vec<unsigned long> &_globalStats):
         perSize(MAX_CL_SIZE + 1),
         clauseActIncr(1.0),
         clauseActDecay(_clauseActDecay),

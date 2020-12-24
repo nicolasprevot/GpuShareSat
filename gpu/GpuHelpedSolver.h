@@ -87,6 +87,7 @@ private:
 #endif
     lbool status;
     int changedCount;
+    bool quickProf;
 
     GpuClauseSharer &gpuClauseSharer;
 
@@ -106,7 +107,7 @@ private:
     void insertStatNames();
 
 public:
-    GpuHelpedSolver(Finisher &_finisher, int cpuThreadId, GpuHelpedSolverParams params, GpuClauseSharer &_gpuClauseSharer);
+    GpuHelpedSolver(Finisher &_finisher, int cpuThreadId, GpuHelpedSolverParams params, GpuClauseSharer &_gpuClauseSharer, bool quickProf);
     GpuHelpedSolver(const GpuHelpedSolver &other, int cpuThreadId);
     void foundConflict(vec<Lit> &learned, int lbd);
     // send the state at level to the gpu

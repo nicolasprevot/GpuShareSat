@@ -243,7 +243,7 @@ BOOST_AUTO_TEST_CASE(testAddClauseHost) {
     StreamPointer sp;
     CorrespArr<int> clausesCountPerThread(2, true);
     GpuDims gpuDims(2, WARP_SIZE);
-    vec<long> globalStats(100, 0);
+    vec<unsigned long> globalStats(100, 0);
     HostClauses hClauses(gpuDims, 0.99, false, globalStats);
     addClause(hClauses, {mkLit(4), mkLit(2)});
     CorrespArr<Lit> cra(2, false);

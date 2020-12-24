@@ -23,7 +23,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 
 using namespace Glucose;
 
-TimeGauge::TimeGauge(long &_toBump, bool enabled): 
+TimeGauge::TimeGauge(unsigned long &_toBump, bool enabled): 
     toBump(_toBump),
     timeStartedMicros(enabled ? realTimeMicros() : -1) {
 }

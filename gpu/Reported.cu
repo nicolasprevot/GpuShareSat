@@ -68,7 +68,7 @@ const vec<ClauseData>& ClauseBatch::getClauseDatas() {
     return clauseDatas;
 }
 
-Reported::Reported(HostClauses &_hostClauses,  vec<vec<long>> &_oneSolverStats) :
+Reported::Reported(HostClauses &_hostClauses,  vec<vec<unsigned long>> &_oneSolverStats) :
         hostClauses(_hostClauses),
         oneSolverStats(_oneSolverStats) {
 }
