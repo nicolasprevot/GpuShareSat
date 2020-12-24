@@ -174,8 +174,7 @@ lbool GpuMultiSolver::solve(int _cpuThreadCount) {
         }
     }
     if (verb.global > 0) {
-        SyncOut so;
-        printf("c printing final stats\n");
+        SYNCED_OUT(printf("c printing final stats\n"));
         printStats();
     }
 
