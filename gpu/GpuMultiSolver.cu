@@ -82,6 +82,7 @@ void launchSolver(std::mutex &mutex, GpuHelpedSolver*& solver) {
         }
         delete copy;
     }
+    SyncOut so;
     printf("c A thread is exiting\n");
 }
 
