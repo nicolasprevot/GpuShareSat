@@ -75,9 +75,10 @@ Reported::Reported(HostClauses &_hostClauses,  vec<vec<unsigned long>> &_oneSolv
 
 void Reported::setSolverCount(int solverCount) {
     repClauses.resize(solverCount);
-    clausesToNotImportAgain.resize(solverCount);
-    currentClauseBatches.resize(solverCount);
-    lastSentAssigId.resize(solverCount);
+    clausesToNotImportAgain.growTo(solverCount);
+    currentClauseBatches.growTo(solverCount, NULL);
+    lastSentAssigId.growTo(solverCount, 0);
+    lastAssigAllReported.growTo(solverCount, 0);
     for (int s = 0; s < solverCount; s++) {
         // There can be at most 3 sets of 32 assignments in flight for a given solver
         repClauses[s] = my_make_unique<ConcurrentQueue<ClauseBatch>>(3);
@@ -127,6 +128,7 @@ bool Reported::popReportedClause(int solverId, MinHArr<Lit> &lits, GpuClauseId &
                 }
                 removeOldestClauses(solverId);
             }
+            lastAssigAllReported[solverId] = seenAllReportsUntil;
             currentClauseBatches[solverId] = NULL;
         } else {
             return false;

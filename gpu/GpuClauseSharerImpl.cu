@@ -133,19 +133,18 @@ void GpuClauseSharerImpl::unsetSolverValues(int solverId, int *lits, int count) 
     sAssigs.exitLock();
 }
 
-bool GpuClauseSharerImpl::trySendAssignment(int solverId) {
+long GpuClauseSharerImpl::trySendAssignment(int solverId) {
     OneSolverAssigs& sAssigs = assigs->getAssigs(solverId);
-    bool success = false;
+    long result = -1;
     sAssigs.enterLock();
     if (sAssigs.isAssignmentAvailableLocked()) {
-        sAssigs.assignmentDoneLocked();
+        result = sAssigs.assignmentDoneLocked();
         oneSolverStats[solverId][assigsSentToGpu]++;
-        success = true;
     } else {
         oneSolverStats[solverId][failuresToFindAssig]++;
     }
     sAssigs.exitLock();
-    return success;
+    return result;
 }
 
 bool GpuClauseSharerImpl::popReportedClause(int solverId, int* &lits, int &count, long &gpuClauseId) {
@@ -196,5 +195,10 @@ const char* GpuClauseSharerImpl::getOneSolverStatName(OneSolverStats stat) {
 void GpuClauseSharerImpl::getCurrentAssignment(int solverId, uint8_t *assig) { 
     assigs->getAssigs(solverId).getCurrentAssignment(assig);
 }
+
+long GpuClauseSharerImpl::getLastAssigAllReported(int cpuSolverId) {
+    return reported->getLastAssigAllReported(cpuSolverId);
+}
+
 
 }

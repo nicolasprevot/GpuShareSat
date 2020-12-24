@@ -86,6 +86,8 @@ private:
     vec<Lit> tempLits;
     HostClauses &hostClauses;
 
+    vec<long> lastAssigAllReported;
+
     ClauseBatch& getClauseBatch(vec<ClauseBatch*> &perSolverBatches, int solverId);
     void addClause(ClauseBatch &clauseBatch, ReportedClause wc);
 
@@ -106,6 +108,8 @@ public:
     void assigWasSent(int solverId, long solverAssigId) { lastSentAssigId[solverId] = solverAssigId; }
     // called by the solver threads
     bool popReportedClause(int solverId, MinHArr<Lit> &lits, GpuClauseId &gpuClauseId);
+
+    long getLastAssigAllReported(int cpuSolverId) {return lastAssigAllReported[cpuSolverId]; }
 
     void printStats();
     ~Reported();

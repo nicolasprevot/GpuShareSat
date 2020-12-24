@@ -199,13 +199,13 @@ bool OneSolverAssigs::isAssignmentAvailableLocked() {
     return false;
 }
 
-void OneSolverAssigs::assignmentDoneLocked() {
+long OneSolverAssigs::assignmentDoneLocked() {
     int currentPos = getPos(currentId);
     assert(firstIdUsed + assigCount() != currentId);
     ASSERT_MSG(notCompletedMask & ((Vals) 1 << currentPos), PRINT(notCompletedMask); PRINT(currentPos));
     // set the bit for this pos to 0
     notCompletedMask &= ~((Vals) 1 << currentPos);
-    currentId++;
+    return currentId++;
 }
 
 void OneSolverAssigs::setAggBits(int _startAggBitPos, int _endAggBitPos) {

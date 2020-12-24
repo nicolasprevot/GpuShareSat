@@ -130,7 +130,7 @@ bool GpuHelpedSolver::tryCopyTrailForGpu(int level) {
         result = gpuClauseSharer.trySetSolverValues(cpuThreadId, (int*)&trail[trailCopiedUntil], max - trailCopiedUntil);
         if (result) trailCopiedUntil = max;
     }
-    if (result) result = gpuClauseSharer.trySendAssignment(cpuThreadId);
+    if (result) result = gpuClauseSharer.trySendAssignment(cpuThreadId) >= 0;
 
     if (result) {
         stats[nbAssignmentsSent]++;

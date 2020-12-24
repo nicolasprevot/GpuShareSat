@@ -119,8 +119,8 @@ class GpuClauseSharer {
 
     // Attempts to send the assignment for this thread to the GPU. All the clauses will be tested against it,
     // and those that trigger will be reported.
-    // This method is thread safe.
-    virtual bool trySendAssignment(int cpuSolverId) = 0;
+    // Returns -1 if we failed the send the current assignment, an identifier of this assignment otherwise, which always increases
+    virtual long trySendAssignment(int cpuSolverId) = 0;
 
     // Returns if there was a clause reported to the given solver id. You should not free lits.
     // Calling this method will invalidate the previously returned lits pointers for this solver id.
@@ -130,6 +130,9 @@ class GpuClauseSharer {
     // clause deletion policy, and this clause triggers again on an assignment from this thread, then it will
     // be reported again.
     virtual bool popReportedClause(int cpuSolverId, int* &lits, int &count, long &gpuClauseId) = 0;
+
+    // Returns the latest assignment for which all clauses have been reported
+    virtual long getLastAssigAllReported(int cpuSolverId) = 0;
 
     // Gets the current assignment of the given cpu solver. This method is mostly intended for debugging and making sure that the GPU
     // representation of a solver assignment is the right one. The values for assig are: 0 -> true, 1 -> false, 2 -> undef

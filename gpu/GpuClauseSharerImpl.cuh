@@ -58,7 +58,7 @@ class GpuClauseSharerImpl : public GpuClauseSharer {
 
     void unsetSolverValues(int threadId, int *lits, int count);
 
-    bool trySendAssignment(int threadId);
+    long trySendAssignment(int threadId);
 
     bool popReportedClause(int solverId, int* &lits, int &count, long &gpuClauseId);
 
@@ -79,6 +79,8 @@ class GpuClauseSharerImpl : public GpuClauseSharer {
     const char* getOneSolverStatName(OneSolverStats stat);
 
     void getCurrentAssignment(int solverId, uint8_t *assig);
+
+    long getLastAssigAllReported(int cpuSolverId);
 };
 }
 
