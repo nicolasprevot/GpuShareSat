@@ -212,8 +212,6 @@ private:
     PerSizeKeeper perSizeKeeper;
     std::unique_ptr<RunInfo> runInfo;
 
-    Profiler profiler;
-
     long addedClauseCountAtLastReduceDb;
 
     bool addClauseNowLocked(vec<Lit>& lits);

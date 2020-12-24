@@ -23,27 +23,14 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 
 using namespace Glucose;
 
-void Profiler::bump(std::string name, double time) {
-    if (timesTaken.find(name) == timesTaken.end()) {
-        timesTaken[name] = 0.0;
-    }
-    timesTaken[name] += time;
-}
-
-void Profiler::printStats() {
-    for (auto &it : timesTaken) {
-        writeAsJson(it.first.c_str(), it.second);
-    }
-}
-
-
-TimeGauge::TimeGauge(Profiler &_profiler, std::string _name, bool enabled): 
-    profiler(_profiler), name(_name), timeStarted(enabled ? realTimeSec() : -1) {
+TimeGauge::TimeGauge(long &_toBump, bool enabled): 
+    toBump(_toBump),
+    timeStartedMicros(enabled ? realTimeMicros() : -1) {
 }
 
 void TimeGauge::complete() {
-    if (timeStarted >= 0) profiler.bump(name, realTimeSec() - timeStarted);
-    timeStarted = -1;
+    if (timeStartedMicros >= 0) toBump += realTimeMicros() - timeStartedMicros;
+    timeStartedMicros = -1;
 }
 
 TimeGauge::~TimeGauge() {

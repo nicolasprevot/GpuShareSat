@@ -218,7 +218,7 @@ void GpuRunner::wholeRun(bool canStart) {
         if (quickProf) {
             float ms;
             exitIfError(cudaEventElapsedTime(&ms, beforeFindClauses.get(), afterFindClauses.get()), POSITION);
-            profiler.bump("timeInFindClauses", ms * 0.001);
+            globalStats[timeSpentTestingClauses] += ms * 1000;
         }
     }
     int nextInAssigIdsPerSolver = -1;
@@ -284,7 +284,7 @@ void GpuRunner::startGpuRunAsync(cudaStream_t &stream, vec<AssigIdsPerSolver> &a
         return;
     }
 
-    TimeGauge tg(profiler, "timeFillAssigs", quickProf);
+    TimeGauge tg(globalStats[timeSpentFillingAssigs], quickProf);
     AssigsAndUpdates assigsAndUpdates = hostAssigs.fillAssigsAsync(cpuToGpuContigCopier, assigIdsPerSolver, stream);
     tg.complete();
 
@@ -324,7 +324,6 @@ void GpuRunner::startGpuRunAsync(cudaStream_t &stream, vec<AssigIdsPerSolver> &a
 }
 
 void GpuRunner::scheduleGpuToCpuCopyAsync(cudaStream_t &stream) {
-    TimeGauge tg(profiler, "timeScheduleCopyAsync", quickProf);
     exitIfFalse(gpuToCpuContigCopier.tryCopyAsync(cudaMemcpyDeviceToHost, stream), POSITION);
     exitIfError(cudaEventRecord(gpuToCpuCopyDone.get(), stream), POSITION);
 }
@@ -357,7 +356,7 @@ void GpuRunner::gatherGpuRunResults(vec<AssigIdsPerSolver> &assigIdsPerSolver, R
         hostClauses.bumpClauseActivity(reportedCls[i].gpuCref);
     }
     {
-        TimeGauge tg(profiler, "timeFillReported", quickProf);
+        TimeGauge tg(globalStats[timeSpentFillingReported], quickProf);
         reported.fill(assigIdsPerSolver, reportedCls);
     }
 }

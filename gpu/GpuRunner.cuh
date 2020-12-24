@@ -67,8 +67,6 @@ private:
     HostClauses &hostClauses;
     Reported &reported;
 
-    Profiler profiler;
-
     float timeToWaitSec;
     cudaStream_t &stream;
     vec<long> &globalStats;

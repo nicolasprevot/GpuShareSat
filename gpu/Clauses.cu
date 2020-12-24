@@ -424,7 +424,7 @@ void printMem() {
 }
 
 void HostClauses::reduceDb(cudaStream_t &stream) {
-    TimeGauge tg(profiler, "timeReduceDb", true);
+    TimeGauge tg(globalStats[timeSpentReduceGpuDb], true);
     vec<int> clauseCountsAtLbds(MAX_CL_SIZE + 1, 0);
     addedClauseCountAtLastReduceDb = globalStats[gpuClausesAdded];
     fillClauseCountsAtLbds(clauseCountsAtLbds);
