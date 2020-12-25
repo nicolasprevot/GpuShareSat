@@ -33,6 +33,7 @@ class HostAssigs;
 class HostClauses;
 class OneSolverAssigs;
 class GpuRunner;
+class GpuClauseSharer;
 
 // typedef std::function<GpuHelpedSolver* (int threadId)> SolverFactory;
 //typedef int SolverFactory;
@@ -43,15 +44,15 @@ class GpuMultiSolver {
 private:
     std::mutex solversMutex;
     vec<GpuHelpedSolver*> helpedSolvers;
-    GpuRunner &gpuRunner;
-    HostAssigs &assigs;
-    Reported &reported;
-    HostClauses &clauses;
+    GpuClauseSharer &gpuClauseSharer;
     int cpuSolverCount;
-    std::function<GpuHelpedSolver* (int threadId, OneSolverAssigs&)> solverFactory;
+    std::function<GpuHelpedSolver* (int threadId)> solverFactory;
     Verbosity verb;
     float memUsedCreateOneSolver;
     std::unique_ptr<PeriodicRunner> periodicRunner;
+
+    long gpuReduceDbPeriod;
+    long gpuReduceDbPeriodInc;
 
     // Prints the sum of the stat among all solvers
     void printStatSum(const char* name, int stat);
@@ -63,12 +64,14 @@ private:
     long getStatSum(int stat);
     void configure();
     bool hasTriedToLowerCpuMemoryUsage;
+    Finisher &finisher;
 
 public:
-    GpuMultiSolver(GpuRunner &gpuRunner, Reported &reported, Finisher &finisher, HostAssigs &assigs, HostClauses &clauses,
-            std::function<GpuHelpedSolver* (int threadId, OneSolverAssigs&) > solverFactory, int varCount, int writeClausesPeriodSec,
-            Verbosity verb, double initMemUsed, double maxMemory);
+    GpuMultiSolver(Finisher &finisher, GpuClauseSharer &gpuClauseSharer,
+            std::function<GpuHelpedSolver* (int threadId) > solverFactory, int varCount, int writeClausesPeriodSec,
+            Verbosity verb, double initMemUsed, double maxMemory, int gpuReduceDbPeriod, int gpuReduceDbPeriodInc);
     void addClause_(vec<Lit>& lits);
+    void addClause(const vec<Lit>& lits);
     lbool solve(int _cpuThreadCount);
     vec<lbool>& getModel();
     void printStats();
@@ -76,10 +79,9 @@ public:
     void setVerbosity(Verbosity v) { verb = v; }
     Verbosity getVerbosity() { return verb; }
     float getMemUsedCreateOneSolver() { return memUsedCreateOneSolver; }
-    void writeClauses();
     double actualCpuMemUsed();
     void printGlobalStats(double cpuTime);
-    Finisher &finisher;
+    void writeClausesInCnf();
     ~GpuMultiSolver();
 };
 

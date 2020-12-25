@@ -89,6 +89,15 @@ __device__ __host__ int getRequired(int a, int b) {
     return c;
 }
 
+__device__ __host__ void printBinaryDH(uint x) {
+    for (int i = 31; i >= 0; i--) {
+        if ((1 << i) & x) {
+            printf("1");
+        }
+        else printf("0");
+    }
+}
+
 void runGpuAdjustingDims(int &warpsPerBlockGuideline, int totalWarps, std::function<void (int blockCount, int threadsPerBlock)> func) {
     assert(warpsPerBlockGuideline > 0);
     while (true) {

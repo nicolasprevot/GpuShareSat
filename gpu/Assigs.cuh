@@ -49,6 +49,7 @@ struct MultiAgg {
 };
 
 __device__ __host__ void printV(MultiAgg multiAgg);
+__device__ void printVD(MultiAgg multiAgg);
 
 struct DAssigAggregates {
     DArr<MultiAgg> multiAggs;
@@ -164,9 +165,9 @@ private:
     vec<int> varToUpdatePos;
 
     // This is the first id for which the assignment is used. Can be equal to currentId, in which case it is not
-    int firstIdUsed;
+    long firstIdUsed;
 
-    int currentId;
+    long currentId;
 
     void copyCompletedLocked();
 
@@ -188,7 +189,8 @@ public:
     bool tryLock() { return lock.try_lock(); }
     void exitLock() { lock.unlock(); }
     bool isAssignmentAvailableLocked();
-    void assignmentDoneLocked();
+    long assignmentDoneLocked();
+    void getCurrentAssignment(uint8_t* assig);
     long getUpdatesSent() { return updatesSent; }
     DOneSolverAssigs copyUpdatesLocked(ArrPair<VarUpdate> &varUpdates, AssigIdsPerSolver &assigIds, HArr<AggCorresp> &aggCorresps);
 
@@ -210,12 +212,14 @@ private:
     int solverCount() { return solverAssigs.size(); }
 
     DAssigAggregates getDAssigAggregates(Vals aggStartVals);
+    int warpsPerBlockForInit;
+    int warpCountForInit;
 
 public:
     HostAssigs(int varCount, GpuDims gpuDims);
     long getChangeCount();
 
-    void growSolverAssigs(int newCount, int &warpsPerBlock, int warpCount);
+    void growSolverAssigs(int newCount);
 
     int getVarCount() {return varCount;}
 

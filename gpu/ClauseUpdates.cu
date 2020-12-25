@@ -46,7 +46,7 @@ void HClauseUpdates::clear() {
     vals.resize(0, false);
 }
 
-void HClauseUpdates::addNewClause(vec<Lit> &cl, ClMetadata clMetadata) {
+void HClauseUpdates::addNewClause(MinHArr<Lit> &cl, ClMetadata clMetadata) {
     HClauseUpdate clUpdate(cl.size(), vals.size(), clMetadata);
     // not using .add for because it needs constrDestr which isn't set
     int initValsSize = vals.size();

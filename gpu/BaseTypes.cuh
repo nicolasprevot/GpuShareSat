@@ -26,7 +26,7 @@ namespace Glucose {
 
 #define MAX_CL_SIZE 100
 
-typedef uint64_t GpuClauseId;
+typedef int64_t GpuClauseId;
 
 typedef uint32_t Vals;
 
@@ -51,6 +51,10 @@ struct AssigIdsPerSolver {
         return startAssigId + position - startAssigPos + s;
     }
 };
+
+inline void printV(AssigIdsPerSolver assigs) {
+    PRINT(assigs.startAssigId); PRINT(assigs.assigCount); NL;
+}
 
 
 inline bool operator==(const GpuCref cref1, const GpuCref cref2) {
@@ -118,11 +122,11 @@ inline MultiLBool makeMultiLBool(lbool lb) {
 inline void printV(const MultiLBool vad) {
 	Vals tr = vad.withTrue();
 	if (tr != 0) {
-		printf("tr: "); Glucose::printBinary(tr); printf(" ");
+		printf("tr: "); Glucose::printBinaryDH(tr); printf(" ");
 	}
 	Vals fa = vad.withFalse();
 	if (fa != 0) {
-		printf("fa: "); Glucose::printBinary(fa); printf(" ");
+		printf("fa: "); Glucose::printBinaryDH(fa); printf(" ");
 	}
 }
 
@@ -172,6 +176,8 @@ inline __host__ __device__ lbool mklbool(uint8_t v) {
 }
 
 __device__ void printVD(Lit l);
+
+__device__ void printVD(lbool lb);
 
 }
 

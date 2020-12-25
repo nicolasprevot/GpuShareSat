@@ -44,24 +44,19 @@ private:
 
     int warpsPerBlock;
     int blockCount;
-    long clauseChecks;
-    long assigClsChecked;
-    long assigsCopiedToGpu;
+    bool hasRunOutOfGpuMemoryOnce;
     EventPointer beforeFindClauses;
     EventPointer afterFindClauses;
 
     EventPointer gpuToCpuCopyDone;
     EventPointer cpuToGpuCopyDone;
 
-    cudaStream_t &stream;
-
-    int executeCount;
     vec<ReportedClause> reportedCls;
     int lastInAssigIdsPerSolver;
     vec<AssigIdsPerSolver> assigIdsPerSolver[2];
     std::unique_ptr<Reporter<ReportedClause>> prevReporter;
 
-    CorrespArr<long> oneSolverChecks;
+    CorrespArr<long> clauseTestsOnAssigs;
     void prepareOneSolverChecksAsync(int threadCount, cudaStream_t &tream);
     // if we do some simple profiling
     bool quickProf;
@@ -72,20 +67,21 @@ private:
     HostClauses &hostClauses;
     Reported &reported;
 
-    Profiler profiler;
-
     float timeToWaitSec;
+    cudaStream_t &stream;
+    vec<unsigned long> &globalStats;
 
-    bool startGpuRunAsync(cudaStream_t &stream, vec<AssigIdsPerSolver> &assigIdsPerSolver, std::unique_ptr<Reporter<ReportedClause>> &reporter);
+    void startGpuRunAsync(cudaStream_t &stream, vec<AssigIdsPerSolver> &assigIdsPerSolver, std::unique_ptr<Reporter<ReportedClause>> &reporter, bool &started, bool &notEnoughGpuMemory);
     void scheduleGpuToCpuCopyAsync(cudaStream_t &stream);
     void gatherGpuRunResults(vec<AssigIdsPerSolver> &assigIdsPerSolver, Reporter<ReportedClause> &reporter);
 
 public:
-    GpuRunner(HostClauses &hClauses, HostAssigs &hostAssigs, Reported &reported, GpuDims gpuDimsGuideline, bool quickProf, int countPerCategory, int minLatencyMicros, cudaStream_t &stream);
+    GpuRunner(HostClauses &_hostClauses, HostAssigs &_hostAssigs, Reported &_reported, GpuDims gpuDimsGuideline, bool _quickProf, int _countPerCategory, cudaStream_t &stream, vec<unsigned long> &globalStats);
 
     void wholeRun(bool canStart);
-    void execute();
     void printStats();
+    bool getHasRunOutOfGpuMemoryOnce() { return hasRunOutOfGpuMemoryOnce; }
+    long getClauseTestsOnAssigs();
 };
 
 }

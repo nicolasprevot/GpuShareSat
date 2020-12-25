@@ -23,23 +23,14 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include <unordered_map>
 
 namespace Glucose {
-class Profiler {
-    private:
-    std::unordered_map<std::string, double> timesTaken; 
-
-    public:
-    void bump(std::string name, double time);
-    void printStats();
-};
 
 class TimeGauge {
     private:
-    Profiler &profiler;
-    std::string name;
-    double timeStarted;
+    unsigned long &toBump;
+    long timeStartedMicros;
 
     public:
-    TimeGauge(Profiler &profiler, std::string name, bool enabled);
+    TimeGauge(unsigned long &toBump, bool enabled);
     void complete();
     ~TimeGauge();
 };

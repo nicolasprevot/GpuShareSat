@@ -47,10 +47,11 @@ Decision:
 #define PRINTV printV
 #endif
 
-#define PRINT(x)\
+#define PRINT(x) {\
 printf(#x ": ");\
 PRINTV(x);\
-printf(" ");
+printf(" ");\
+}
 
 #define PRINTLN(x) { PRINT(x); NL }
 

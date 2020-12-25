@@ -19,10 +19,11 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #ifndef DEF_TEST_HELPER
 #define DEF_TEST_HELPER
 
-#include "gpu/GpuHelpedSolver.cuh"
+#include "gpu/GpuHelpedSolver.h"
 #include "gpu/Assigs.cuh"
 #include "gpu/GpuUtils.cuh"
 #include "gpu/CompositionRoot.cuh"
+#include "gpu/GpuClauseSharerImpl.cuh"
 
 // Used by tests
 namespace Glucose {
@@ -31,13 +32,22 @@ class GpuRunner;
 
 void setDefaultOptions(GpuOptions &options);
 
+class GpuClauseSharerForTests : public GpuClauseSharerImpl {
+    public:
+    using GpuClauseSharerImpl::assigs;
+    using GpuClauseSharerImpl::gpuRunner;
+    using GpuClauseSharerImpl::reported;
+    using GpuClauseSharerImpl::clauses;
+    using GpuClauseSharerImpl::sp;
+
+    GpuClauseSharerForTests(GpuClauseSharerOptions opts, int varCount);
+};
+
 class GpuFixture {
 public:
     Finisher finisher;
     vec<GpuHelpedSolver*> solvers;
-    StreamPointer sp;
-    int solverCount;
-    CompositionRoot co;
+    GpuClauseSharerForTests gpuClauseSharer;
 
     GpuFixture(GpuOptions options, int varCount, int solverCount, int initRepSize = 100);
     ~GpuFixture();
@@ -46,15 +56,15 @@ public:
     CRef executeAndImportClauses();
     void executeAndImportClauses(vec<CRef> &res);
     void checkReportedImported(int count, int instance, bool unit);
+    void addClause(const vec<Lit> &cl);
 };
 
-void execute(GpuRunner &gpuRunner);
+void execute(GpuClauseSharer &gpuClauseSharer);
 
-void addClause(HostClauses &cls, Lit lit, int lbd = 3);
-void addClause(HostClauses &cls, Lit lit1, Lit lit2, int lbd = 3);
-void addClause(HostClauses &cls, Lit lit1, Lit lit2, Lit lit3, int lbd = 3);
 void copyToDeviceAsync(HostClauses &hCls, cudaStream_t &stream, GpuDims gpuDims);
 void copyToDeviceAsync(HostClauses &hCls, cudaStream_t &stream, ContigCopier &cc, GpuDims gpuDims);
+
+void addClause(HostClauses &hostClauses, const vec<Lit> &cl);
 
 }
 

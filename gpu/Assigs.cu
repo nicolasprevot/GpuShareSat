@@ -30,11 +30,15 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 namespace Glucose {
 
 __device__ void printVD(MultiLBool multiLBool) {
-    PRINT(multiLBool.isTrue); PRINT(multiLBool.isDef); NL;
+    printf("tr: "); printBinaryDH(multiLBool.isTrue); printf(" def: "); printBinaryDH(multiLBool.isDef); printf(" "); 
 }
 
 __device__ void printV(MultiAgg multiAgg) {
-    PRINT(multiAgg.canBeTrue); PRINT(multiAgg.canBeFalse); PRINT(multiAgg.canBeUndef); NL;
+    printf("t: "); printBinaryDH(multiAgg.canBeTrue); printf(" f: "); printBinaryDH(multiAgg.canBeFalse); printf(" u: "); printBinaryDH(multiAgg.canBeUndef); NL;
+}
+
+__device__ void printVD(MultiAgg multiAgg) {
+    printV(multiAgg);
 }
 
 void printV(VarUpdate vu) {
@@ -172,7 +176,7 @@ void OneSolverAssigs::setVarLocked(Var var, lbool val) {
         updates.resize(updates.size() + 1);
         VarUpdate& vu = updates[updates.size() - 1];
         // For the not completed ones: set the new values
-        // For the already completed ones: set the values they had, which we can get from lastVarVal
+        // For the already completed ones: set the values they had already on the gpu, which we can get from lastVarVal
         vu.newMultiLBool.isDef = setOnMask(vu.newMultiLBool.isDef, notCompletedMask, isSet, lastVarVal[var] != l_Undef);
         vu.newMultiLBool.isTrue = setOnMask(vu.newMultiLBool.isTrue, notCompletedMask, isTrue, lastVarVal[var] == l_True);
         vu.var = var;
@@ -195,13 +199,13 @@ bool OneSolverAssigs::isAssignmentAvailableLocked() {
     return false;
 }
 
-void OneSolverAssigs::assignmentDoneLocked() {
+long OneSolverAssigs::assignmentDoneLocked() {
     int currentPos = getPos(currentId);
     assert(firstIdUsed + assigCount() != currentId);
     ASSERT_MSG(notCompletedMask & ((Vals) 1 << currentPos), PRINT(notCompletedMask); PRINT(currentPos));
     // set the bit for this pos to 0
     notCompletedMask &= ~((Vals) 1 << currentPos);
-    currentId++;
+    return currentId++;
 }
 
 void OneSolverAssigs::setAggBits(int _startAggBitPos, int _endAggBitPos) {
@@ -223,6 +227,9 @@ void OneSolverAssigs::setAggCorresp(AggCorresp &aggCorresp, int &aggBitPos, int 
     id += bitsCount;
 }
 
+void OneSolverAssigs::getCurrentAssignment(uint8_t *assig) {
+    memcpy(assig, &lastVarVal[0], sizeof(uint8_t) * lastVarVal.size());
+}
 
 // Note: the reason why this method changes an ArrPair rather than a DArr is that if the contig copier gets resized,
 // it would invalidate the DArr
@@ -238,9 +245,13 @@ DOneSolverAssigs OneSolverAssigs::copyUpdatesLocked(ArrPair<VarUpdate> &varUpdat
     if (updates.size() > 0) {
         memcpy(&(varUpdates.getHArr()[initSize]), &(updates[0]), updates.size() * sizeof(VarUpdate));
     }
-
+    uint lastIdCopied;
     // If lastIdCopied is 0, it means nothing has been copied, we can set everything the same as 0
-    uint lastIdCopied = currentId != 0 ? currentId - 1 : 0;
+    if (currentId == 0) lastIdCopied = 0;
+    // If currentId == firstIdUsed + assigCount() then the GPU is full
+    else if (currentId == firstIdUsed + assigCount()) lastIdCopied = currentId - 1;
+    // Otherwise, currentId is not completed yet, but it may have had some updates already
+    else lastIdCopied = currentId;
 
     int bitsUsed = currentId - firstIdUsed;
     // Going to assing agg bits to non-agg bits, generally several bits for one agg bit
@@ -284,13 +295,13 @@ HostAssigs::HostAssigs(int _varCount, GpuDims gpuDims) :
         varCount(_varCount),
         multiAggAlloc(_varCount)
 {
-    int warpsPerBlock = gpuDims.threadsPerBlock / WARP_SIZE; 
-    ASSERT_OP(warpsPerBlock, >, 0);
-    int warpCount = warpsPerBlock * gpuDims.blockCount;
+    warpsPerBlockForInit = gpuDims.threadsPerBlock / WARP_SIZE; 
+    ASSERT_OP(warpsPerBlockForInit, >, 0);
+    warpCountForInit = warpsPerBlockForInit * gpuDims.blockCount;
     dAssigAggregates.multiAggs = multiAggAlloc.getDArr();
-    growSolverAssigs(1, warpsPerBlock, warpCount);
+    growSolverAssigs(1);
     MultiAgg multiAgg {0, ~((Vals) 0), 0};
-    initDArr(multiAggAlloc.getDArr(), multiAgg, warpsPerBlock, warpCount);
+    initDArr(multiAggAlloc.getDArr(), multiAgg, warpsPerBlockForInit, warpCountForInit);
 }
 
 OneSolverAssigs& HostAssigs::getAssigs(int solverId) { 
@@ -369,11 +380,11 @@ void assignAggBitsToSolver(int &currentBit, OneSolverAssigs &solverAssig, int bi
     solverAssig.setAggBits(start, currentBit);
 }
 
-void HostAssigs::growSolverAssigs(int solverCount, int &warpsPerBlock, int warpCount) {
+void HostAssigs::growSolverAssigs(int solverCount) {
     int oldCount = solverAssigs.size();
     solverAssigs.growTo(solverCount);
     for (int i = oldCount; i < solverCount; i++) {
-        solverAssigs[i] = my_make_unique<OneSolverAssigs>(varCount, warpsPerBlock, warpCount);
+        solverAssigs[i] = my_make_unique<OneSolverAssigs>(varCount, warpsPerBlockForInit, warpCountForInit);
     }
 
     int bitsCount = sizeof(Vals) * 8;

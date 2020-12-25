@@ -20,11 +20,13 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include <stdlib.h>
 
 #include <cuda.h>
+#include "gpu/BaseTypes.cuh"
 #include "Helper.cuh"
 #include "gpu/Reported.cuh"
 #include "gpu/Reporter.cuh"
 #include "gpu/Clauses.cuh"
 #include "utils/ConcurrentQueue.h"
+#include "GpuClauseSharer.h"
 
 // #define PRINT_DETAILS_CLAUSES
 
@@ -66,15 +68,17 @@ const vec<ClauseData>& ClauseBatch::getClauseDatas() {
     return clauseDatas;
 }
 
-// maxAssigsPerSolver: the maximum number of simultaneous assignments for one solver
-Reported::Reported(HostClauses &_hostClauses) :
-        timesReported(0),
-        totalReported(0),
-        hostClauses(_hostClauses) {
+Reported::Reported(HostClauses &_hostClauses,  vec<vec<unsigned long>> &_oneSolverStats) :
+        hostClauses(_hostClauses),
+        oneSolverStats(_oneSolverStats) {
 }
 
 void Reported::setSolverCount(int solverCount) {
-    repClauses.growTo(solverCount);
+    repClauses.resize(solverCount);
+    clausesToNotImportAgain.growTo(solverCount);
+    currentClauseBatches.growTo(solverCount, NULL);
+    lastSentAssigId.growTo(solverCount, 0);
+    lastAssigAllReported.growTo(solverCount, 0);
     for (int s = 0; s < solverCount; s++) {
         // There can be at most 3 sets of 32 assignments in flight for a given solver
         repClauses[s] = my_make_unique<ConcurrentQueue<ClauseBatch>>(3);
@@ -87,6 +91,49 @@ ClauseBatch& Reported::getClauseBatch(vec<ClauseBatch*> &perSolverBatches, int s
         perSolverBatches[solverId]->clear();
     }
     return *perSolverBatches[solverId];
+}
+
+bool Reported::popReportedClause(int solverId, MinHArr<Lit> &lits, GpuClauseId &gpuClauseId) {
+    // When iterating over the current clause batch, this method doesn't lock anything
+    while (true) {
+        if (currentClauseBatches[solverId] == NULL) {
+            getIncrReportedClauses(solverId, currentClauseBatches[solverId]);
+        }
+        ClauseBatch *current = currentClauseBatches[solverId];
+        if (current != NULL) {
+            if (current->popClause(lits, gpuClauseId)) {
+                // The same clause may trigger for several assignments, since an assignment may not have known about 
+                // clauses reported to previous assignments. This is also true for assignments in different clause batches
+                // We don't want to report the same clause several times in this case
+                if (clausesToNotImportAgain[solverId].find(gpuClauseId) == clausesToNotImportAgain[solverId].end()) {
+                    clausesToNotImportAgain[solverId].insert(gpuClauseId);
+                    oneSolverStats[solverId][reportedClauses]++;
+                    return true;
+                }
+            }
+            current->assigWhichKnowsAboutThese = lastSentAssigId[solverId] + 1;
+
+            // We've received all reported clauses for all assignments up to not including this one
+            long seenAllReportsUntil = current->assigIds.startAssigId + current->assigIds.assigCount;
+            ClauseBatch *clBatch;
+            // There is a possibility that a clause will trigger again on an assignment if this assignment did not know
+            // about the clause. For a clause batch, once we've handled all the assignments which didn't know yet about
+            // the clauses reported in this clause batch: these clauses won't trigger on future assignments (unless the
+            // solver deleted this clause).
+            while (getOldestClauses(solverId, clBatch)
+                    && clBatch->assigWhichKnowsAboutThese <= seenAllReportsUntil) {
+                auto &clDatas = clBatch->getClauseDatas();
+                for (int i = 0; i < clDatas.size(); i++) {
+                    clausesToNotImportAgain[solverId].erase(clDatas[i].gpuClauseId);
+                }
+                removeOldestClauses(solverId);
+            }
+            lastAssigAllReported[solverId] = seenAllReportsUntil;
+            currentClauseBatches[solverId] = NULL;
+        } else {
+            return false;
+        }
+    }
 }
 
 void Reported::fill(vec<AssigIdsPerSolver> &solvAssigIds, vec<ReportedClause> &wrongClauses) {
@@ -107,6 +154,7 @@ void Reported::fill(vec<AssigIdsPerSolver> &solvAssigIds, vec<ReportedClause> &w
     // fill the rep clauses for all the solvers
     for (int i = 0; i < wrongClauses.size(); i++) {
         ReportedClause &wc = wrongClauses[i];
+
         addClause(getClauseBatch(perSolverBatches, wc.solverId), wc);
     }
 
@@ -116,27 +164,22 @@ void Reported::fill(vec<AssigIdsPerSolver> &solvAssigIds, vec<ReportedClause> &w
             repClauses[s]->addNew();
         }
     }
-    timesReported ++;
 }
 
 void Reported::addClause(ClauseBatch &clauseBatch, ReportedClause wc) {
     int gpuClId;
+
     // The lits are copied twice here
     // HostClauses has a weird representation of lits, not contiguous in memory
     // HostClauses could return an object that can be queried to get all the lits, would make it faster
     // but does it matter?
     hostClauses.getClause(tempLits, gpuClId, wc.gpuCref);
-#ifdef PRINT_DETAILS_CLAUSES
-    printf("reported clause: ");
-    printV(tempLits);
-    printf("\n");
-#endif
+
     clauseBatch.addClause(gpuClId);
     for (int i = 0; i < tempLits.size(); i++) {
         clauseBatch.addLit(tempLits[i]);
     }
     clauseBatch.hadSomeReported |= wc.reportedAssignments;
-    totalReported++;
 }
 
 bool Reported::getIncrReportedClauses(int solvId, ClauseBatch*& clBatch) {
@@ -153,7 +196,6 @@ void Reported::removeOldestClauses(int solvId) {
 
 
 void Reported::printStats() {
-    writeAsJson("times_reported_gpu", timesReported);
 }
 
 Reported::~Reported() {

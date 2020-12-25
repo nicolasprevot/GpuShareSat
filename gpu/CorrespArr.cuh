@@ -192,7 +192,7 @@ template<typename T> void printV(DArr<T> darr) {
 template<typename T> __global__ void setAllTo(DArr<T> darr, T value) {
     int min, max;
     assignToThread(darr.size(), min, max);
-    for (int i = 0; i < darr.size(); i++) {
+    for (int i = min; i < max; i++) {
         darr[i] = value;
     }
 }
@@ -234,20 +234,27 @@ public:
         return _h_ptr;
     } 
 
-    MinHArr(size_t size, T *h_ptr
+    MinHArr(size_t size, T *h_ptr) {
+        _h_ptr = h_ptr;
+        _size = size;
 #ifndef NDEBUG
+        _copyDone = NULL;
+#endif
+    }
+
+
+#ifndef NDEBUG
+    MinHArr(size_t size, T *h_ptr
     , DestrCheckPointer destrCheckPointer
     , cudaEvent_t *copyDone
-#endif
     )
-#ifndef NDEBUG
     : _destrCheckPointer(destrCheckPointer),
     _copyDone(copyDone)
-#endif 
          {
         _h_ptr = h_ptr;
         _size = size;
     }
+#endif
 
     MinHArr<T> withSize(int newSize) {
         ASSERT_OP(newSize, <=, _size);

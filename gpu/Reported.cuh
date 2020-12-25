@@ -29,6 +29,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "mtl/Vec.h"
 #include "BaseTypes.cuh"
 #include "GpuUtils.cuh"
+#include <set>
 
 namespace Glucose {
 
@@ -75,16 +76,28 @@ template<typename T> class ConcurrentQueue;
 class Reported {
 private:
     vec<std::unique_ptr<ConcurrentQueue<ClauseBatch>>> repClauses; // first index: solver
-    long totalReported; // total number of reported clauses
-    int timesReported;
+
+    vec<vec<unsigned long>> &oneSolverStats;
+    // only used from the solver threads
+    vec<std::set<GpuClauseId>> clausesToNotImportAgain;
+    // this is only accessed from the solver threads
+    vec<ClauseBatch*> currentClauseBatches;
+    vec<long> lastSentAssigId;
     vec<Lit> tempLits;
     HostClauses &hostClauses;
+
+    vec<long> lastAssigAllReported;
 
     ClauseBatch& getClauseBatch(vec<ClauseBatch*> &perSolverBatches, int solverId);
     void addClause(ClauseBatch &clauseBatch, ReportedClause wc);
 
+    // called by the solver threads
+    bool getIncrReportedClauses(int solvId, ClauseBatch*& clBatch);
+    bool getOldestClauses(int solvId, ClauseBatch*& clBatch);
+    void removeOldestClauses(int solvId);
+
 public:
-    Reported(HostClauses &hostClauses);
+    Reported(HostClauses &hostClauses, vec<vec<unsigned long>> &oneSolverStats);
 
     // This isn't known yet when the object is created which is why we have to set it later
     void setSolverCount(int solverCount);
@@ -92,15 +105,13 @@ public:
     // solvAssigs tell us the solver id / and solverAssigId for a given position in the reported clauses
     void fill(vec<AssigIdsPerSolver> &solvAssigs, vec<ReportedClause> &wrongClauses);
 
-    int getTimesReported() {return timesReported; }
-
+    void assigWasSent(int solverId, long solverAssigId) { lastSentAssigId[solverId] = solverAssigId; }
     // called by the solver threads
-    bool getIncrReportedClauses(int solvId, ClauseBatch*& clBatch);
-    bool getOldestClauses(int solvId, ClauseBatch*& clBatch);
-    void removeOldestClauses(int solvId);
+    bool popReportedClause(int solverId, MinHArr<Lit> &lits, GpuClauseId &gpuClauseId);
+
+    long getLastAssigAllReported(int cpuSolverId) {return lastAssigAllReported[cpuSolverId]; }
 
     void printStats();
-    long getTotalReported() {return totalReported;}
     ~Reported();
 };
 

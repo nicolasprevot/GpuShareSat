@@ -21,7 +21,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "gpu/Helper.cuh"
 #include "gpu/Assigs.cuh"
 #include "gpu/Clauses.cuh"
-#include "gpu/GpuHelpedSolver.cuh"
+#include "gpu/GpuHelpedSolver.h"
 #include "gpu/GpuRunner.cuh"
 #include "satUtils/SolverTypes.h"
 #include "core/Solver.h"
@@ -35,7 +35,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "gpu/GpuRunner.cuh"
 #include "testUtils/TestHelper.cuh"
 #include "utils/Utils.h"
-#include "my_make_unique.h"
+#include "gpu/my_make_unique.h"
 
 namespace Glucose {
 
@@ -97,6 +97,8 @@ PerfFixture::PerfFixture(int _clauseCount, int _clMinSize, int _clMaxSize, int n
     srand(25);
     vec<Lit> lits;
     ContigCopier cc(true);
+    cudaStream_t &stream = gpuClauseSharer.sp.get();
+    GpuDims gpuDims {10, 256};
     double seed = 0.4;
     for (int cl = 0; cl < clauseCount; cl++) {
         lits.clear();
@@ -104,15 +106,15 @@ PerfFixture::PerfFixture(int _clauseCount, int _clMinSize, int _clMaxSize, int n
         for (int l = 0; l < size; l++) {
             lits.push(randomLit(seed, nVars));
         }
-        co.hClauses->addClause(lits, 5);
+        gpuClauseSharer.clauses->addClause(MinHArr<Lit>(lits.size(), &lits[0]), 5);
         // HClauses is designed to copy clauses in small chunks, not a large amount at once
         if (cl % 5000 == 0) {
-            copyToDeviceAsync(*co.hClauses, sp.get(), cc, co.gpuDims);
-            exitIfError(cudaStreamSynchronize(sp.get()), POSITION);
+            copyToDeviceAsync(*gpuClauseSharer.clauses, stream, cc, gpuDims);
+            exitIfError(cudaStreamSynchronize(stream), POSITION);
         }
     }
-    copyToDeviceAsync(*co.hClauses, sp.get(), cc, co.gpuDims);
-    exitIfError(cudaStreamSynchronize(sp.get()), POSITION);
+    copyToDeviceAsync(*gpuClauseSharer.clauses, stream, cc, gpuDims);
+    exitIfError(cudaStreamSynchronize(stream), POSITION);
 }
 
 // print all the wrong clauses
@@ -121,16 +123,13 @@ BOOST_AUTO_TEST_CASE(testPrintClauses) {
     PerfFixture fx(300000, 10, 11);
     double seed = 0.6;
     resetAllVariables(seed, *(fx.solvers[0]));
-    fx.solvers[0]->copyAssigsForGpu(fx.solvers[0]->decisionLevel());
-    execute(*fx.co.gpuRunner);
-    ClauseBatch* clBatch;
-    fx.co.reported->getIncrReportedClauses(0, clBatch);
-    assert(clBatch != NULL);
+    fx.solvers[0]->tryCopyTrailForGpu(fx.solvers[0]->decisionLevel());
+    execute(fx.gpuClauseSharer);
     Lit array[MAX_CL_SIZE];
     GpuClauseId gpuClauseId;
     MinHArr<Lit> lits;
 
-    while (clBatch->popClause(lits, gpuClauseId)) {
+    while (fx.gpuClauseSharer.reported->popReportedClause(0, lits, gpuClauseId)) {
         // vec doesn't have a sort method, so let's use an array instead
         for (int j = 0; j < lits.size(); j++) {
             array[j] = lits[j];
@@ -167,10 +166,10 @@ BOOST_AUTO_TEST_CASE(testPerf) {
     for (int i = 0; i < n; i++) {
         for (int j = 0; j < fx.solvers.size(); j++) {
             resetAllVariables(seed, *(fx.solvers[j]));
-            fx.solvers[j]->copyAssigsForGpu(fx.solvers[j]->decisionLevel());
+            fx.solvers[j]->tryCopyTrailForGpu(fx.solvers[j]->decisionLevel());
         }
         clock_gettime(CLOCK_REALTIME, &begin);
-        execute(*fx.co.gpuRunner);
+        execute(fx.gpuClauseSharer);
         clock_gettime(CLOCK_REALTIME, &gpuDone);
         // This is partly because we can't add more assignments unless we read clauses for existing assignments
         bool a;
@@ -185,18 +184,17 @@ BOOST_AUTO_TEST_CASE(testPerf) {
         printf("no time passed");
     }
     else {
-        fx.co.gpuRunner->printStats();
         printf("gpu exec time taken: %ld micros\n", gpuExecTimeMicros);
         printf("import time taken: %ld micros\n", importTimeMicros);
-        printf("wrong clause count: %ld\n", fx.co.reported->getTotalReported());
+        printf("wrong clause count: %ld\n", fx.gpuClauseSharer.getGlobalStat(gpuReports));
         printf("clause count: %d\n", fx.clauseCount);
         printf("executions per seconds: %ld\n", (n * 1000000)/ (gpuExecTimeMicros + importTimeMicros));
         printf("reads per microsecond: %ld\n", n * fx.clauseCount * (1 + (fx.clMinSize + fx.clMaxSize) / 2) / (gpuExecTimeMicros));
     }
 #ifdef NDEBUG
-    BOOST_CHECK_EQUAL(19739, fx.co.reported->getTotalReported());
+    BOOST_CHECK_EQUAL(19739, fx.gpuClauseSharer.getGlobalStat(gpuReports));
 #else
-    BOOST_CHECK_EQUAL(143, fx.co.reported->getTotalReported());
+    BOOST_CHECK_EQUAL(143, fx.gpuClauseSharer.getGlobalStat(gpuReports));
 #endif
     exitIfLastError(POSITION);
 }
@@ -208,30 +206,27 @@ BOOST_AUTO_TEST_CASE(testReportedAreValid) {
     exitIfLastError(POSITION);
     bool foundEmptyClause = false;
     int importedValidLastTime = 0;
-    int reportedLastTime = 0;
+    int importedLastTime = 0;
     double seed = 0.8;
     resetAllVariables(seed, *(fx.solvers[0]));
     // If the gpu reports some clauses: at least one of them must be valid
     // Because the cpu solver then changes its variables because of this one,
     // the next clauses may not be valid
     while (true) {
-        fx.solvers[0]->copyAssigsForGpu(fx.solvers[0]->decisionLevel());
+        fx.solvers[0]->tryCopyTrailForGpu(fx.solvers[0]->decisionLevel());
         // the first maybExecute will only start the run but not get the results, so execute twice
-        fx.co.gpuRunner->wholeRun(true);
-        fx.co.gpuRunner->wholeRun(false);
+        execute(fx.gpuClauseSharer);
         CRef conflict = solver.gpuImportClauses(foundEmptyClause);
-        int reported = solver.stats[nbReported], importedValid = solver.stats[nbImportedValid];
-        printf("%d clauses reported out of which %d valid\n", reported, importedValid);
+        int reported = solver.stats[nbImported], importedValid = solver.stats[nbImportedValid];
+        printf("%d clauses imported out of which %d valid\n", reported, importedValid);
 
         vec<Lit> clauseLits;
-        int gpuClId;
-        fx.co.hClauses->getClause(clauseLits, gpuClId, GpuCref {10, 171660});
 
         // continue as long as we get some clauses
-        if (solver.stats[nbReported] == reportedLastTime) {
+        if (solver.stats[nbImported] == importedLastTime) {
             break;
         }
-        reportedLastTime = solver.stats[nbReported];
+        importedLastTime = solver.stats[nbImported];
         ASSERT_OP(solver.stats[nbImportedValid], >, importedValidLastTime);
         importedValidLastTime = solver.stats[nbImportedValid];
 
@@ -242,7 +237,7 @@ BOOST_AUTO_TEST_CASE(testReportedAreValid) {
             solver.cancelUntil(solver.decisionLevel() - 1);
         }
     }
-    exitIfError(cudaStreamSynchronize(fx.co.streamPointer.get()), POSITION);
+    exitIfError(cudaStreamSynchronize(fx.gpuClauseSharer.sp.get()), POSITION);
     exitIfLastError(POSITION);
 }
 

@@ -29,7 +29,7 @@ namespace Glucose {
     }
 }
 
-#include "gpu/GpuHelpedSolver.cuh"
+#include "gpu/GpuHelpedSolver.h"
 
 namespace Glucose {
 

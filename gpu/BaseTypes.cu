@@ -34,9 +34,9 @@ __device__ void printVD(lbool glb) {
 }
 
 __device__ void printVD(Lit l) {
-    if (dSign(l)) printf("+");
-    else printf("-");
     printf("%d", dVar(l));
+    if (dSign(l)) printf("-");
+    else printf("+");
 }
 
 }

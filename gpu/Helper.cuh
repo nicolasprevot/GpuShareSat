@@ -50,6 +50,7 @@ __device__ void printVD(unsigned long v);
 __device__ void printVD(int v);
 __device__ void printVD(unsigned int v);
 __device__ void printVD(void* pt);
+__device__ __host__ void printBinaryDH(uint v);
 
 // We generally want to run with many gpu threads per block, but is it difficult to find exactly how many we can run with
 // when calling this method, the caller specifies how many threads it wants to run, (and a guideline of how many threads per block)

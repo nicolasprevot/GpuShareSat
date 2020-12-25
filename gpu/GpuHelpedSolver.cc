@@ -17,47 +17,33 @@ DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  **************************************************************************************************/
 
-#include "Helper.cuh"
-#include "GpuHelpedSolver.cuh"
-#include "Reported.cuh"
-#include "Assigs.cuh"
+#include "GpuHelpedSolver.h"
 #include "utils/Utils.h"
-#include "Helper.cuh"
-#include "Helper.cuh"
-#include "Clauses.cuh"
+#include "utils/Profiler.h"
 
 #include <chrono>
 #include <thread>
 #include <sstream>
 #include <mutex>
 
+
 #define PRINT_ALOT 0
 
 namespace Glucose {
 
-GpuHelpedSolver::GpuHelpedSolver(const GpuHelpedSolver &other, int _cpuThreadId, OneSolverAssigs &_assigsForGpu) :
-        SimpSolver(other, _cpuThreadId), reported(other.reported),
-        trailCopiedUntil(other.trailCopiedUntil), changedCount(other.changedCount), status(other.status),
-        hClauses(other.hClauses), nextAssigPos(other.nextAssigPos),
-        lastReduceDbCount(other.lastReduceDbCount), conflictsLastReduceDb(other.conflictsLastReduceDb),
-        seenAllReportsUntil(other.seenAllReportsUntil),
-        params(other.params), assigsForGpu(_assigsForGpu),
-        needToReduceCpuMemoryUsage(other.needToReduceCpuMemoryUsage) {
+GpuHelpedSolver::GpuHelpedSolver(const GpuHelpedSolver &other, int _cpuThreadId) :
+        SimpSolver(other, _cpuThreadId), params(other.params),
+        needToReduceCpuMemoryUsage(other.needToReduceCpuMemoryUsage), 
+        status(other.status), changedCount(other.changedCount), quickProf(other.quickProf),
+        gpuClauseSharer(other.gpuClauseSharer), 
+        trailCopiedUntil(other.trailCopiedUntil) {
 
 }
 
-GpuHelpedSolver::GpuHelpedSolver(Reported &_reported, Finisher &_finisher,
-        HostClauses &clauses, int _cpuThreadId,
-        GpuHelpedSolverParams _params, OneSolverAssigs &_assigsForGpu) :
-        reported(_reported), status(
-        l_Undef), hClauses(clauses),
-        trailCopiedUntil(0), changedCount(0), SimpSolver(_cpuThreadId, _finisher),
-        seenAllReportsUntil(0),
-        conflictsLastReduceDb(0),
-        nextAssigPos(0),
-        params(_params),
-        assigsForGpu(_assigsForGpu),
-        needToReduceCpuMemoryUsage(false) {
+GpuHelpedSolver::GpuHelpedSolver(Finisher &_finisher, int _cpuThreadId, GpuHelpedSolverParams _params, GpuClauseSharer &_gpuClauseSharer, bool _quickProf) :
+        SimpSolver(_cpuThreadId, _finisher), params(_params),
+        needToReduceCpuMemoryUsage(false), status(l_Undef), changedCount(0), quickProf(_quickProf),
+        gpuClauseSharer(_gpuClauseSharer), trailCopiedUntil(0) {
         // for the first gpu stat
         stats.push(0);
 #define X(v) stats.push(0);
@@ -80,22 +66,19 @@ void GpuHelpedSolver::insertStatNames() {
 // Even if the gpu doesn't have the empty clause: it may have the clause ~a when we know a to be true
 // In this case, we can't return a cref conflict for ~a because a clause with a cref can't have a size of 1
 CRef GpuHelpedSolver::gpuImportClauses(bool& foundEmptyClause) {
+    TimeGauge tg(stats[timeSpentImportingClauses], quickProf);
     foundEmptyClause = false;
 
-    ClauseBatch* clBatch;
     CRef confl = CRef_Undef;
     int decisionLevelAtConflict = -1;
-    while (reported.getIncrReportedClauses(cpuThreadId, clBatch)) {
+    int *litsAsInt;
+    int count;
+    long gpuClauseId;
+    while (gpuClauseSharer.popReportedClause(cpuThreadId, litsAsInt, count, gpuClauseId)) {
+        Lit *lits = (Lit*) litsAsInt;
         if (params.import) {
-            handleClBatch(*clBatch, confl, decisionLevelAtConflict, foundEmptyClause);
-        }
-        while (reported.getOldestClauses(cpuThreadId, clBatch)
-                && clBatch->assigWhichKnowsAboutThese <= seenAllReportsUntil) {
-            auto &clDatas = clBatch->getClauseDatas();
-            for (int i = 0; i < clDatas.size(); i++) {
-                clausesToNotImportAgain.erase(clDatas[i].gpuClauseId);
-            }
-            reported.removeOldestClauses(cpuThreadId);
+            MinClause litsArr{lits, count};
+            handleReportedClause(litsArr, confl, decisionLevelAtConflict, foundEmptyClause);
         }
     }
 
@@ -105,19 +88,8 @@ CRef GpuHelpedSolver::gpuImportClauses(bool& foundEmptyClause) {
     return CRef_Undef;
 }
 
-void GpuHelpedSolver::handleClBatch(ClauseBatch &clBatch, CRef &conflict, int &decisionLevelAtConflict, bool &foundEmptyClause) {
-    clBatch.assigWhichKnowsAboutThese = nextAssigPos;
-    MinHArr<Lit> lits;
-    GpuClauseId gpuClauseId;
-    while (clBatch.popClause(lits, gpuClauseId)) {
-        handleReportedClause(lits, gpuClauseId, conflict, decisionLevelAtConflict, foundEmptyClause);
-    }
-    seenAllReportsUntil = clBatch.assigIds.startAssigId + clBatch.assigIds.assigCount;
-    stats[nbAssigNoReport] += clBatch.assigIds.assigCount - countBitsSet(clBatch.hadSomeReported);
-}
-
 void GpuHelpedSolver::sendClauseToGpu(vec<Lit> &lits, int lbd) {
-    hClauses.addClause(lits, lbd);
+    gpuClauseSharer.addClause((int*) &lits[0], lits.size());
     if (lits.size() == 1) {
         stats[nbExportedUnit]++;
     } else {
@@ -125,85 +97,64 @@ void GpuHelpedSolver::sendClauseToGpu(vec<Lit> &lits, int lbd) {
     }
 }
 
-void GpuHelpedSolver::handleReportedClause(MinHArr<Lit> &lits, GpuClauseId &gpuClauseId,
-        CRef &conflict, int &decisionLevelAtConflict, bool &foundEmptyClause) {
-    stats[nbReported] ++;
-
-    // Check if we can import on the cpu the reported clause
-    // Issue is: there's a possibility that the exact same clause has been reported several times
-    // for different assignments, we don't want to import it twice in this case
-    // Note: for one gpu run, a clause will be reported at most once for a solver,
-    // but it may have been already reported in the previous gpu run
-    bool canAdd = true;
-    if (clausesToNotImportAgain.find(gpuClauseId) != clausesToNotImportAgain.end()) {
-        canAdd = false;
-#ifdef PRINT_DETAILS_CLAUSES
-        SyncOut so;
-        std::cout << "not_learn: thread " << cpuThreadId << " cl size " << lits.size();
-#ifdef PRINT_DETAILS_LITS
-        std::cout << " " << lits;
-#endif
-        std::cout << std::endl;
-#endif
-    } else {
-        clausesToNotImportAgain.insert(gpuClauseId);
-    }
-    if (canAdd) {
-        CRef cr = insertAndLearnClause(lits, foundEmptyClause);
-        if (cr != CRef_Undef) {
-            decisionLevelAtConflict = decisionLevel();
-            conflict = cr;
-        }
+void GpuHelpedSolver::handleReportedClause(MinClause lits, CRef &conflict, int &decisionLevelAtConflict, bool &foundEmptyClause) {
+    CRef cr = insertAndLearnClause(lits, foundEmptyClause);
+    if (cr != CRef_Undef) {
+        decisionLevelAtConflict = decisionLevel();
+        conflict = cr;
     }
 }
 
-void GpuHelpedSolver::unsetFromTrailForGpuLocked(int level) {
+void GpuHelpedSolver::unsetFromTrailForGpu(int level) {
     // if level is decisionLevel, there's no trail_lim for it
     if (level < decisionLevel()) {
-        for (int i = trail_lim[level]; i < trailCopiedUntil; i++) {
-            assigsForGpu.setVarLocked(var(trail[i]), l_Undef);
-        }
         // doing this because trail may actually be copied until less than that
-        trailCopiedUntil = min(trailCopiedUntil, trail_lim[level]);
+        if (trailCopiedUntil > trail_lim[level]) {
+            gpuClauseSharer.unsetSolverValues(cpuThreadId, (int*)&trail[trail_lim[level]], trailCopiedUntil - trail_lim[level]);
+            trailCopiedUntil = trail_lim[level];
+        }
     }
 
 }
 
-void GpuHelpedSolver::copyTrailForGpuLocked(int level) {
+bool GpuHelpedSolver::tryCopyTrailForGpu(int level) {
     int max;
-    // Note that we may unset variables from two sources:
-    // - Those from toUnsetFromAssigsForGpu (if cancelUntil happened before)
-    // - Some more to get to level, which may not be the current decision level
-    for (int i = 0; i < toUnsetFromAssigsForGpu.size(); i++) {
-        assigsForGpu.setVarLocked(toUnsetFromAssigsForGpu[i], l_Undef);
-    }
-    toUnsetFromAssigsForGpu.clear();
     if (level < decisionLevel()) {
-        unsetFromTrailForGpuLocked(level);
+        unsetFromTrailForGpu(level);
         max = trail_lim[level];
     } else {
         max = trail.size();
     }
-    while (trailCopiedUntil < max) {
-        Lit p = trail[trailCopiedUntil];
-        Var v = var(p);
-        lbool val = value(v);
-        assert(val != l_Undef);
-        assigsForGpu.setVarLocked(v, val);
-        trailCopiedUntil++;
-        changedCount++;
+    bool result = true;
+    if (trailCopiedUntil < max) {
+        result = gpuClauseSharer.trySetSolverValues(cpuThreadId, (int*)&trail[trailCopiedUntil], max - trailCopiedUntil);
+        if (result) trailCopiedUntil = max;
     }
-    assigsForGpu.assignmentDoneLocked();
+    long assigId = 0;
+    if (result) {
+        assigId = gpuClauseSharer.trySendAssignment(cpuThreadId);
+        result = assigId >= 0;
+    }
+    if (result) {
+        stats[nbAssignmentsSent]++;
+#ifdef CHECK_ASSIG_ON_GPU_IS_RIGHT
+        tempAssig.resize(nVars());
+        gpuClauseSharer.getCurrentAssignment(cpuThreadId, (uint8_t*) &tempAssig[0]);
+        for (int i = 0; i < nVars(); i++) {
+            lbool exp;
+            if (this->level(i) <= level) exp = value(i);
+            else exp = l_Undef;
+            ASSERT_OP_MSG(exp, ==, tempAssig[i], PRINT(i));
+        }
+#endif
+    }
+    else stats[nbFailureFindAssignment]++;
+
+    return result;
 }
 
 void GpuHelpedSolver::cancelUntil(int level) {
-    if (level < decisionLevel()) {
-        for (int i = trail_lim[level]; i < trailCopiedUntil; i++) {
-            toUnsetFromAssigsForGpu.push(var(trail[i]));
-        }
-        // doing this because trail may actually be copied until less than that
-        trailCopiedUntil = min(trailCopiedUntil, trail_lim[level]);
-    }
+    unsetFromTrailForGpu(level);
     Solver::cancelUntil(level);
 }
 
@@ -212,41 +163,17 @@ void GpuHelpedSolver::foundConflict(vec<Lit> &learned, int lbd) {
 }
 
 void GpuHelpedSolver::foundConflictInner(int level, vec<Lit> &learned, int lbd) {
-    int assigId = copyAssigsForGpuInner(level);
+    tryCopyTrailForGpu(level);
     if (lbd >= 0) {
         sendClauseToGpu(learned, lbd);
     }
 }
 
-// here only for testing
-void GpuHelpedSolver::copyAssigsForGpu(int level) {
-    vec<Lit> lits;
-    // -1 indicates that we don't care about the clause
-    foundConflictInner(level, lits, -1);
-}
-
-int GpuHelpedSolver::copyAssigsForGpuInner(int level) {
-    assigsForGpu.enterLock();
-    int res;
-    if (assigsForGpu.isAssignmentAvailableLocked()) {
-        copyTrailForGpuLocked(level);
-        res = nextAssigPos;
-        nextAssigPos++;
-    }
-    else {
-        stats[nbFailureFindAssignment]++;
-        res = -1;
-    }
-    assigsForGpu.exitLock();
-    return res;
-}
-
-// finds the lit with the largest level among lits from start to the end and put it in start
-void GpuHelpedSolver::findLargestLevel(MinHArr<Lit>& lits, int start) {
-    int size = lits.size();
-    for (int i = start + 1; i < size; i++) {
-        if (litLevel(lits[i]) > litLevel(lits[start])) {
-            std::swap(lits[i], lits[start]);
+// finds the lit with the largest level among lits from start to end and put it in start
+void GpuHelpedSolver::findLargestLevel(MinClause cl, int start) {
+    for (int i = start + 1; i < cl.count; i++) {
+        if (litLevel(cl.lits[i]) > litLevel(cl.lits[start])) {
+            std::swap(cl.lits[i], cl.lits[start]);
         }
     }
 }
@@ -255,19 +182,20 @@ void GpuHelpedSolver::findLargestLevel(MinHArr<Lit>& lits, int start) {
 // May lead to canceling to backtracking if this clause leads to an implication at a level strictly lower
 // than the current level
 // returns a non-undef cref if this clause is in conflict
-CRef GpuHelpedSolver::insertAndLearnClause(MinHArr<Lit> &lits, bool &foundEmptyClause) {
-
+CRef GpuHelpedSolver::insertAndLearnClause(MinClause cl, bool &foundEmptyClause) {
+    stats[nbImported]++;
+    Lit *lits = cl.lits;
+    int count = cl.count;
     // if only one literal isn't false, it will be in 0 of lits
-    findLargestLevel(lits, 0);
+    findLargestLevel(cl, 0);
     // if only two literals aren't set, they will be in 0 and 1 of lits
-    findLargestLevel(lits, 1);
-    int size = lits.size();
-    if (size == 0) {
+    findLargestLevel(cl, 1);
+    if (count == 0) {
         stats[nbImportedValid]++;
         foundEmptyClause = true;
         return CRef_Undef;
     }
-    if (size == 1) {
+    if (count == 1) {
         lbool val = value(lits[0]);
         if (val == l_False && level(var(lits[0])) == 0) {
             foundEmptyClause = true;
@@ -287,20 +215,20 @@ CRef GpuHelpedSolver::insertAndLearnClause(MinHArr<Lit> &lits, bool &foundEmptyC
     if (value(lits[1]) != l_False) {
         // two literals not set: we can just learn the clause
         assert(value(lits[0]) != l_False);
-        addLearnedClause(lits);
+        addLearnedClause(cl);
         return CRef_Undef;
     }
     if (value(lits[0]) == l_True
             && level(var(lits[0])) <= level(var(lits[1]))) {
         // We're implying a literal at a level <= to what it is already. Just learn the clause, it's not doing anything now, though
-        addLearnedClause(lits);
+        addLearnedClause(cl);
         return CRef_Undef;
     }
     if ((value(lits[0]) == l_False)
             && (level(var(lits[1])) == level(var(lits[0])))) {
         // conflict
 #ifdef DEBUG
-        for (int i = 0; i < lits.size(); i++) {
+        for (int i = 0; i < count; i++) {
             assert(value(lits[i]) == l_False);
         }
 #endif
@@ -308,27 +236,26 @@ CRef GpuHelpedSolver::insertAndLearnClause(MinHArr<Lit> &lits, bool &foundEmptyC
         stats[nbImportedValid]++;
         cancelUntil(level(var(lits[1])));
         qhead = trail.size();
-        return addLearnedClause(lits);
+        return addLearnedClause(cl);
     }
     // lit 0 is implied by the rest, may currently be undef or false
 #ifdef DEBUG
-    for (int i = 1; i < lits.size(); i++) {
+    for (int i = 1; i < count; i++) {
         assert(value(lits[i]) == l_False);
     }
 #endif
-    CRef cr = addLearnedClause(lits);
+    CRef cr = addLearnedClause(cl);
     cancelUntil(level(var(lits[1])));
     stats[nbImportedValid]++;
     uncheckedEnqueue(lits[0], cr);
     return CRef_Undef;
 }
 
-CRef GpuHelpedSolver::addLearnedClause(MinHArr<Lit>& lits) {
-    stats[nbImported]++;
+CRef GpuHelpedSolver::addLearnedClause(MinClause cl) {
     // at this point, we could change the solver learnClause code to take a MinHArr instead, that would make it a bit faster
     tempLits.clear(false);
-    for (int i = 0; i < lits.size(); i++) {
-        tempLits.push(lits[i]);
+    for (int i = 0; i < cl.count; i++) {
+        tempLits.push(cl.lits[i]);
     }
     return learnClause(tempLits, true, tempLits.size());
 }
@@ -386,7 +313,10 @@ GpuHelpedSolverParams GpuHelpedSolverOptions::toParams() {
 void GpuHelpedSolver::printStats() {
     JObj jo;
     Solver::printStats();
-    writeAsJson("assigCountSentToGpu", nextAssigPos);
+    for (int i = 0; i < gpuClauseSharer.getOneSolverStatCount(); i++) {
+        OneSolverStats oss = static_cast<OneSolverStats>(i);
+        writeAsJson(gpuClauseSharer.getOneSolverStatName(oss), gpuClauseSharer.getOneSolverStat(cpuThreadId, oss));
+    }
 }
 
 } /* namespace Glucose */

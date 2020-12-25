@@ -36,6 +36,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "ContigCopy.cuh"
 #include "ClauseUpdates.cuh"
 #include "utils/Profiler.h"
+#include "GpuClauseSharer.h"
 
 #define RESCALE_CONST 1e19
 
@@ -155,10 +156,6 @@ class PerSizeKeeper{
 private:
     vec<std::unique_ptr<HOneSizeClauses>> perSize;
 
-    // This does not include clauses in clauseUpdates
-    int clauseCount;
-    int clauseLengthSum;
-
     void changeCount(int clSize, int newCount);
 
     void moveClause(int clSize, int oldClid, int newClId);
@@ -168,9 +165,10 @@ private:
 
     bool tryCopyHeadersToDeviceIfNecessaryAsync(cudaStream_t &stream);
     void rescaleActivity();
+    vec<unsigned long> &globalStats;
 
 public:
-    PerSizeKeeper(float clauseActDecay);
+    PerSizeKeeper(float clauseActDecay, vec<unsigned long> &globalStats);
 
     ArrPair<DOneSizeClauses> tryGetDArr(ContigCopier &cc, cudaStream_t &stream);
     // modifiers
@@ -186,10 +184,7 @@ public:
     // Adds the clause and returns its clId in size
     // modifies clCountPerSize, vals, activity, metadata
     // doesn't change vals on the device
-    int getClauseCount() { return clauseCount; }
-    int getClauseLengthSum() { return clauseLengthSum; }
     int getClauseCount(int clSize) { return perSize[clSize]->clMetadata.size(); }
-    void printStats();
     void getClause(vec<Lit> &lits, int &gpuClId, GpuCref gpuCref);
     int getLbd(int clSize, int clId) { return perSize[clSize]->clMetadata[clId].lbd; }
     float getClauseActivity(int clSize, int clId) { return perSize[clSize]->clMetadata[clId].activity;}
@@ -217,20 +212,9 @@ private:
     PerSizeKeeper perSizeKeeper;
     std::unique_ptr<RunInfo> runInfo;
 
-    Profiler profiler;
-
-    // only increases
-    int clausesAddedCount;
-    // We wait for clausesAddedCount to reach this before reducing the db
-    int nextReduceDb;
-
-    int nextReduceDbInc; // We remove half of the clauses (the least useful ones) once we've added that many more clauses
-
-    int nextReduceDbIncInc; // We increase nextReduceDb by this much each time we reduce
+    long addedClauseCountAtLastReduceDb;
 
     bool addClauseNowLocked(vec<Lit>& lits);
-
-    int reduceDbCount;
 
     double getAvgActivity(int minLimLbd, int maxLimLbd);
     ArrPair<DOneSizeClauses> tryGetDClauses(ContigCopier &cc, cudaStream_t &stream);
@@ -238,11 +222,11 @@ private:
     // howManyUnder: number of clauses with an lbd < to medLbd
     // howManyThisLbd: number of clauses with medLbd
     void getMedianLbd(int &medLbd, int &howManyUnder, int &howManyThisLbd, vec<int> &clauseCountsAtLbds);
-    // it should stop increasing memory usage
-    volatile bool needToReduceCpuMemoryUsage;
+
+    vec<unsigned long> &globalStats;
 
 public:
-    HostClauses(GpuDims gpuDimsGuideline, float clauseActDecay, int firstReduceDb, int reduceDbInc, bool actOnly);
+    HostClauses(GpuDims gpuDimsGuideline, float clauseActDecay, bool actOnly, vec<unsigned long> &globalStats);
 
     RunInfo makeRunInfo(cudaStream_t &stream, ContigCopier &cc);
 
@@ -251,10 +235,8 @@ public:
     bool needToReduceDb();
     void reduceDb(cudaStream_t &stream);
 
-    // These two method can be called by other threads. they're the only ones
-    void addClause(vec<Lit> &clause, int lbd);
-
-    void tryReduceCpuMemoryUsage() { needToReduceCpuMemoryUsage = true; }
+    // This method can be called by other threads.
+    GpuClauseId addClause(MinHArr<Lit> clause, int lbd);
     
     bool reallyNeedToCopyClausesToDevice();
 
@@ -262,15 +244,11 @@ public:
 
     // copies all the clauses added previously with addClause to the device
     ClUpdateSet getUpdatesForDevice(cudaStream_t &stream, ContigCopier &cc);
-    void printStats();
 
-    int getClauseCount() { return perSizeKeeper.getClauseCount(); }
     int getClauseCount(int clSize) { return perSizeKeeper.getClauseCount(clSize); }
 
     // Rest is visible for testing
     void fillClauseCountsAtLbds(vec<int> &vec);
-
-    int getClauseLengthSum() { return perSizeKeeper.getClauseLengthSum(); }
 
     // Returns an approximation of the nth (starting from 1) lowest activity for clauses with lbd such that minLimLbd <= lbd < maxLimLbd
     // assumes that activities have been copied to the host
@@ -280,12 +258,13 @@ public:
 
     void getRemovingLbdAndAct(int &minLimLbd, int &maxLimLbd, float &act, vec<int> &clauseCountsAtLbds);
 
-    int getReduceDbCount() {
-        return reduceDbCount;
-    }
+    long getAddedClauseCount() {return globalStats[gpuClausesAdded]; }
+    long getAddedClauseCountAtLastReduceDb() {return addedClauseCountAtLastReduceDb; }
 
     void bumpClauseActivity(GpuCref gpuCref) { perSizeKeeper.bumpClauseActivity(gpuCref.clSize, gpuCref.clIdInSize); }
     float getClauseActivity(GpuCref gpuCref) { return perSizeKeeper.getClauseActivity(gpuCref.clSize, gpuCref.clIdInSize); }
+
+    void writeClausesInCnf(FILE *file, int varCount);
 
 };
 

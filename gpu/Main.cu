@@ -24,7 +24,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include <csignal>
 
 #include "Helper.cuh"
-#include "GpuMultiSolver.cuh"
+#include "GpuMultiSolver.h"
 #include "satUtils/Dimacs.h"
 #include "CompositionRoot.cuh"
 #include "core/Solver.h"
@@ -52,8 +52,7 @@ int runGpuSolver(CompositionRoot &compRoot, GpuOptions &gpuOptions, CommonOption
         // We have an approximation of the memory used for one solver. We don't take into account the memory used for the gpu itself
         // or other things.
         int cpuSolverCount = gpuOptions.getNumberOfCpuThreads(verb.global, memUsedOneSolver);
-        int warpsPerBlock = compRoot.gpuDims.threadsPerBlock / WARP_SIZE;
-        compRoot.hostAssigs->growSolverAssigs(cpuSolverCount, warpsPerBlock, compRoot.gpuDims.blockCount * warpsPerBlock);
+        compRoot.gpuClauseSharer->setCpuSolverCount(cpuSolverCount);
         ret = msolver.solve(cpuSolverCount);
     }
     printResult(ret);

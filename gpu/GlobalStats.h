@@ -1,4 +1,4 @@
-/***************************************************************************************[SolverTypes.h]
+/***************************************************************************************[Solver.cc]
  Glucose -- Copyright (c) 2009-2014, Gilles Audemard, Laurent Simon
                                 CRIL - Univ. Artois, France
                                 LRI  - Univ. Paris Sud, France (2009-2013)
@@ -49,96 +49,22 @@ DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  **************************************************************************************************/
 
-#include "satUtils/Dimacs.h"
-
-namespace Glucose {
-
-DimacsParser::DimacsParser(gzFile inputStream) :
-        in(StreamBuffer(inputStream)),
-        varCount(-1),
-        clauseCount(-1),
-        seenClauses(0),
-        done(false),
-        needToParse(true)
-        {
-}
-
-void writeClause(FILE *file, const vec<Lit>& lits) {
-    for (int i = 0; i < lits.size(); i++) {
-        int val = (var(lits[i]) + 1) * (sign(lits[i]) ? -1 : 1);
-        fprintf(file, "%d ", val);
-    }
-    fprintf(file, "0\n");
-}
-
-void DimacsParser::readClause(vec<Lit>& lits) {
-    int parsed_lit, var;
-    lits.clear();
-    for (;;){
-        parsed_lit = parseInt(in);
-        if (parsed_lit == 0) break;
-        var = abs(parsed_lit)-1;
-        assert(var < varCount);
-        lits.push( (parsed_lit > 0) ? mkLit(var) : ~mkLit(var) );
-    }
-}
-
-int DimacsParser::nVars() {
-    if (varCount == -1) {
-        needToParse = true;
-        maybeParse();
-    }
-    assert(varCount != -1);
-    return varCount;
-}
-
-bool DimacsParser::hasNewClause() {
-    maybeParse();
-    // we may have parsed only the initial line
-    if (!done && seenClauses == 0) maybeParse();
-    needToParse = false;
-    // don't need to parse until the clause has been read
-    return !done;
-}
-
-vec<Lit>& DimacsParser::getNextClause() {
-    maybeParse();
-    assert(!done);
-    needToParse = true; //we're returning the clause, so will need to parse a new one
-    return currentClause;
-}
-
-void DimacsParser::maybeParse() {
-    if (!needToParse) {
-        return;
-    }
-    while (true) {
-        skipWhitespace(in);
-        if (*in == EOF) {
-            if (clauseCount  != seenClauses) {
-                fprintf(stderr, "WARNING! DIMACS header mismatch: wrong number of clauses.\n");
-                throw;
-            }
-            done = true;
-            needToParse = false;
-            return;
-        }
-        else if (*in == 'p'){
-            if (eagerMatch(in, "p cnf")){
-                varCount  = parseInt(in);
-                clauseCount = parseInt(in);
-            } else {
-                printf("PARSE ERROR! Unexpected char: %c\n", *in), exit(3);
-            }
-            return;
-        } else if (*in == 'c' || *in == 'p')
-            skipLine(in);
-        else {
-            seenClauses++;
-            readClause(currentClause);
-            return;
-        }
-    }
-}
-
-}
+// This purposedly doesn't have a header guard
+// It's using X macros
+// The point is to only write all the stats once
+X(gpuClauses)
+X(gpuClauseLengthSum)
+X(gpuClausesAdded)
+X(gpuRuns)
+// When we test 32 groups at once, it only counts towards 1 here
+X(clauseTestsOnGroups)
+// When we test 32 assignments at once, it only counts towards 1 here
+// Getting this stat is slow compared to the others
+X(clauseTestsOnAssigs)
+X(totalAssigClauseTested)
+X(gpuReduceDbs)
+X(gpuReports)
+X(timeSpentTestingClauses)
+X(timeSpentFillingAssigs)
+X(timeSpentFillingReported)
+X(timeSpentReduceGpuDb)
