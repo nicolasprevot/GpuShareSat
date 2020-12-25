@@ -76,9 +76,20 @@ CRef GpuHelpedSolver::gpuImportClauses(bool& foundEmptyClause) {
     long gpuClauseId;
     while (gpuClauseSharer.popReportedClause(cpuThreadId, litsAsInt, count, gpuClauseId)) {
         Lit *lits = (Lit*) litsAsInt;
+        if (cpuThreadId == 0 && gpuClauseId == 48) {
+            printf("thread %d importing %ld at %ld ", cpuThreadId, gpuClauseId, conflicts);
+            for (int i = 0; i < count; i++) PRINT(lits[i]); NL;
+        }
         if (params.import) {
             MinClause litsArr{lits, count};
             handleReportedClause(litsArr, confl, decisionLevelAtConflict, foundEmptyClause);
+        }
+        if (cpuThreadId == 0 && gpuClauseId == 48) {
+            printf("vals: ");
+            for (int i = 0; i < count; i++) {
+                PRINT(lits[i]); PRINT(value(lits[i]));
+            }
+            NL;
         }
     }
 
@@ -130,10 +141,20 @@ bool GpuHelpedSolver::tryCopyTrailForGpu(int level) {
         result = gpuClauseSharer.trySetSolverValues(cpuThreadId, (int*)&trail[trailCopiedUntil], max - trailCopiedUntil);
         if (result) trailCopiedUntil = max;
     }
-    if (result) result = gpuClauseSharer.trySendAssignment(cpuThreadId) >= 0;
-
+    long assigId = 0;
+    if (result) {
+        assigId = gpuClauseSharer.trySendAssignment(cpuThreadId);
+        result = assigId >= 0;
+    }
     if (result) {
         stats[nbAssignmentsSent]++;
+        int arrCount = 22;
+        PRINT(level); PRINT(decisionLevel()); PRINT(assigId); NL;
+        int arr[] = {109191, 109175, 109159, 109160, 109157, 109158, 109163, 109164, 109165, 109166, 109167, 109168, 109169, 109170, 109161, 109162, 109171, 109172, 109156, 109173, 109174, 109181};
+        for (int i = 0; i < arrCount; i++) {
+            int v = arr[i];
+            PRINT(v); PRINT(value(v)); PRINT(this->level(v)); NL;
+        }
 #ifdef CHECK_ASSIG_ON_GPU_IS_RIGHT
         tempAssig.resize(nVars());
         gpuClauseSharer.getCurrentAssignment(cpuThreadId, (uint8_t*) &tempAssig[0]);
@@ -141,9 +162,10 @@ bool GpuHelpedSolver::tryCopyTrailForGpu(int level) {
             lbool exp;
             if (this->level(i) <= level) exp = value(i);
             else exp = l_Undef;
-            ASSERT_OP_MSG(exp, ==, tempAssig[i], PRINT(i));
+            if (exp != tempAssig[i]) THROW_ERROR("err");
         }
 #endif
+
     }
     else stats[nbFailureFindAssignment]++;
 

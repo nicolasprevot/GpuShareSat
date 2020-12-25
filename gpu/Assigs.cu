@@ -30,7 +30,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 namespace Glucose {
 
 __device__ void printVD(MultiLBool multiLBool) {
-    PRINT(multiLBool.isTrue); PRINT(multiLBool.isDef); NL;
+    printf("tr: "); printBinaryDH(multiLBool.isTrue); printf(" def: "); printBinaryDH(multiLBool.isDef); printf(" "); 
 }
 
 __device__ void printV(MultiAgg multiAgg) {
@@ -112,6 +112,8 @@ __device__ void dUpdateAssigs(DValsPerId<VarUpdate> varUpdates, DArr<DOneSolverA
     DArr<AggCorresp> aggCorresps = dAggCorresps.getForId(solverId);
     for (int i = 0; i < varUpdatesThisThread.size(); i++) {
         VarUpdate &vu = varUpdatesThisThread[i];
+
+        if (vu.var == 18125) {printf("setting 18125 on gpu to "); PRINT(vu.newMultiLBool); PRINT(solverId); NL; }
         dOneSolverAssigs[solverId].multiLBools[vu.var] = vu.newMultiLBool;
         MultiAgg newAgg { 0, 0, 0};
         Vals globAggMask = 0;
@@ -139,8 +141,12 @@ __global__ void dSetAllAssigsToLast(DValsPerId<VarUpdate> varUpdates, DArr<DOneS
         VarUpdate &vu = varUpdatesThisThread[i];
         Vals lastMask = dOneSolverAssigs[solverId].lastMask;
         MultiLBool &multiLBool = dOneSolverAssigs[solverId].multiLBools[vu.var];
+        if (vu.var == 18125) {printf("setting 18125 on gpu to last, wass "); PRINT(multiLBool); PRINT(lastMask); NL; }
         setSameAsMask(multiLBool.isTrue, lastMask);
         setSameAsMask(multiLBool.isDef, lastMask);
+
+        if (vu.var == 18125) {printf("setting 18125 on gpu to last, is now "); PRINT(multiLBool); NL; }
+
         MultiAgg multiAgg; 
         Vals allAggBits = dOneSolverAssigs[solverId].allAggBits;
         updateAggregate(allAggBits, lastMask, multiLBool, multiAgg);
@@ -169,6 +175,7 @@ Vals setOnMask(Vals &x, Vals mask, bool onMask, bool notOnMask) {
 }
 
 void OneSolverAssigs::setVarLocked(Var var, lbool val) {
+    if (var == 18125) {printf("setting l "); PRINT(var); PRINT(val); PRINT(currentId); NL; }
     bool isSet = val != l_Undef;
     bool isTrue = val == l_True;
     int updatePos = varToUpdatePos[var];
@@ -234,7 +241,7 @@ void OneSolverAssigs::getCurrentAssignment(uint8_t *assig) {
 // Note: the reason why this method changes an ArrPair rather than a DArr is that if the contig copier gets resized,
 // it would invalidate the DArr
 DOneSolverAssigs OneSolverAssigs::copyUpdatesLocked(ArrPair<VarUpdate> &varUpdates, AssigIdsPerSolver &assigIds,
-    HArr<AggCorresp> &aggCorresps) {
+    HArr<AggCorresp> &aggCorresps, /* A: remove*/ cudaStream_t &stream) {
 
     assigIds.startAssigId = firstIdUsed;
     assigIds.assigCount = currentId - firstIdUsed;
@@ -245,9 +252,24 @@ DOneSolverAssigs OneSolverAssigs::copyUpdatesLocked(ArrPair<VarUpdate> &varUpdat
     if (updates.size() > 0) {
         memcpy(&(varUpdates.getHArr()[initSize]), &(updates[0]), updates.size() * sizeof(VarUpdate));
     }
+    // A: remove
+    int arrCount = 22;
+    int arr[] = {109191, 109175, 109159, 109160, 109157, 109158, 109163, 109164, 109165, 109166, 109167, 109168, 109169, 109170, 109161, 109162, 109171, 109172, 109156, 109173, 109174, 109181};
+    for (int i = 0; i < updates.size(); i++) {
+        for (int j = 0; j < arrCount; j++) {
+            if (arr[j] == updates[i].var) {
+                printf("updating var %d to ", updates[i].var); PRINT(updates[i].newMultiLBool); NL;
+            }
+        }
+    }
 
+    uint lastIdCopied;
     // If lastIdCopied is 0, it means nothing has been copied, we can set everything the same as 0
-    uint lastIdCopied = currentId != 0 ? currentId - 1 : 0;
+    if (currentId == 0) lastIdCopied = 0;
+    // If currentId == firstIdUsed + assigCount() then the GPU is full
+    else if (currentId == firstIdUsed + assigCount()) lastIdCopied = currentId - 1;
+    // Otherwise, currentId is not completed yet, but it may have had some updates already
+    else lastIdCopied = currentId;
 
     int bitsUsed = currentId - firstIdUsed;
     // Going to assing agg bits to non-agg bits, generally several bits for one agg bit
@@ -281,9 +303,31 @@ DOneSolverAssigs OneSolverAssigs::copyUpdatesLocked(ArrPair<VarUpdate> &varUpdat
     res.allAggBits = getMaskFromTo(startAggBitPos, endAggBitPos);
     assert(res.multiLBools.size() > 0);
 
+    // A: delete this
+    HArr<MultiLBool> hMultiLBools(multiLBool.size(), false);
+    vec<bool> inUpdates(multiLBool.size(), false);
+    printf("start copy to host of multi lbools\n");
+    copyArrAsync(hMultiLBools, multiLBool.getDArr(), stream);
+    // It's also so that the set all assigs to last completed
+    exitIfError(cudaStreamSynchronize(stream), POSITION);
+    for (int i = 0; i < updates.size(); i++) {
+        inUpdates[updates[i].var] = true;
+    }
+    for (int i = 0; i < multiLBool.size(); i++) {
+        if (!inUpdates[i]) {
+            MultiLBool ml = hMultiLBools[i];
+            lbool lb = lastVarVal[i];
+            ASSERT_OP_MSG(ml.isDef, ==, ((~0) * (lb != l_Undef)), PRINT(i); PRINT(lb); PRINT(currentId)); 
+            ASSERT_OP_MSG(ml.isTrue & ml.isDef, ==, (~0) * (lb == l_True), PRINT(i));
+        }
+    }
+
+
     updates.clear(false);
     firstIdUsed = currentId;
     notCompletedMask = ~0;
+
+
     return res;
 }
 
@@ -326,7 +370,7 @@ AssigsAndUpdates HostAssigs::fillAssigsAsync(ContigCopier &cc, vec<AssigIdsPerSo
         varUpdates.idToStartPos.getHArr()[s] = varUpdates.vals.getHArr().size();
         if (solverAssigs[s]->tryLock()) {
             DOneSolverAssigs dAssigs = solverAssigs[s]->copyUpdatesLocked(varUpdates.vals, 
-                assigIdsPerSolver[s], aggCorresps);
+                assigIdsPerSolver[s], aggCorresps, stream);
             solverAssigs[s]->exitLock();
             dSolverAssigs.getHArr()[s] = dAssigs;
             assert(dAssigs.multiLBools.size() > 0);

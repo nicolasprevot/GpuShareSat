@@ -52,6 +52,10 @@ struct AssigIdsPerSolver {
     }
 };
 
+inline void printV(AssigIdsPerSolver assigs) {
+    PRINT(assigs.startAssigId); PRINT(assigs.assigCount); NL;
+}
+
 
 inline bool operator==(const GpuCref cref1, const GpuCref cref2) {
     return cref1.clSize == cref2.clSize && cref1.clIdInSize == cref2.clIdInSize;
@@ -118,11 +122,11 @@ inline MultiLBool makeMultiLBool(lbool lb) {
 inline void printV(const MultiLBool vad) {
 	Vals tr = vad.withTrue();
 	if (tr != 0) {
-		printf("tr: "); Glucose::printBinary(tr); printf(" ");
+		printf("tr: "); Glucose::printBinaryDH(tr); printf(" ");
 	}
 	Vals fa = vad.withFalse();
 	if (fa != 0) {
-		printf("fa: "); Glucose::printBinary(fa); printf(" ");
+		printf("fa: "); Glucose::printBinaryDH(fa); printf(" ");
 	}
 }
 

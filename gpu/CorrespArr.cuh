@@ -192,7 +192,7 @@ template<typename T> void printV(DArr<T> darr) {
 template<typename T> __global__ void setAllTo(DArr<T> darr, T value) {
     int min, max;
     assignToThread(darr.size(), min, max);
-    for (int i = 0; i < darr.size(); i++) {
+    for (int i = min; i < max; i++) {
         darr[i] = value;
     }
 }

@@ -1266,6 +1266,7 @@ void Solver::maybeReduceDB() {
 void Solver::reduceDB() {
     assertLearnedizeAndStats();
     int i, j;
+    if (cpuThreadId == 0) printf("thread 0 reduce db\n");
     stats[reduceDb]++;
     if (!compareLbd)
         sort(learned, reduceDBAct_lt(ca));
