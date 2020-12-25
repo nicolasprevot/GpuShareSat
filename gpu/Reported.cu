@@ -97,9 +97,7 @@ bool Reported::popReportedClause(int solverId, MinHArr<Lit> &lits, GpuClauseId &
     // When iterating over the current clause batch, this method doesn't lock anything
     while (true) {
         if (currentClauseBatches[solverId] == NULL) {
-            if (getIncrReportedClauses(solverId, currentClauseBatches[solverId])) {
-                currentClauseBatches[solverId]->assigWhichKnowsAboutThese = lastSentAssigId[solverId] + 1;
-            }
+            getIncrReportedClauses(solverId, currentClauseBatches[solverId]);
         }
         ClauseBatch *current = currentClauseBatches[solverId];
         if (current != NULL) {
@@ -113,7 +111,9 @@ bool Reported::popReportedClause(int solverId, MinHArr<Lit> &lits, GpuClauseId &
                     return true;
                 }
             }
-            // We've received all reported clauses for all assignments up to this one
+            current->assigWhichKnowsAboutThese = lastSentAssigId[solverId] + 1;
+
+            // We've received all reported clauses for all assignments up to not including this one
             long seenAllReportsUntil = current->assigIds.startAssigId + current->assigIds.assigCount;
             ClauseBatch *clBatch;
             // There is a possibility that a clause will trigger again on an assignment if this assignment did not know

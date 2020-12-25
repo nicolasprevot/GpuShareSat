@@ -140,6 +140,7 @@ long GpuClauseSharerImpl::trySendAssignment(int solverId) {
     if (sAssigs.isAssignmentAvailableLocked()) {
         result = sAssigs.assignmentDoneLocked();
         oneSolverStats[solverId][assigsSentToGpu]++;
+        reported->assigWasSent(solverId, result);
     } else {
         oneSolverStats[solverId][failuresToFindAssig]++;
     }
