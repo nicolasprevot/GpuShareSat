@@ -521,6 +521,33 @@ BOOST_AUTO_TEST_CASE(SolverDoesntImportSameClauseTwice) {
     BOOST_CHECK_EQUAL(1, fx.gpuClauseSharer.getOneSolverStat(0, reportedClauses));
 }
 
+// This test is about the same as the previous one, except that we start a gpu run before the second assignment is sent
+// So clauses for both assignment will be reported in distinct clause batches
+BOOST_AUTO_TEST_CASE(SolverDoesntImportSameClauseTwiceOnSuccessiveGpuExecutions) {
+    GpuOptions ops;
+    setDefaultOptions(ops);
+    GpuFixture fx(ops, 3, 1);
+    GpuHelpedSolver& solver = *(fx.solvers[0]);
+    addClause(*fx.gpuClauseSharer.clauses, {~mkLit(0), mkLit(1)});
+
+    solver.newDecisionLevel();
+    solver.uncheckedEnqueue(mkLit(0));
+    solver.tryCopyTrailForGpu(1);
+    fx.gpuClauseSharer.gpuRun();
+
+    solver.cancelUntil(0);
+    solver.newDecisionLevel();
+    solver.uncheckedEnqueue(~mkLit(1));
+    solver.tryCopyTrailForGpu(1);
+    fx.gpuClauseSharer.gpuRun();
+    bool foundEmptyClause;
+    solver.gpuImportClauses(foundEmptyClause);
+    fx.gpuClauseSharer.gpuRun();
+    solver.gpuImportClauses(foundEmptyClause);
+
+    BOOST_CHECK_EQUAL(1, fx.gpuClauseSharer.getOneSolverStat(0, reportedClauses));
+}
+
 // Test that if a clause has been imported and then deleted, it can be imported again
 BOOST_AUTO_TEST_CASE(SolverCanReimportClause) {
     // In this test: we add two clauses on the gpu, both get imported, then we reduceDb
