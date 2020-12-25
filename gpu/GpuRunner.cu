@@ -86,14 +86,6 @@ __device__ void dCheckOneClauseOneSolver(DOneSolverAssigs dOneSolverAssigs, DAss
         litPt += WARP_SIZE;
     }
     ASSERT_OP(gpuCref.clSize, >=, 1);
-    if (gpuCref.clSize == 22 && gpuCref.clIdInSize == 0 && solverId == 0) {
-        printf("reporting clause 48, to report is: "); printBinaryDH(reportComputer.getToReport()); printf("start vals: "); printBinaryDH(dOneSolverAssigs.startVals); NL;
-        
-        for (Lit* litPt = startLitPt; litPt < endLitPt; litPt += WARP_SIZE) {
-            PRINT(*litPt); PRINT(dOneSolverAssigs.multiLBools[dVar(*litPt)]);
-        }
-        NL;
-    }
     dReporter.report(ReportedClause {reportComputer.getToReport(), solverId, gpuCref}, getThreadId());
 }
 

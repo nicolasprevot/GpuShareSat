@@ -336,9 +336,6 @@ ClUpdateSet HostClauses::getUpdatesForDevice(cudaStream_t &stream, ContigCopier 
         dClUpdates[i].clIdInSize = perSizeKeeper.addClause(up.clSize, clauseUpdates.getLits(i), up.clMetadata);
         dClUpdates[i].clSize = up.clSize;
         dClUpdates[i].updatePosStart = up.updatePosStart;
-
-
-        if (up.clMetadata.gpuClauseId == 48) { printf("cl 48: "); PRINT(up.clSize); PRINT(dClUpdates[i].clIdInSize); NL; }
         globalStats[gpuClausesAdded]++;
         i++;
     }

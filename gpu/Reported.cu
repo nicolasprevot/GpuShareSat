@@ -175,13 +175,6 @@ void Reported::addClause(ClauseBatch &clauseBatch, ReportedClause wc) {
     // but does it matter?
     hostClauses.getClause(tempLits, gpuClId, wc.gpuCref);
 
-    if (wc.solverId == 0 && gpuClId == 48) {
-        printf("adding clause 48 for solver 0 ");
-#ifndef __CUDA_ARCH__
-        PRINT(clauseBatch.assigIds); NL;
-#endif
-    }
-
     clauseBatch.addClause(gpuClId);
     for (int i = 0; i < tempLits.size(); i++) {
         clauseBatch.addLit(tempLits[i]);

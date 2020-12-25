@@ -192,7 +192,7 @@ public:
     long assignmentDoneLocked();
     void getCurrentAssignment(uint8_t* assig);
     long getUpdatesSent() { return updatesSent; }
-    DOneSolverAssigs copyUpdatesLocked(ArrPair<VarUpdate> &varUpdates, AssigIdsPerSolver &assigIds, HArr<AggCorresp> &aggCorresps, cudaStream_t &stream);
+    DOneSolverAssigs copyUpdatesLocked(ArrPair<VarUpdate> &varUpdates, AssigIdsPerSolver &assigIds, HArr<AggCorresp> &aggCorresps);
 
     void setAggBits(int startAggBitPos, int endAggBitPos);
     bool hasSomethingToCopy() { return currentId != firstIdUsed; }
