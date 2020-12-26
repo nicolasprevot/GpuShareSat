@@ -19,7 +19,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "GpuMultiSolver.h"
 #include "GpuHelpedSolver.h"
 #include "utils/System.h"
-#include "utils/Utils.h"
+#include "gpuShareLib/Utils.h"
 #include "satUtils/Dimacs.h"
 #include <thread> 
 #include "utils/Periodic.h"

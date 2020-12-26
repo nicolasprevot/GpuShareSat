@@ -23,7 +23,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "Reporter.cuh"
 #include "GpuUtils.cuh"
 #include <memory>
-#include "utils/Profiler.h"
+#include "Profiler.h"
 
 namespace GpuShare {
 

@@ -35,7 +35,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "BaseTypes.cuh"
 #include "ContigCopy.cuh"
 #include "ClauseUpdates.cuh"
-#include "utils/Profiler.h"
+#include "Profiler.h"
 #include "GpuClauseSharer.h"
 
 #define RESCALE_CONST 1e19

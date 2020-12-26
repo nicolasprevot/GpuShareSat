@@ -55,7 +55,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 
 #include "utils/System.h"
 #include "gpuShareLib/Assert.h"
-#include "utils/Utils.h"
+#include "gpuShareLib/Utils.h"
 #include "mtl/Sort.h"
 #include "core/Solver.h"
 #include "core/Constants.h"

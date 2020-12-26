@@ -23,7 +23,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "Assigs.cuh"
 #include "Reporter.cuh"
 #include "utils/System.h"
-#include "utils/Utils.h"
+#include "gpuShareLib/Utils.h"
 #include "CorrespArr.cuh"
 #include "my_make_unique.h"
 #include <thread>         // std::this_thread::sleep_for

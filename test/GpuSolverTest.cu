@@ -34,7 +34,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include <cuda.h>
 #include <mtl/Vec.h>
 #include <algorithm>
-#include "utils/Utils.h"
+#include "gpuShareLib/Utils.h"
 
 #include "gpuShareLib/GpuRunner.cuh"
 #include "gpuShareLib/GpuClauseSharer.h"

@@ -18,8 +18,8 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
  **************************************************************************************************/
 
 #include "GpuHelpedSolver.h"
-#include "utils/Utils.h"
-#include "utils/Profiler.h"
+#include "gpuShareLib/Utils.h"
+#include "gpuShareLib/Profiler.h"
 
 #include <chrono>
 #include <thread>

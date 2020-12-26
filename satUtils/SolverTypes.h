@@ -61,7 +61,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "mtl/Alg.h"
 #include "mtl/Vec.h"
 #include "mtl/Alloc.h"
-#include "utils/Utils.h"
+#include "gpuShareLib/Utils.h"
 
 // note: this print details clauses makes sense only if we don't have permanently learned clauses
 // #define PRINT_DETAILS_CLAUSES 1
@@ -116,7 +116,7 @@ const Lit lit_Error = { -1 };  // }
 // the point of using a custom method for rand rather than the default one is: if some more code decides to
 // get some random values, it won't impact this code, as long as it doesn't use the same seed variable
 inline Lit randomLit(double& seed, int varCount) {
-    return mkLit(irand(seed, varCount), irand(seed, 2));
+    return mkLit(GpuShare::irand(seed, varCount), GpuShare::irand(seed, 2));
 }
 
 typedef uint32_t uint;
@@ -429,12 +429,6 @@ struct Watcher {
     }
 */
 };
-
-#ifndef __CUDA_ARCH__
-inline void printV(const Watcher& w) {
-    PRINT(w.cref); PRINT(w.blocker);
-}
-#endif
 
 template<class Idx, class Vec, class Deleted>
 void OccLists<Idx,Vec,Deleted>::cleanAll()

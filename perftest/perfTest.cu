@@ -25,7 +25,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "gpu/GpuRunner.cuh"
 #include "satUtils/SolverTypes.h"
 #include "core/Solver.h"
-#include "utils/Utils.h"
+#include "gpuShareLib/Utils.h"
 #include <cuda.h>
 #include <mtl/Vec.h>
 #include <algorithm>
@@ -34,7 +34,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include <memory>
 #include "gpu/GpuRunner.cuh"
 #include "testUtils/TestHelper.cuh"
-#include "utils/Utils.h"
+#include "gpuShareLib/Utils.h"
 #include "gpu/my_make_unique.h"
 
 namespace Glucose {
