@@ -28,7 +28,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "CorrespArr.cuh"
 #include "BaseTypes.cuh"
 #include "GpuUtils.cuh"
-#include <vector>
+#include "mtl/Vec.h"
 #include <set>
 
 namespace GpuShare {
@@ -47,8 +47,8 @@ struct ClauseData {
 
 class ClauseBatch {
 private:
-    std::vector<Lit> lits;
-    std::vector<ClauseData> clauseDatas;
+    vec<Lit> lits;
+    vec<ClauseData> clauseDatas;
     int nextClauseToPop;
 
 public:
@@ -67,7 +67,7 @@ public:
     // once clear is called, the MinHArr won't be valid any more
     bool popClause(MinHArr<Lit> &lits, GpuClauseId &gpuClauseId);
 
-    const std::vector<ClauseData>& getClauseDatas();
+    const vec<ClauseData>& getClauseDatas();
 };
 
 template<typename T> class ConcurrentQueue;

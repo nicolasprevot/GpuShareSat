@@ -93,10 +93,10 @@ struct MultiLBool {
         if (isDef == 0u) return gl_Undef;
         if (isDef != ~0u) return gl_Inexisting;
         if (isTrue == 0u) {
-            return l_False;
+            return gl_False;
         }
         if (isTrue != ~0U) return gl_Inexisting;
-        return l_True;
+        return gl_True;
     }
 };
 
@@ -117,17 +117,17 @@ inline MultiLBool operator&(MultiLBool vad, Vals u) {
 }
 
 inline MultiLBool makeMultiLBool(lbool lb) {
-    return MultiLBool { lb != l_Undef ? ~ 0u : 0u, lb == l_True ? ~0u : 0u};
+    return MultiLBool { lb != gl_Undef ? ~ 0u : 0u, lb == gl_True ? ~0u : 0u};
 }
 
 inline void printV(const MultiLBool vad) {
 	Vals tr = vad.withTrue();
 	if (tr != 0) {
-		printf("tr: "); Glucose::printBinaryDH(tr); printf(" ");
+		printf("tr: "); GpuShare::printBinaryDH(tr); printf(" ");
 	}
 	Vals fa = vad.withFalse();
 	if (fa != 0) {
-		printf("fa: "); Glucose::printBinaryDH(fa); printf(" ");
+		printf("fa: "); GpuShare::printBinaryDH(fa); printf(" ");
 	}
 }
 

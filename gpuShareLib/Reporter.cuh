@@ -24,6 +24,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "ContigCopy.cuh"
 #include "GpuUtils.cuh"
 #include "Helper.cuh"
+#include "mtl/Vec.h"
 #include <algorithm>
 #include <functional>
 
