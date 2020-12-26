@@ -20,11 +20,11 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include <stdlib.h>
 
 #include <cuda.h>
-#include "gpu/BaseTypes.cuh"
+#include "BaseTypes.cuh"
 #include "Helper.cuh"
-#include "gpu/Reported.cuh"
-#include "gpu/Reporter.cuh"
-#include "gpu/Clauses.cuh"
+#include "Reported.cuh"
+#include "Reporter.cuh"
+#include "Clauses.cuh"
 #include "utils/ConcurrentQueue.h"
 #include "GpuClauseSharer.h"
 

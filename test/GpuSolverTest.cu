@@ -18,25 +18,26 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
  **************************************************************************************************/
 #define BOOST_TEST_MODULE cuda_module
 #include <boost/test/unit_test.hpp>
-#include "gpu/Helper.cuh"
-#include "gpu/GpuUtils.cuh"
-#include "gpu/Assigs.cuh"
-#include "gpu/Clauses.cuh"
+#include "gpuShareLib/Helper.cuh"
+#include "gpu/CompositionRoot.h"
+#include "gpuShareLib/GpuUtils.cuh"
+#include "gpuShareLib/Assigs.cuh"
+#include "gpuShareLib/Clauses.cuh"
 #include "gpu/GpuHelpedSolver.h"
-#include "gpu/GpuRunner.cuh"
+#include "gpuShareLib/GpuRunner.cuh"
 #include "gpu/GpuMultiSolver.h"
-#include "gpu/Reported.cuh"
+#include "gpuShareLib/Reported.cuh"
 #include "satUtils/SolverTypes.h"
 #include "core/Solver.h"
 #include "testUtils/TestHelper.cuh"
-#include "gpu/ContigCopy.cuh"
+#include "gpuShareLib/ContigCopy.cuh"
 #include <cuda.h>
 #include <mtl/Vec.h>
 #include <algorithm>
 #include "utils/Utils.h"
 
-#include "gpu/GpuRunner.cuh"
-#include "gpu/GpuClauseSharer.h"
+#include "gpuShareLib/GpuRunner.cuh"
+#include "gpuShareLib/GpuClauseSharer.h"
 
 using namespace std;
 

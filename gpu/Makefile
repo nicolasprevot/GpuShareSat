@@ -6,7 +6,7 @@ SMVER=50
 #SMVER=35
 
 EXEC = glucose-gpu
-DEPDIR    = mtl utils core simp satUtils
+DEPDIR    = mtl utils core simp satUtils gpuShareLib
 MROOT = $(PWD)/..
 COMP = nvcc
 CFLAGS = -std=c++11

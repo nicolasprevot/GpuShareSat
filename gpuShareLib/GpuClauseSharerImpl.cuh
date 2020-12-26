@@ -81,6 +81,9 @@ class GpuClauseSharerImpl : public GpuClauseSharer {
     void getCurrentAssignment(int solverId, uint8_t *assig);
 
     long getLastAssigAllReported(int cpuSolverId);
+
+    // Without this, we get error: incomplete type is not allowed for types in unique_ptr
+    ~GpuClauseSharerImpl();
 };
 }
 

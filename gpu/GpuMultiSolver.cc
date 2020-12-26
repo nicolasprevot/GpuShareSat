@@ -23,7 +23,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "satUtils/Dimacs.h"
 #include <thread> 
 #include "utils/Periodic.h"
-#include "my_make_unique.h"
+#include "gpuShareLib/my_make_unique.h"
 
 namespace Glucose {
 

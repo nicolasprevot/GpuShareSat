@@ -17,8 +17,10 @@ DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  **************************************************************************************************/
 
-#include "gpu/Helper.cuh"
+#include "gpuShareLib/Helper.cuh"
 #include "testUtils/TestHelper.cuh"
+#include "gpu/CompositionRoot.h"
+#include "gpuShareLib/Clauses.cuh"
 #include <boost/test/unit_test.hpp>
 
 

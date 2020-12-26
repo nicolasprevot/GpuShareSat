@@ -24,7 +24,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #define Assigs_h
 
 #include "BaseTypes.cuh"
-#include "gpu/CorrespArr.cuh"
+#include "CorrespArr.cuh"
 #include "mtl/Vec.h"
 #include "satUtils/SolverTypes.h"
 #include "GpuUtils.cuh"

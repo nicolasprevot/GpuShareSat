@@ -60,6 +60,7 @@ enum OneSolverStats {
 #undef X
 };
 
+
 class GpuClauseSharer {
 
     public:
@@ -145,6 +146,8 @@ class GpuClauseSharer {
 
 
 };
+
+GpuClauseSharer* makeGpuClauseSharerPtr(GpuClauseSharerOptions opts, int varCount);
 }
 
 #endif

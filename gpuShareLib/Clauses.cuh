@@ -30,7 +30,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "satUtils/SolverTypes.h"
 #include "mtl/Vec.h"
 #include "mtl/Heap.h"
-#include "gpu/CorrespArr.cuh"
+#include "CorrespArr.cuh"
 #include "GpuUtils.cuh"
 #include "BaseTypes.cuh"
 #include "ContigCopy.cuh"

@@ -19,16 +19,16 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #ifndef DEF_TEST_HELPER
 #define DEF_TEST_HELPER
 
-#include "gpu/GpuHelpedSolver.h"
-#include "gpu/Assigs.cuh"
-#include "gpu/GpuUtils.cuh"
-#include "gpu/CompositionRoot.cuh"
-#include "gpu/GpuClauseSharerImpl.cuh"
+#include "gpuShareLib/GpuClauseSharerImpl.cuh"
+#include "gpuShareLib/GpuUtils.cuh"
 
 // Used by tests
 namespace Glucose {
 
+class GpuOptions;
 class GpuRunner;
+class GpuHelpedSolver;
+class ContigCopier;
 
 void setDefaultOptions(GpuOptions &options);
 

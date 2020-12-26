@@ -10,6 +10,12 @@
 #include <thread>
 
 namespace Glucose {
+
+
+GpuClauseSharer* makeGpuClauseSharerPtr(GpuClauseSharerOptions opts, int varCount) {
+    return new GpuClauseSharerImpl(opts, varCount);
+}
+
 GpuClauseSharerImpl::GpuClauseSharerImpl(GpuClauseSharerOptions _opts, /* TODO: we should be able to increase it */ int _varCount) {
 // assumes the enum values start at 0
 #define X(v) globalStatNames.push(#v);
@@ -201,5 +207,7 @@ long GpuClauseSharerImpl::getLastAssigAllReported(int cpuSolverId) {
     return reported->getLastAssigAllReported(cpuSolverId);
 }
 
+GpuClauseSharerImpl::~GpuClauseSharerImpl() {
+}
 
 }

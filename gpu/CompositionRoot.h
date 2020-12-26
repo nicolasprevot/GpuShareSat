@@ -27,23 +27,16 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #define COMPOSITIONROOT_H_
 
 #include "utils/Options.h"
-#include "GpuUtils.cuh"
-#include "CorrespArr.cuh"
-#include "Assigs.cuh"
-#include "Reported.cuh"
-#include "GpuMultiSolver.h"
-#include "Reporter.cuh"
-#include "ContigCopy.cuh"
-#include "Clauses.cuh"
-#include "GpuRunner.cuh"
 #include "GpuHelpedSolver.h"
 #include "utils/Periodic.h"
-#include "my_make_unique.h"
 #include "satUtils/InitHelper.h"
+#include "GpuMultiSolver.h"
 
 #include <memory>
 
 namespace Glucose {
+
+class GpuClauseSharer;
 
 class GpuOptions {
 public:
@@ -73,7 +66,6 @@ public:
     // The reason for having them public is that they're used by the tests as well,
     // and the tests need to look at these individually
     int varCount;
-    StreamPointer streamPointer;
     std::unique_ptr<GpuClauseSharer> gpuClauseSharer;
     std::unique_ptr<GpuMultiSolver> gpuMultiSolver;
     Verbosity verb;

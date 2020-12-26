@@ -23,13 +23,12 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
  *      Author: nicolas
  */
 
-#include "Helper.cuh"
-#include "CompositionRoot.cuh"
+#include "CompositionRoot.h"
 #include "GpuHelpedSolver.h"
-#include "ContigCopy.cuh"
 #include "utils/System.h"
 #include "utils/Options.h"
-#include "GpuClauseSharerImpl.cuh"
+#include "gpuShareLib/GpuClauseSharer.h"
+#include "gpuShareLib/my_make_unique.h"
 #include <thread>
 #include <stdio.h>
 
@@ -108,7 +107,7 @@ CompositionRoot::CompositionRoot(GpuOptions opts, CommonOptions commonOpts, Fini
     maxPageLockedMem = 1e6 * opts.maxMemory / 10;
     double initMemUsed = memUsed();
 
-    gpuClauseSharer = my_make_unique<GpuClauseSharerImpl>(csOpts, varCount);
+    gpuClauseSharer = std::unique_ptr<GpuClauseSharer>(makeGpuClauseSharerPtr(csOpts, varCount));
 
     gpuMultiSolver = my_make_unique<GpuMultiSolver>(finisher, *gpuClauseSharer,
                 std::function<GpuHelpedSolver* (int)> ([&](int cpuThreadId) {
