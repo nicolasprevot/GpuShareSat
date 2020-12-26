@@ -53,6 +53,13 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 
 namespace Glucose {
 
+Glucose::StreamBuffer::StreamBuffer(gzFile i) : in(i), pos(0), size(0) {
+     if (pos >= size) {
+         pos  = 0;
+         size = gzread(in, buf, sizeof(buf));
+     }
+}
+
 DimacsParser::DimacsParser(gzFile inputStream) :
         in(StreamBuffer(inputStream)),
         varCount(-1),

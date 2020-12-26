@@ -61,7 +61,6 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "mtl/Alg.h"
 #include "mtl/Vec.h"
 #include "mtl/Alloc.h"
-#include "gpuShareLib/Utils.h"
 
 // note: this print details clauses makes sense only if we don't have permanently learned clauses
 // #define PRINT_DETAILS_CLAUSES 1
@@ -112,12 +111,6 @@ inline  Lit  toLit     (int i)              { Lit p; p.x = i; return p; }
 
 const Lit lit_Undef = { -2 };  // }- Useful special constants.
 const Lit lit_Error = { -1 };  // }
-
-// the point of using a custom method for rand rather than the default one is: if some more code decides to
-// get some random values, it won't impact this code, as long as it doesn't use the same seed variable
-inline Lit randomLit(double& seed, int varCount) {
-    return mkLit(GpuShare::irand(seed, varCount), GpuShare::irand(seed, 2));
-}
 
 typedef uint32_t uint;
 

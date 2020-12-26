@@ -28,7 +28,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 
 #include "utils/Options.h"
 #include "GpuHelpedSolver.h"
-#include "utils/Periodic.h"
+#include "Periodic.h"
 #include "satUtils/InitHelper.h"
 #include "GpuMultiSolver.h"
 #include "gpuShareLib/GpuClauseSharer.h"

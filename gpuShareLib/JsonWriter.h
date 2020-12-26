@@ -17,58 +17,56 @@ DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  **************************************************************************************************/
 
-#include <boost/test/unit_test.hpp>
-#include "gpuShareLib/ConcurrentQueue.h"
+#ifndef DEF_JSON_WRITER
+#define DEF_JSON_WRITER
 
-namespace Glucose {
+#include <stdio.h>
 
-BOOST_AUTO_TEST_SUITE( ConcurrentQueueTest )
+namespace GpuShare {
 
-BOOST_AUTO_TEST_CASE(maxAndMinTest) {
-    ConcurrentQueue<int> cq(2);
-    // add three elements
-    cq.getNew() = 3;
-    cq.addNew();
-    cq.getNew() = 2;
-    cq.addNew();
-    cq.getNew() = 5;
-    cq.addNew();
+void writeJsonField(const char* name);
 
-    // get and remove them
-    int *pt = NULL;
+void setNeedNewlineAndComma();
 
-    BOOST_CHECK(cq.getIncrInter(pt));
-    BOOST_CHECK_EQUAL(3, *pt);
-    BOOST_CHECK(cq.getIncrInter(pt));
-    BOOST_CHECK_EQUAL(2, *pt);
-    BOOST_CHECK(cq.getIncrInter(pt));
-    BOOST_CHECK_EQUAL(5, *pt);
-    BOOST_CHECK(!cq.getIncrInter(pt));
+// we can't use writeAsJson here because it wouldn't quote the value
+void writeJsonString(const char *name, const char *val);
 
-    BOOST_CHECK(cq.getMin(pt));
-    BOOST_CHECK_EQUAL(3, *pt);
-    cq.removeMin();
-    BOOST_CHECK(cq.getMin(pt));
-    BOOST_CHECK_EQUAL(2, *pt);
-    cq.removeMin();
-    BOOST_CHECK(cq.getMin(pt));
-    BOOST_CHECK_EQUAL(5, *pt);
-    cq.removeMin();
-    BOOST_CHECK(!cq.getMin(pt));
-
-    // add one more
-    cq.getNew() = 9;
-    cq.addNew();
-
-    BOOST_CHECK(cq.getIncrInter(pt));
-    BOOST_CHECK_EQUAL(9, *pt);
-
-    BOOST_CHECK(cq.getMin(pt));
-    BOOST_CHECK_EQUAL(9, *pt);
-    cq.removeMin();
-    BOOST_CHECK(!cq.getMin(pt));
+// here because Solver doesn't use printV
+void writeAsJson(const char *name, unsigned long val) {
+    writeJsonField(name);
+    printf("%ld", val);
+    setNeedNewlineAndComma();
 }
 
-BOOST_AUTO_TEST_SUITE_END()
-
+template<typename T> void writeAsJson(const char *name, T val) {
+    writeJsonField(name);
+    printV(val);
+    setNeedNewlineAndComma();
 }
+
+#define writeVarJson(v) {\
+    writeAsJson(#v, v);\
+}
+
+class JObj {
+public:
+    JObj();
+    ~JObj();
+};
+
+// This is meant to be the outside object for a whole set of stats
+class JStats {
+private:
+    JObj *jo;
+public:
+    JStats();
+    ~JStats();
+};
+
+class JArr {
+public:
+    JArr();
+    ~JArr();
+};
+}
+#endif

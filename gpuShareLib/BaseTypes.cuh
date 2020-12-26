@@ -20,7 +20,8 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #ifndef DEF_BASETYPES_CUH
 #define DEF_BASETYPES_CUH
 #include "Helper.cuh"
-#include "satUtils/SolverTypes.h"
+#include "SolverTypes.h"
+#include "Utils.h"
 
 namespace GpuShare {
 
@@ -78,9 +79,9 @@ struct MultiLBool {
 
     lbool getLBool(Vals mask) {
         assertHasExactlyOneBit(mask);
-        if ((isDef & mask) == 0) return l_Undef;
-        if ((isTrue & mask) == 0) return l_False;
-        return l_True;
+        if ((isDef & mask) == 0) return gl_Undef;
+        if ((isTrue & mask) == 0) return gl_False;
+        return gl_True;
     }
 
     void printBinary() {
@@ -89,12 +90,12 @@ struct MultiLBool {
     }
 
     lbool getUniqueVal() {
-        if (isDef == 0u) return l_Undef;
-        if (isDef != ~0u) return l_Inexisting;
+        if (isDef == 0u) return gl_Undef;
+        if (isDef != ~0u) return gl_Inexisting;
         if (isTrue == 0u) {
             return l_False;
         }
-        if (isTrue != ~0U) return l_Inexisting;
+        if (isTrue != ~0U) return gl_Inexisting;
         return l_True;
     }
 };

@@ -27,7 +27,6 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #define GPUHELPEDSOLVER_H_
 
 #include "simp/SimpSolver.h"
-#include "utils/ConcurrentQueue.h"
 #include "gpuShareLib/GpuClauseSharer.h"
 
 #include <set>

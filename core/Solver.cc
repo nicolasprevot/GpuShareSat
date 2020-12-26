@@ -54,12 +54,13 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include <sstream>
 
 #include "utils/System.h"
-#include "gpuShareLib/Assert.h"
-#include "gpuShareLib/Utils.h"
+#include "utils/Utils.h"
 #include "mtl/Sort.h"
 #include "core/Solver.h"
 #include "core/Constants.h"
 #include "simp/SimpSolver.h"
+#include "gpuShareLib/JsonWriter.h"
+#include "Finisher.h"
 
 using namespace Glucose;
 
@@ -740,15 +741,13 @@ void Solver::analyze(CRef confl, vec <Lit> &out_learned, vec <Lit> &selectors, i
 #ifdef KEEP_IMPL_COUNT
     stats[sumConflictImplying] += learnedPermLearnedImplying;
 #endif
-// Note: if a variable is implied by a clause: it is at the position 0 in this clause
-    assertLearnedizeAndStats();
+    // Note: if a variable is implied by a clause: it is at the position 0 in this clause
     // Generate conflict clause:
     //
     out_learned.push(); // (leave room for the asserting literal)
     int index = trail.size() - 1;
     int origIndex = index;
     do {
-        assertLearnedizeAndStats();
         assert(confl != CRef_Undef); // (otherwise should be UIP)
         Clause &c = ca[confl];
         // Special case for binary clauses
@@ -760,7 +759,6 @@ void Solver::analyze(CRef confl, vec <Lit> &out_learned, vec <Lit> &selectors, i
         }
 
         if (c.learned()) {
-            assertLearnedizeAndStats();
             claBumpActivity(c);
             if (c.fromGpu()) {
                 stats[learnedFromGpuSeen]++;
@@ -783,7 +781,6 @@ void Solver::analyze(CRef confl, vec <Lit> &out_learned, vec <Lit> &selectors, i
             stats[originalSeen]++;
             c.setSeen(true);
         }
-        assertLearnedizeAndStats();
         // DYNAMIC NBLEVEL trick (see competition'09 companion paper)
         if(c.learned() && c.lbd() > 2) {
             unsigned int nblevels = computeLBD(c);
@@ -794,7 +791,7 @@ void Solver::analyze(CRef confl, vec <Lit> &out_learned, vec <Lit> &selectors, i
                 }
                 if ((int) nblevels <= coLBDBound) {
                     // At this point, the clause may be unary watched or not
-                    ASSERT_OR_DO(learned.remove(confl));
+                    learned.remove(confl);
                     permanentlyLearned.push(confl);
                     updateStatsForClauseChanged(c, -1);
                     c.setPermLearned();
@@ -808,7 +805,6 @@ void Solver::analyze(CRef confl, vec <Lit> &out_learned, vec <Lit> &selectors, i
                 }
             }
         }
-        assertLearnedizeAndStats();
 
         for(int j = (p == lit_Undef) ? 0 : 1; j < c.size(); j++) {
             Lit q = c[j];
@@ -945,7 +941,6 @@ void Solver::analyze(CRef confl, vec <Lit> &out_learned, vec <Lit> &selectors, i
      } else
 #endif
     szWithoutSelectors = out_learned.size();
-    assertLearnedizeAndStats();
     // Compute LBD
     lbd = computeLBD(out_learned, out_learned.size() - selectors.size());
 
@@ -1098,7 +1093,7 @@ void Solver::checkWatchesAreCorrect(Lit l) {
     for (int i = 0; i < ws.size(); i++) {
         CRef cref = ws[i].cref;
         Clause &cl = ca[cref];
-        ASSERT_MSG(cl.hasLit(~l), PRINT(cref); PRINT(l));
+        assert(cl.hasLit(~l));
     }
 }
 
@@ -1264,7 +1259,6 @@ void Solver::maybeReduceDB() {
 |    clauses are clauses that are reason to some assignment. Binary clauses are never removed.
 |________________________________________________________________________________________________@*/
 void Solver::reduceDB() {
-    assertLearnedizeAndStats();
     int i, j;
     stats[reduceDb]++;
     if (!compareLbd)
@@ -1305,7 +1299,6 @@ bool Solver::canRemoveLearnedClause(Clause &c) {
 void Solver::removeSatisfied(vec <CRef> &cs) {
 
     int i, j;
-    assertLearnedizeAndStats();
     for(i = j = 0; i < cs.size(); i++) {
         Clause &c = ca[cs[i]];
         if(satisfied(c))
@@ -1314,7 +1307,6 @@ void Solver::removeSatisfied(vec <CRef> &cs) {
             cs[j++] = cs[i];
     }
     cs.shrink(i - j);
-    assertLearnedizeAndStats();
 }
 
 
@@ -1338,7 +1330,6 @@ void Solver::rebuildOrderHeap() {
 |________________________________________________________________________________________________@*/
 bool Solver::simplify() {
     assert(decisionLevel() == 0);
-    assertLearnedizeAndStats();
     if(!ok) return ok = false;
     else {
         CRef cr = propagate();
@@ -1352,12 +1343,8 @@ bool Solver::simplify() {
         return true;
 
     // Remove satisfied clauses:
-    assertLearnedizeAndStats();
     removeSatisfied(learned);
-    assertLearnedizeAndStats();
     removeSatisfied(permanentlyLearned);
-    assertLearnedizeAndStats();
-    assertLearnedizeAndStats();
     if(remove_satisfied) // Can be turned off.
         removeSatisfied(clauses);
     checkGarbage();
@@ -1365,7 +1352,6 @@ bool Solver::simplify() {
 
     simpDB_assigns = nAssigns();
     simpDB_props = stats[clauseLiterals] + stats[learnedLiterals]; // (shouldn't depend on stats really, but it will do for now)
-    assertLearnedizeAndStats();
     return true;
 }
 
@@ -1468,7 +1454,6 @@ void Solver::adaptSolver() {
 */
         SyncedOutPrintf("c Removing of non permanent clauses.\n");
     }
-    assertLearnedizeAndStats();
 }
 
 bool Solver::propagateAndMaybeLearnFromConflict(bool &foundEmptyClause, bool &blocked, vec<Lit> &learned_clause, vec<Lit> &selectors) {
@@ -1479,7 +1464,6 @@ bool Solver::propagateAndMaybeLearnFromConflict(bool &foundEmptyClause, bool &bl
     if (confl == CRef_Undef) {
         return false;
     }
-    assertLearnedizeAndStats();
     newDescent = false;
     stats[sumDecisionLevels] += decisionLevel();
     stats[sumTrail] += trail.size();
@@ -1506,13 +1490,11 @@ bool Solver::propagateAndMaybeLearnFromConflict(bool &foundEmptyClause, bool &bl
     }
     learned_clause.clear();
     selectors.clear();
-    assertLearnedizeAndStats();
     int backtrack_level;
     unsigned int nblevels;
     unsigned int szWithoutSelectors;
     analyze(confl, learned_clause, selectors, backtrack_level, nblevels, szWithoutSelectors);
     foundConflict(learned_clause, nblevels);
-    assertLearnedizeAndStats();
 #ifdef DEBUG
     if (learned_clause.size() > 1) {
         assert(level(var(learned_clause[0])) >= decisionLevel());
@@ -1551,7 +1533,6 @@ bool Solver::propagateAndMaybeLearnFromConflict(bool &foundEmptyClause, bool &bl
     }
     varDecayActivity();
     claDecayActivity();
-    assertLearnedizeAndStats();
     return true;
 }
 
@@ -1580,7 +1561,6 @@ lbool Solver::search(int nof_conflicts) {
         if (finisher.shouldIStop(cpuThreadId)) {
             return l_Undef;
         }
-        assertLearnedizeAndStats();
         bool foundEmptyClause;
         bool foundConflict = propagateAndMaybeLearnFromConflict(foundEmptyClause, blocked, learned_clause, selectors);
 
@@ -1622,16 +1602,13 @@ lbool Solver::search(int nof_conflicts) {
                 cancelUntil(bt);
                 return l_Undef;
             }
-            assertLearnedizeAndStats();
 
             // Simplify the set of problem clauses:
             if(decisionLevel() == 0 && !simplify()) {
                 return l_False;
             }
-            assertLearnedizeAndStats();
             // Perform clause database reduction !
             maybeReduceDB();
-            assertLearnedizeAndStats();
             Lit next = lit_Undef;
             while(decisionLevel() < assumptions.size()) {
                 // Perform user provided assumption:
@@ -1670,7 +1647,6 @@ lbool Solver::search(int nof_conflicts) {
 CRef Solver::learnClause(vec<Lit> &lits, bool fromGpu, int nblevels) {
     CRef cr;
     assert(lits.size() >= 2);
-    assertLearnedizeAndStats();
     if(nblevels <= coLBDBound) {
         cr = ca.alloc(lits, false, fromGpu, true);
         permanentlyLearned.push(cr);
@@ -1680,7 +1656,6 @@ CRef Solver::learnClause(vec<Lit> &lits, bool fromGpu, int nblevels) {
         claBumpActivity(ca[cr]);
     }
     updateStatsForClauseChanged(ca[cr], 1);
-    assertLearnedizeAndStats();
     ca[cr].setLBD(nblevels);
 #ifdef PRINT_DETAILS_CLAUSES
     {
@@ -1973,15 +1948,29 @@ CRef Solver::gpuImportClauses(bool &foundEmptyClause) {
 
 void Solver::printStats() {
     for (auto const& e : statNames) {
-        writeAsJson(e.second.c_str(), stats[e.first]);
+        GpuShare::writeAsJson(e.second.c_str(), stats[e.first]);
     }
-    writeAsJson("original", clauses.size());
-    writeAsJson("conflicts", conflicts);
-    writeAsJson("nbClausesBeforeReduce", nbclausesbeforereduce);
+    GpuShare::writeAsJson("original", (unsigned long) clauses.size());
+    GpuShare::writeAsJson("conflicts", conflicts);
+    GpuShare::writeAsJson("nbClausesBeforeReduce", (unsigned long) nbclausesbeforereduce);
 }
 
 void Solver::printEncapsulatedStats() {
-    JStats jstats;
+    GpuShare::JStats jstats;
     printStats();
+}
+
+double luby(double y, int x) {
+    // Find the finite subsequence that contains index 'x', and the
+    // size of that subsequence:
+    int size, seq;
+    for(size = 1, seq = 0; size < x + 1; seq++, size = 2 * size + 1);
+
+    while(size - 1 != x) {
+        size = (size - 1) >> 1;
+        seq--;
+        x = x % size;
+    }
+    return pow(y, seq);
 }
 

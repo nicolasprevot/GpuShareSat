@@ -50,7 +50,6 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
  **************************************************************************************************/
 
 #include "satUtils/SolverTypes.h"
-#include "gpuShareLib/Utils.h"
 namespace Glucose {
 
 void printV(const Lit& lit) {

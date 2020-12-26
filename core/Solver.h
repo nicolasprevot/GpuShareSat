@@ -90,13 +90,7 @@ template <class S> float getStatAvg(vec<S*>& solvers, CoreStats stat) {
     return (float) getStatSum(solvers, stat) / solvers.size();
 }
 
-// the reason for making it a macro is to get the line number when it errors
-#define assertLearnedizeAndStats() { \
-    ASSERT_OP((uint64_t) (learned.size()), ==, stats[learnedNotFromGpu] + stats[learnedFromGpu]);\
-    ASSERT_OP((uint64_t) (permanentlyLearned.size()), ==, stats[permanentlyLearnedFromGpu] + stats[permanentlyLearnedNotFromGpu]);\
-}
-
-class Finisher;
+struct Finisher;
 
 //=================================================================================================
 // Solver -- the main class:
@@ -697,6 +691,8 @@ struct reduceDB_lt {
 
         //return ca[x].size() > 2 && (ca[y].size() == 2 || ca[x].activity() < ca[y].activity()); } 
     }
+
+
 };
 
 
@@ -728,6 +724,7 @@ template<typename Solver> void printProblemStatsHeader(Solver &s) {
     }
 }
 
+double luby(double y, int x);
 
 }
 

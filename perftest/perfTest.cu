@@ -36,6 +36,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "testUtils/TestHelper.cuh"
 #include "gpuShareLib/Utils.h"
 #include "gpu/my_make_unique.h"
+#include "utils/Utils.h"
 
 namespace Glucose {
 

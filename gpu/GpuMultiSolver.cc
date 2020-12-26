@@ -22,8 +22,11 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "gpuShareLib/Utils.h"
 #include "satUtils/Dimacs.h"
 #include <thread> 
-#include "utils/Periodic.h"
+#include "Periodic.h"
 #include "gpuShareLib/my_make_unique.h"
+#include "core/Finisher.h"
+#include "utils/Utils.h"
+#include "gpuShareLib/JsonWriter.h"
 
 namespace Glucose {
 
@@ -203,14 +206,14 @@ void GpuMultiSolver::printStats() {
     long apprMemAllocated = 0;
     gpuClauseSharer.getGpuMemInfo(freeGpuMem, totalGpuMem);
     {
-        JStats jstats;
-        writeJsonString("type", "periodicStats");
-        writeAsJson("cpuTime", cpuTimeSec());
-        writeAsJson("realTime", realTimeSecSinceStart());
+        GpuShare::JStats jstats;
+        GpuShare::writeJsonString("type", "periodicStats");
+        GpuShare::writeAsJson("cpuTime", cpuTimeSec());
+        GpuShare::writeAsJson("realTime", realTimeSecSinceStart());
         {
-            writeJsonField("solverStats");
+            GpuShare::writeJsonField("solverStats");
             {
-                JArr jarr;
+                GpuShare::JArr jarr;
                 std::lock_guard<std::mutex> lock(solversMutex);
                 for (int i = 0; i < helpedSolvers.size(); i++) {
                     if (helpedSolvers[i] != NULL) {
@@ -219,18 +222,18 @@ void GpuMultiSolver::printStats() {
                     }
                 }
             }
-            writeJsonField("globalStats");
+            GpuShare::writeJsonField("globalStats");
             {
-                JObj jo;
-                writeAsJson("cpuMemUsed_megabytes", actualCpuMemUsed());
-                writeAsJson("gpuMemUsed_megabytes", (float) (totalGpuMem - freeGpuMem) / 1.0e6);
+                GpuShare::JObj jo;
+                GpuShare::writeAsJson("cpuMemUsed_megabytes", actualCpuMemUsed());
+                GpuShare::writeAsJson("gpuMemUsed_megabytes", (float) (totalGpuMem - freeGpuMem) / 1.0e6);
 #ifdef KEEP_IMPL_COUNT
                 printStatSum("conflict impl count sum", sumConflictImplying);
 #endif
-                writeAsJson("approximateMemAllocated_megabytes", apprMemAllocated / 1.0e6);
+                GpuShare::writeAsJson("approximateMemAllocated_megabytes", apprMemAllocated / 1.0e6);
                 for (int i = 0; i < gpuClauseSharer.getGlobalStatCount(); i++) {
                     GpuShare::GlobalStats gs = static_cast<GpuShare::GlobalStats>(i);
-                    writeAsJson(gpuClauseSharer.getGlobalStatName(gs), gpuClauseSharer.getGlobalStat(gs));
+                    GpuShare::writeAsJson(gpuClauseSharer.getGlobalStatName(gs), gpuClauseSharer.getGlobalStat(gs));
                 }
             }
         }

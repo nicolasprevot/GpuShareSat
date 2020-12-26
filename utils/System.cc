@@ -98,3 +98,13 @@ double Glucose::memUsed(void) {
 double Glucose::memUsed() { 
     return 0; }
 #endif
+
+TimePrinter::TimePrinter(const char *_message) : message(_message) {
+    cpuTimeSecStarted = cpuTimeSec();
+    realTimeSecStarted = realTimeSec();
+}
+
+TimePrinter::~TimePrinter() {
+    printf("c cpu time %s: %f s\n", message, cpuTimeSec() - cpuTimeSecStarted);
+    printf("c real time %s: %f s\n", message, realTimeSec() - realTimeSecStarted);
+}

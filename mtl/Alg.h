@@ -22,7 +22,6 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #define Glucose_Alg_h
 
 #include "mtl/Vec.h"
-#include "gpuShareLib/Utils.h"
 
 namespace Glucose {
 
@@ -38,7 +37,7 @@ static inline void remove(V& ts, const T& t)
 {
     int j = 0;
     for (; j < ts.size() && ts[j] != t; j++);
-    ASSERT_OP_MSG(j, <, ts.size(), PRINT(ts); PRINT(t));
+    assert(j < ts.size());
     for (; j < ts.size()-1; j++) ts[j] = ts[j+1];
     ts.pop();
 }

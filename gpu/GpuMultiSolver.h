@@ -30,6 +30,7 @@ namespace GpuShare {
 
 namespace Glucose {
 class GpuHelpedSolver;
+struct Finisher;
 
 // typedef std::function<GpuHelpedSolver* (int threadId)> SolverFactory;
 //typedef int SolverFactory;

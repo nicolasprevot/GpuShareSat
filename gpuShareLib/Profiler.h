@@ -17,58 +17,22 @@ DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  **************************************************************************************************/
 
-#include <boost/test/unit_test.hpp>
-#include "gpuShareLib/ConcurrentQueue.h"
+#ifndef DEF_PROFILER
+#define DEF_PROFILER
+#include <string>
 
-namespace Glucose {
+namespace GpuShare {
 
-BOOST_AUTO_TEST_SUITE( ConcurrentQueueTest )
+class TimeGauge {
+    private:
+    unsigned long &toBump;
+    long timeStartedMicros;
 
-BOOST_AUTO_TEST_CASE(maxAndMinTest) {
-    ConcurrentQueue<int> cq(2);
-    // add three elements
-    cq.getNew() = 3;
-    cq.addNew();
-    cq.getNew() = 2;
-    cq.addNew();
-    cq.getNew() = 5;
-    cq.addNew();
-
-    // get and remove them
-    int *pt = NULL;
-
-    BOOST_CHECK(cq.getIncrInter(pt));
-    BOOST_CHECK_EQUAL(3, *pt);
-    BOOST_CHECK(cq.getIncrInter(pt));
-    BOOST_CHECK_EQUAL(2, *pt);
-    BOOST_CHECK(cq.getIncrInter(pt));
-    BOOST_CHECK_EQUAL(5, *pt);
-    BOOST_CHECK(!cq.getIncrInter(pt));
-
-    BOOST_CHECK(cq.getMin(pt));
-    BOOST_CHECK_EQUAL(3, *pt);
-    cq.removeMin();
-    BOOST_CHECK(cq.getMin(pt));
-    BOOST_CHECK_EQUAL(2, *pt);
-    cq.removeMin();
-    BOOST_CHECK(cq.getMin(pt));
-    BOOST_CHECK_EQUAL(5, *pt);
-    cq.removeMin();
-    BOOST_CHECK(!cq.getMin(pt));
-
-    // add one more
-    cq.getNew() = 9;
-    cq.addNew();
-
-    BOOST_CHECK(cq.getIncrInter(pt));
-    BOOST_CHECK_EQUAL(9, *pt);
-
-    BOOST_CHECK(cq.getMin(pt));
-    BOOST_CHECK_EQUAL(9, *pt);
-    cq.removeMin();
-    BOOST_CHECK(!cq.getMin(pt));
-}
-
-BOOST_AUTO_TEST_SUITE_END()
+    public:
+    TimeGauge(unsigned long &toBump, bool enabled);
+    void complete();
+    ~TimeGauge();
+};
 
 }
+#endif

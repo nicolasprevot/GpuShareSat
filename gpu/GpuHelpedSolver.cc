@@ -20,6 +20,9 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "GpuHelpedSolver.h"
 #include "gpuShareLib/Utils.h"
 #include "gpuShareLib/Profiler.h"
+#include "core/Finisher.h"
+#include "utils/Utils.h"
+#include "gpuShareLib/JsonWriter.h"
 
 #include <chrono>
 #include <thread>
@@ -66,7 +69,7 @@ void GpuHelpedSolver::insertStatNames() {
 // Even if the gpu doesn't have the empty clause: it may have the clause ~a when we know a to be true
 // In this case, we can't return a cref conflict for ~a because a clause with a cref can't have a size of 1
 CRef GpuHelpedSolver::gpuImportClauses(bool& foundEmptyClause) {
-    TimeGauge tg(stats[timeSpentImportingClauses], quickProf);
+    GpuShare::TimeGauge tg(stats[timeSpentImportingClauses], quickProf);
     foundEmptyClause = false;
 
     CRef confl = CRef_Undef;
@@ -311,11 +314,11 @@ GpuHelpedSolverParams GpuHelpedSolverOptions::toParams() {
 }
 
 void GpuHelpedSolver::printStats() {
-    JObj jo;
+    GpuShare::JObj jo;
     Solver::printStats();
     for (int i = 0; i < gpuClauseSharer.getOneSolverStatCount(); i++) {
         GpuShare::OneSolverStats oss = static_cast<GpuShare::OneSolverStats>(i);
-        writeAsJson(gpuClauseSharer.getOneSolverStatName(oss), gpuClauseSharer.getOneSolverStat(cpuThreadId, oss));
+        GpuShare::writeAsJson(gpuClauseSharer.getOneSolverStatName(oss), gpuClauseSharer.getOneSolverStat(cpuThreadId, oss));
     }
 }
 

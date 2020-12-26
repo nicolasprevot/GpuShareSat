@@ -2,8 +2,6 @@
 #define GpuClauseSharerImpl_h
 
 #include "GpuClauseSharer.h"
-#include "mtl/Vec.h"
-#include "satUtils/SolverTypes.h"
 #include "BaseTypes.cuh"
 #include "GpuUtils.cuh"
 #include <memory>

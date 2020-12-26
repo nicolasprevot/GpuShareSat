@@ -80,4 +80,14 @@ inline double Glucose::realTimeSec() {
     return (double) realTimeMicros() / 1000000;
 }
 
+class TimePrinter {
+private:
+    double cpuTimeSecStarted;
+    double realTimeSecStarted;
+    const char *message;
+public:
+    TimePrinter(const char *message);
+    ~TimePrinter();
+};
+
 #endif

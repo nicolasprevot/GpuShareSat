@@ -25,8 +25,6 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 
 #include "BaseTypes.cuh"
 #include "CorrespArr.cuh"
-#include "mtl/Vec.h"
-#include "satUtils/SolverTypes.h"
 #include "GpuUtils.cuh"
 #include "ContigCopy.cuh"
 

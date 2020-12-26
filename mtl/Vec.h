@@ -26,11 +26,10 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 
 #include "mtl/IntTypes.h"
 #include "mtl/XAlloc.h"
+#include <initializer_list>
 
-#include "gpuShareLib/Utils.h"
-#include "gpuShareLib/Assert.h"
 
-#include<string.h>
+#include <string.h>
 
 namespace Glucose {
 
@@ -126,8 +125,8 @@ public:
     T&       last  (void)              { return data[sz-1]; }
 
     // Vector interface:
-    const T& operator [] (int index) const { ASSERT_OP(index, >=, 0); ASSERT_OP(index, <, sz); return data[index]; }
-    T&       operator [] (int index)       { ASSERT_OP(index, >=, 0); ASSERT_OP(index, <, sz); return data[index]; }
+    const T& operator [] (int index) const { assert(index >= 0); assert(index < sz); return data[index]; }
+    T&       operator [] (int index)       { assert(index >= 0); assert(index < sz); return data[index]; }
 
     // Duplicatation (preferred instead):
     void copyTo(vec<T>& copy) const { copy.clear(); copy.growTo(sz); for (int i = 0; i < sz; i++) copy[i] = data[i]; }

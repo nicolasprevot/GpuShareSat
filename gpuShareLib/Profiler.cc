@@ -17,58 +17,32 @@ DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  **************************************************************************************************/
 
-#include <boost/test/unit_test.hpp>
-#include "gpuShareLib/ConcurrentQueue.h"
+#include "Profiler.h"
+#include "Utils.h"
 
-namespace Glucose {
+#include <sys/time.h>
 
-BOOST_AUTO_TEST_SUITE( ConcurrentQueueTest )
+namespace GpuShare {
 
-BOOST_AUTO_TEST_CASE(maxAndMinTest) {
-    ConcurrentQueue<int> cq(2);
-    // add three elements
-    cq.getNew() = 3;
-    cq.addNew();
-    cq.getNew() = 2;
-    cq.addNew();
-    cq.getNew() = 5;
-    cq.addNew();
+long realTimeMicros() {
+    struct timeval time;
+    gettimeofday(&time, NULL);
+    return time.tv_usec + 1e6 * time.tv_sec;
 
-    // get and remove them
-    int *pt = NULL;
-
-    BOOST_CHECK(cq.getIncrInter(pt));
-    BOOST_CHECK_EQUAL(3, *pt);
-    BOOST_CHECK(cq.getIncrInter(pt));
-    BOOST_CHECK_EQUAL(2, *pt);
-    BOOST_CHECK(cq.getIncrInter(pt));
-    BOOST_CHECK_EQUAL(5, *pt);
-    BOOST_CHECK(!cq.getIncrInter(pt));
-
-    BOOST_CHECK(cq.getMin(pt));
-    BOOST_CHECK_EQUAL(3, *pt);
-    cq.removeMin();
-    BOOST_CHECK(cq.getMin(pt));
-    BOOST_CHECK_EQUAL(2, *pt);
-    cq.removeMin();
-    BOOST_CHECK(cq.getMin(pt));
-    BOOST_CHECK_EQUAL(5, *pt);
-    cq.removeMin();
-    BOOST_CHECK(!cq.getMin(pt));
-
-    // add one more
-    cq.getNew() = 9;
-    cq.addNew();
-
-    BOOST_CHECK(cq.getIncrInter(pt));
-    BOOST_CHECK_EQUAL(9, *pt);
-
-    BOOST_CHECK(cq.getMin(pt));
-    BOOST_CHECK_EQUAL(9, *pt);
-    cq.removeMin();
-    BOOST_CHECK(!cq.getMin(pt));
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+TimeGauge::TimeGauge(unsigned long &_toBump, bool enabled): 
+    toBump(_toBump),
+    timeStartedMicros(enabled ? realTimeMicros() : -1) {
+}
+
+void TimeGauge::complete() {
+    if (timeStartedMicros >= 0) toBump += realTimeMicros() - timeStartedMicros;
+    timeStartedMicros = -1;
+}
+
+TimeGauge::~TimeGauge() {
+    complete();
+}
 
 }

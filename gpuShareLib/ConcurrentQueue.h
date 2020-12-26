@@ -22,7 +22,8 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 
 #include <atomic>
 #include <memory>
-#include "mtl/Vec.h"
+#include "Vec.h"
+#include "Utils.h"
 namespace Glucose {
 
 // this class is NOT thread safe

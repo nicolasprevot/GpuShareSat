@@ -17,60 +17,82 @@ DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  **************************************************************************************************/
 
-#include "Utils.h"
-#include <random>
-#include <assert.h>
-#include <limits.h>
-#include "utils/System.h"
+#include "JsonWriter.h"
+#include <stdio.h>
 
 namespace GpuShare {
 
-int randBetween(int min, int max) {
-    return rand() % (max - min) + min;
+// global variables
+bool needCommaJson = false;
+bool needNewlineJson = false;
+
+void setNeedNewlineAndComma() {
+    needCommaJson = true;
+    needNewlineJson = true;
 }
 
-void printV(long v) {
-    printf("%ld ", v);
+void writeJsonString(const char *name, const char *val) {
+    writeJsonField(name);
+    printf("\"%s\"", val);
+    setNeedNewlineAndComma();
 }
 
-void printV(unsigned long v) {
-    printf("%ld ", v);
-}
-
-void printV(void* pt) {
-    printf("%p ", pt);
-}
-
-void printV(int v) {
-    printf("%d ", v);
-}
-
-void printV(uint v) {
-    printf("%x ", v);
-}
-
-void printV(const char* chs) {
-    printf("%s", chs);
-}
-
-void printV(float f) {
-    printf("%f", f);
-}
-
-void printV(double d) {
-    printf("%lf", d);
-}
-
-void printBinary(uint x) {
-    bool seen1 = false;
-    for (int i = 31; i >= 0; i--) {
-        if ((1 << i) & x) {
-            printf("1");
-            seen1 = true;
-        }
-        else if (seen1) printf("0");
+void writePrecJson() {
+    if (needCommaJson) {
+        printf(",");
     }
+    if (needNewlineJson) {
+        printf("\nc ");
+    }
+    needCommaJson = false;
+    needNewlineJson = false;
 }
 
+void writeJsonField(const char* name) {
+    writePrecJson();
+    printf("\"%s\": ", name);
+}
+
+JStats::JStats() {
+    printf("c stats_start\nc");
+    needCommaJson = false;
+    needNewlineJson = false;
+    jo = new JObj();
+}
+
+JStats::~JStats() {
+    delete jo;
+    printf("\nc stats_end\n");
+}
+
+JObj::JObj() {
+    writePrecJson();
+    printf("{");
+    needNewlineJson = true;
+}
+
+JObj::~JObj() {
+    if (needNewlineJson) {
+        printf("\nc ");
+    }
+    printf("}");
+    needNewlineJson = true;
+    needCommaJson = true;
+}
+
+JArr::JArr() {
+    writePrecJson();
+    printf("[");
+    needNewlineJson = true;
+}
+
+JArr::~JArr() {
+    if (needNewlineJson) {
+        printf("\nc ");
+    }
+    printf("]");
+    needNewlineJson = true;
+    needCommaJson = true;
+}
 
 }

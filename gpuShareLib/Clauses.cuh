@@ -27,9 +27,6 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include <mutex>
 #include <memory>
 
-#include "satUtils/SolverTypes.h"
-#include "mtl/Vec.h"
-#include "mtl/Heap.h"
 #include "CorrespArr.cuh"
 #include "GpuUtils.cuh"
 #include "BaseTypes.cuh"

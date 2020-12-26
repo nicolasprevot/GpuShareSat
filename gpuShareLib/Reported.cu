@@ -25,7 +25,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "Reported.cuh"
 #include "Reporter.cuh"
 #include "Clauses.cuh"
-#include "utils/ConcurrentQueue.h"
+#include "ConcurrentQueue.h"
 #include "GpuClauseSharer.h"
 
 // #define PRINT_DETAILS_CLAUSES
