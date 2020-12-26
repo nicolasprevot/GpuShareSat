@@ -41,7 +41,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #define RESCALE_CONST 1e19
 
 
-namespace Glucose {
+namespace GpuShare {
 
 
 

@@ -24,7 +24,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 
 __device__ int forSyncOut;
 
-namespace Glucose {
+namespace GpuShare {
 
 StreamPointer::StreamPointer() {
     cudaStreamCreate(&stream);

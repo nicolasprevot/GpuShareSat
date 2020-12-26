@@ -18,7 +18,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
  **************************************************************************************************/
 #include "BaseTypes.cuh"
 
-namespace Glucose {
+namespace GpuShare {
 __device__ void printVD(lbool glb) {
     switch (toUint8(glb)) {
         case 0:

@@ -40,7 +40,7 @@ GpuHelpedSolver::GpuHelpedSolver(const GpuHelpedSolver &other, int _cpuThreadId)
 
 }
 
-GpuHelpedSolver::GpuHelpedSolver(Finisher &_finisher, int _cpuThreadId, GpuHelpedSolverParams _params, GpuClauseSharer &_gpuClauseSharer, bool _quickProf) :
+GpuHelpedSolver::GpuHelpedSolver(Finisher &_finisher, int _cpuThreadId, GpuHelpedSolverParams _params, GpuShare::GpuClauseSharer &_gpuClauseSharer, bool _quickProf) :
         SimpSolver(_cpuThreadId, _finisher), params(_params),
         needToReduceCpuMemoryUsage(false), status(l_Undef), changedCount(0), quickProf(_quickProf),
         gpuClauseSharer(_gpuClauseSharer), trailCopiedUntil(0) {

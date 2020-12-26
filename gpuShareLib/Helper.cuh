@@ -43,7 +43,7 @@ void exitIfError(cudaError_t err, const char pos[]);
 void exitIfLastError(const char pos[]);
 void exitIfFalse(bool val, const char pos[]);
 
-namespace Glucose {
+namespace GpuShare {
 
 __device__ void printVD(long v);
 __device__ void printVD(unsigned long v);

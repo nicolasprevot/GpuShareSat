@@ -24,16 +24,12 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include <functional>
 #include "utils/Utils.h"
 
+namespace GpuShare {
+    class GpuClauseSharer;
+}
+
 namespace Glucose {
 class GpuHelpedSolver;
-class Clauses;
-class Finisher;
-class Reported;
-class HostAssigs;
-class HostClauses;
-class OneSolverAssigs;
-class GpuRunner;
-class GpuClauseSharer;
 
 // typedef std::function<GpuHelpedSolver* (int threadId)> SolverFactory;
 //typedef int SolverFactory;
@@ -44,7 +40,7 @@ class GpuMultiSolver {
 private:
     std::mutex solversMutex;
     vec<GpuHelpedSolver*> helpedSolvers;
-    GpuClauseSharer &gpuClauseSharer;
+    GpuShare::GpuClauseSharer &gpuClauseSharer;
     int cpuSolverCount;
     std::function<GpuHelpedSolver* (int threadId)> solverFactory;
     Verbosity verb;
@@ -67,7 +63,7 @@ private:
     Finisher &finisher;
 
 public:
-    GpuMultiSolver(Finisher &finisher, GpuClauseSharer &gpuClauseSharer,
+    GpuMultiSolver(Finisher &finisher, GpuShare::GpuClauseSharer &gpuClauseSharer,
             std::function<GpuHelpedSolver* (int threadId) > solverFactory, int varCount, int writeClausesPeriodSec,
             Verbosity verb, double initMemUsed, double maxMemory, int gpuReduceDbPeriod, int gpuReduceDbPeriodInc);
     void addClause_(vec<Lit>& lits);

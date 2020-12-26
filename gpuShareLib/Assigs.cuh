@@ -33,7 +33,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include <atomic>
 #include <memory>
 
-namespace Glucose {
+namespace GpuShare {
 
 inline int assigCount() {
     return sizeof(Vals) * 8;

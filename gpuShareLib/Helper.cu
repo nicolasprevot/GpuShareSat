@@ -58,7 +58,7 @@ void exitIfLastError(const char pos[]) {
     exitIfError(cudaGetLastError(), pos);
 }
 
-namespace Glucose {
+namespace GpuShare {
 
 __device__  void printVD(long v) {
     printf("%ld ", v);

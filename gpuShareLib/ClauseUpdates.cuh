@@ -23,7 +23,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "CorrespArr.cuh"
 #include "ContigCopy.cuh"
 
-namespace Glucose {
+namespace GpuShare {
 
 struct ClMetadata {
     int lbd;

@@ -91,7 +91,7 @@ private:
     int changedCount;
     bool quickProf;
 
-    GpuClauseSharer &gpuClauseSharer;
+    GpuShare::GpuClauseSharer &gpuClauseSharer;
 
     // The values of variables for GpuClauseSharer are those that we have on the trail until this
     int trailCopiedUntil;
@@ -109,7 +109,7 @@ private:
     void insertStatNames();
 
 public:
-    GpuHelpedSolver(Finisher &_finisher, int cpuThreadId, GpuHelpedSolverParams params, GpuClauseSharer &_gpuClauseSharer, bool quickProf);
+    GpuHelpedSolver(Finisher &_finisher, int cpuThreadId, GpuHelpedSolverParams params, GpuShare::GpuClauseSharer &_gpuClauseSharer, bool quickProf);
     GpuHelpedSolver(const GpuHelpedSolver &other, int cpuThreadId);
     void foundConflict(vec<Lit> &learned, int lbd);
     // send the state at level to the gpu

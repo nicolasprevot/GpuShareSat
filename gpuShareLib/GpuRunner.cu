@@ -31,7 +31,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 
 // #define PRINT_ALOT 1
 
-namespace Glucose {
+namespace GpuShare {
 struct ReportComputer {
     // if all literals seen so far are false in the current clause
     Vals allFalse;

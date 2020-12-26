@@ -31,12 +31,11 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "utils/Periodic.h"
 #include "satUtils/InitHelper.h"
 #include "GpuMultiSolver.h"
+#include "gpuShareLib/GpuClauseSharer.h"
 
 #include <memory>
 
 namespace Glucose {
-
-class GpuClauseSharer;
 
 class GpuOptions {
 public:
@@ -58,7 +57,7 @@ public:
     GpuOptions();
     int getNumberOfCpuThreads(int verbosity, float mem);
 
-    GpuClauseSharerOptions toGpuClauseSharerOptions(int verbosity, int initRepCountPerCategory = 10);
+    GpuShare::GpuClauseSharerOptions toGpuClauseSharerOptions(int verbosity, int initRepCountPerCategory = 10);
 };
 
 class CompositionRoot {
@@ -66,7 +65,7 @@ public:
     // The reason for having them public is that they're used by the tests as well,
     // and the tests need to look at these individually
     int varCount;
-    std::unique_ptr<GpuClauseSharer> gpuClauseSharer;
+    std::unique_ptr<GpuShare::GpuClauseSharer> gpuClauseSharer;
     std::unique_ptr<GpuMultiSolver> gpuMultiSolver;
     Verbosity verb;
 

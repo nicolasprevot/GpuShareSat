@@ -19,7 +19,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #ifndef GpuClauseSharer_h
 #define GpuClauseSharer_h
 
-namespace Glucose {
+namespace GpuShare {
 
 struct GpuClauseSharerOptions {
     // A guideline (might not be exactly respected) of the number of blocks to use on the GPU. -1 to infer it from the machine specs.

@@ -22,7 +22,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "Helper.cuh"
 #include "satUtils/SolverTypes.h"
 
-namespace Glucose {
+namespace GpuShare {
 
 #define MAX_CL_SIZE 100
 
@@ -84,8 +84,8 @@ struct MultiLBool {
     }
 
     void printBinary() {
-        printf("isDef: "); Glucose::printBinary(isDef); NL;
-        printf("isTrue: "); Glucose::printBinary(isTrue); NL;
+        printf("isDef: "); GpuShare::printBinary(isDef); NL;
+        printf("isTrue: "); GpuShare::printBinary(isTrue); NL;
     }
 
     lbool getUniqueVal() {

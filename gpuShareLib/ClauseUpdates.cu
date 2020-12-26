@@ -18,7 +18,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
  **************************************************************************************************/
 #include "Helper.cuh"
 #include "ClauseUpdates.cuh"
-namespace Glucose {
+namespace GpuShare {
 
 DClauseUpdates ClUpdateSet::getDClauseUpdates() {
     return DClauseUpdates { updates.getDArr(), vals.getDArr() };

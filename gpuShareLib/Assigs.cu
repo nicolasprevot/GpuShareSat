@@ -27,7 +27,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 
 #define PRINT_ALOT 0
 
-namespace Glucose {
+namespace GpuShare {
 
 __device__ void printVD(MultiLBool multiLBool) {
     printf("tr: "); printBinaryDH(multiLBool.isTrue); printf(" def: "); printBinaryDH(multiLBool.isDef); printf(" "); 

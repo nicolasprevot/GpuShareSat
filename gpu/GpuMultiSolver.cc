@@ -29,7 +29,7 @@ namespace Glucose {
 
 // There should only be one instance of this class.
 // This class synchronizes the work of several GpuHelpedSolver
-GpuMultiSolver::GpuMultiSolver(Finisher &_finisher, GpuClauseSharer &_gpuClauseSharer, 
+GpuMultiSolver::GpuMultiSolver(Finisher &_finisher, GpuShare::GpuClauseSharer &_gpuClauseSharer, 
         std::function<GpuHelpedSolver* (int threadId) > _solverFactory, int varCount, int writeClausesPeriodSec,
         Verbosity _verb, double _initMemUsed, double _maxMemory, int _gpuReduceDbPeriod, int _gpuReduceDbPeriodInc):
                 gpuClauseSharer(_gpuClauseSharer),
@@ -229,7 +229,7 @@ void GpuMultiSolver::printStats() {
 #endif
                 writeAsJson("approximateMemAllocated_megabytes", apprMemAllocated / 1.0e6);
                 for (int i = 0; i < gpuClauseSharer.getGlobalStatCount(); i++) {
-                    GlobalStats gs = static_cast<GlobalStats>(i);
+                    GpuShare::GlobalStats gs = static_cast<GpuShare::GlobalStats>(i);
                     writeAsJson(gpuClauseSharer.getGlobalStatName(gs), gpuClauseSharer.getGlobalStat(gs));
                 }
             }

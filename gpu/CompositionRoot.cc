@@ -56,8 +56,8 @@ GpuOptions::GpuOptions():
 
 }
 
-GpuClauseSharerOptions GpuOptions::toGpuClauseSharerOptions(int verbosity, int initRepCountPerCategory) {
-    GpuClauseSharerOptions csOpts;
+GpuShare::GpuClauseSharerOptions GpuOptions::toGpuClauseSharerOptions(int verbosity, int initRepCountPerCategory) {
+    GpuShare::GpuClauseSharerOptions csOpts;
     csOpts.gpuBlockCountGuideline = blockCount;
     csOpts.gpuThreadsPerBlockGuideline = threadsPerBlock;
     csOpts.minGpuLatencyMicros = minGpuLatencyMicros;
@@ -100,14 +100,14 @@ CompositionRoot::CompositionRoot(GpuOptions opts, CommonOptions commonOpts, Fini
     varCount(varCount)
 {
     verb = commonOpts.getVerbosity();
-    GpuClauseSharerOptions csOpts = opts.toGpuClauseSharerOptions(verb.global);
+    GpuShare::GpuClauseSharerOptions csOpts = opts.toGpuClauseSharerOptions(verb.global);
     verb.writeStatsPeriodSec = (verb.global > 0) ? opts.writeStatsPeriodSec : -1;
 
     // don't page lock more than 10 % of memory in one go
     maxPageLockedMem = 1e6 * opts.maxMemory / 10;
     double initMemUsed = memUsed();
 
-    gpuClauseSharer = std::unique_ptr<GpuClauseSharer>(makeGpuClauseSharerPtr(csOpts, varCount));
+    gpuClauseSharer = std::unique_ptr<GpuShare::GpuClauseSharer>(GpuShare::makeGpuClauseSharerPtr(csOpts, varCount));
 
     gpuMultiSolver = my_make_unique<GpuMultiSolver>(finisher, *gpuClauseSharer,
                 std::function<GpuHelpedSolver* (int)> ([&](int cpuThreadId) {

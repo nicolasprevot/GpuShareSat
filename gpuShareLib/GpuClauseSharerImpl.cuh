@@ -9,7 +9,7 @@
 #include <memory>
 
 
-namespace Glucose {
+namespace GpuShare {
 
 class HostAssigs;
 class GpuRunner;

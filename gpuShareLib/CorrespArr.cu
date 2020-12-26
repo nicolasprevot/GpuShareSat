@@ -23,7 +23,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 size_t maxPageLockedMem = 1e9;
 // #define LOG_MEM
 
-namespace Glucose {
+namespace GpuShare {
 
 void assertIsDevicePtr(void *mem) {
 #ifndef NDEBUG

@@ -29,7 +29,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 
 // #define LOG_MEM
 
-namespace Glucose {
+namespace GpuShare {
 
 void printV(cudaMemcpyKind kind);
 

@@ -26,7 +26,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #ifndef UTILS_CUH_
 #define UTILS_CUH_
 
-namespace Glucose {
+namespace GpuShare {
 
 // The point of this class is to not have to manually create / delete the cudaStream_t object
 // It's generally a good practice to encapsulate memory allocation / deallocation

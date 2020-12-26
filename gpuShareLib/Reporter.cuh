@@ -27,7 +27,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include <algorithm>
 #include <functional>
 
-namespace Glucose {
+namespace GpuShare {
 
 template<typename T>
 class DReporter {
@@ -125,7 +125,7 @@ public:
     }
 };
 
-} /* namespace Glucose */
+} /* namespace GpuShare */
 
 
 #endif /* ROLLINGREPORTER_CUH_ */

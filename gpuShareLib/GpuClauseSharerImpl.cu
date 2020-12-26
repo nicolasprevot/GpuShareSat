@@ -9,7 +9,7 @@
 #include "utils/System.h"
 #include <thread>
 
-namespace Glucose {
+namespace GpuShare {
 
 
 GpuClauseSharer* makeGpuClauseSharerPtr(GpuClauseSharerOptions opts, int varCount) {

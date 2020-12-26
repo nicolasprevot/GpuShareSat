@@ -30,7 +30,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 
 // #define PRINT_DETAILS_CLAUSES
 
-namespace Glucose {
+namespace GpuShare {
 
 ClauseBatch::ClauseBatch():
         nextClauseToPop(0) {
