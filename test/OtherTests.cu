@@ -31,7 +31,7 @@ namespace Glucose {
 
 #include "gpu/GpuHelpedSolver.h"
 
-namespace Glucose {
+namespace GpuShare {
 
 BOOST_AUTO_TEST_SUITE(OtherTest)
 

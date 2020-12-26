@@ -99,7 +99,6 @@ public:
     }
 };
 
-void writeClause(FILE *file, const vec<Lit>& lits);
 
 template<class Solver>
 static void parse_DIMACS(gzFile input_stream, Solver& S) {

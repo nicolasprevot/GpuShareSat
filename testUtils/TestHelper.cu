@@ -22,9 +22,11 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "gpu/CompositionRoot.h"
 #include "gpuShareLib/Clauses.cuh"
 #include <boost/test/unit_test.hpp>
+#include "gpuShareLib/GpuClauseSharer.h"
 
+using namespace Glucose;
 
-namespace Glucose {
+namespace GpuShare {
 
 void setDefaultOptions(GpuOptions &options) {
     options.blockCount = 3;
@@ -33,7 +35,7 @@ void setDefaultOptions(GpuOptions &options) {
     options.minGpuLatencyMicros = 50;
 }
 
-GpuFixture::GpuFixture(GpuOptions options, int varCount, int _solverCount, int initRepCountPerCategory) :
+GpuFixture::GpuFixture(GpuOptions &options, int varCount, int _solverCount, int initRepCountPerCategory) :
         gpuClauseSharer(options.toGpuClauseSharerOptions(2, initRepCountPerCategory), varCount)
 {
     gpuClauseSharer.setCpuSolverCount(_solverCount);
@@ -59,7 +61,7 @@ void GpuFixture::execute() {
     for (int i = 0; i < solvers.size(); i++) {
         solvers[i] -> tryCopyTrailForGpu(solvers[i] -> decisionLevel());
     }
-    Glucose::execute(gpuClauseSharer);
+    GpuShare::execute(gpuClauseSharer);
 }
 
 CRef GpuFixture::executeAndImportClauses() {

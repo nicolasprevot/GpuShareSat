@@ -34,6 +34,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "ClauseUpdates.cuh"
 #include "Profiler.h"
 #include "GpuClauseSharer.h"
+#include "Vec.h"
 
 #define RESCALE_CONST 1e19
 
@@ -264,6 +265,8 @@ public:
     void writeClausesInCnf(FILE *file, int varCount);
 
 };
+
+void writeClause(FILE *file, const vec<Lit>& lits);
 
 }
 

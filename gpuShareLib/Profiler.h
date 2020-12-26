@@ -23,6 +23,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 
 namespace GpuShare {
 
+
 class TimeGauge {
     private:
     unsigned long &toBump;

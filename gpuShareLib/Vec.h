@@ -18,8 +18,8 @@ DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 **************************************************************************************************/
 
-#ifndef Glucose_Vec_h
-#define Glucose_Vec_h
+#ifndef GpuShare_Vec_h
+#define GpuShare_Vec_h
 
 #include <assert.h>
 #include <new>
@@ -156,6 +156,7 @@ template<class T> void printV(const vec<T>& vec) {
     printf("]");
 }
 
+class OutOfMemoryException {};
 
 template<class T>
 void vec<T>::capacity(int min_cap) {

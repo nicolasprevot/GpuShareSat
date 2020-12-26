@@ -27,6 +27,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "CorrespArr.cuh"
 #include "GpuUtils.cuh"
 #include "ContigCopy.cuh"
+#include "Vec.h"
 
 #include <atomic>
 #include <memory>

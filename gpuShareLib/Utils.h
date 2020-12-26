@@ -145,6 +145,8 @@ inline void makeSameAsF(uint &val, uint toSet, uint from) {
 
 void printBinary(uint x);
 
+long realTimeMicros();
+
 }
 
 

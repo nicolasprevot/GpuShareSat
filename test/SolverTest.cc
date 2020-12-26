@@ -19,6 +19,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 
 #include <boost/test/unit_test.hpp>
 #include "core/Solver.h"
+#include "core/Finisher.h"
 #include "satUtils/Dimacs.h"
 
 namespace Glucose {

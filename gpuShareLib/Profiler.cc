@@ -24,13 +24,6 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 
 namespace GpuShare {
 
-long realTimeMicros() {
-    struct timeval time;
-    gettimeofday(&time, NULL);
-    return time.tv_usec + 1e6 * time.tv_sec;
-
-}
-
 TimeGauge::TimeGauge(unsigned long &_toBump, bool enabled): 
     toBump(_toBump),
     timeStartedMicros(enabled ? realTimeMicros() : -1) {

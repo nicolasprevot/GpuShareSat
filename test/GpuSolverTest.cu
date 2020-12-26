@@ -41,7 +41,9 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 
 using namespace std;
 
-namespace Glucose {
+using namespace Glucose;
+
+namespace GpuShare {
 
 
 
@@ -83,16 +85,16 @@ BOOST_AUTO_TEST_CASE(testAssigsTwoSolvers) {
     OneSolverAssigs& assig0 = hostAssigs.getAssigs(0);
     assig0.enterLock();
     BOOST_CHECK(assig0.isAssignmentAvailableLocked());
-    assig0.setVarLocked(0, l_False);
-    assig0.setVarLocked(1, l_Undef);
+    assig0.setVarLocked(0, gl_False);
+    assig0.setVarLocked(1, gl_Undef);
     assig0.assignmentDoneLocked();
     assig0.exitLock();
 
     OneSolverAssigs& assig1 = hostAssigs.getAssigs(1);
     assig1.enterLock();
     BOOST_CHECK(assig1.isAssignmentAvailableLocked());
-    assig1.setVarLocked(0, l_Undef);
-    assig1.setVarLocked(1, l_True);
+    assig1.setVarLocked(0, gl_Undef);
+    assig1.setVarLocked(1, gl_True);
     assig1.assignmentDoneLocked();
     assig1.exitLock();
     vec<AssigIdsPerSolver> assigIdsPerSolver;
@@ -125,13 +127,13 @@ BOOST_AUTO_TEST_CASE(testAssigsTwoAssignments) {
     OneSolverAssigs& assig = hostAssigs.getAssigs(0);
     assig.enterLock();
     BOOST_CHECK(assig.isAssignmentAvailableLocked());
-    assig.setVarLocked(0, l_True);
-    assig.setVarLocked(1, l_False);
+    assig.setVarLocked(0, gl_True);
+    assig.setVarLocked(1, gl_False);
     assig.assignmentDoneLocked();
     assig.exitLock();
     assig.enterLock();
     BOOST_CHECK(assig.isAssignmentAvailableLocked());
-    assig.setVarLocked(0, l_Undef);
+    assig.setVarLocked(0, gl_Undef);
     assig.assignmentDoneLocked();
     assig.exitLock();
     ContigCopier cc;
@@ -164,7 +166,7 @@ BOOST_AUTO_TEST_CASE(testManyAssignments) {
     for (int i = 0; i < assigCount(); i++) {
         assig.enterLock();
         BOOST_CHECK(assig.isAssignmentAvailableLocked());
-        assig.setVarLocked(i, i % 2 == 0 ? l_True : l_False);
+        assig.setVarLocked(i, i % 2 == 0 ? gl_True : gl_False);
         assig.assignmentDoneLocked();
         assig.exitLock();
     }
@@ -179,7 +181,7 @@ BOOST_AUTO_TEST_CASE(testManyAssignments) {
 
     assig.enterLock();
     BOOST_CHECK(assig.isAssignmentAvailableLocked());
-    assig.setVarLocked(7, l_Undef);
+    assig.setVarLocked(7, gl_Undef);
     assig.assignmentDoneLocked();
     assig.exitLock();
 
@@ -210,11 +212,11 @@ BOOST_AUTO_TEST_CASE(testAssigAggregates) {
     int assigsPerSolver = sizeof(Vals) * 8;
     for (int solv = 0; solv < 2; solv++) {
         OneSolverAssigs& assig = hostAssigs.getAssigs(solv);
-        lbool l = solv == 0 ? l_True : l_False;
+        lbool l = solv == 0 ? gl_True : gl_False;
         for (int i = 0; i < assigsPerSolver; i++) {
             assig.enterLock();
             ASSERT_MSG(assig.isAssignmentAvailableLocked(), PRINT(i); PRINT(solv));
-            assig.setVarLocked(0, i % 2 == 0 ? l : l_Undef);
+            assig.setVarLocked(0, i % 2 == 0 ? l : gl_Undef);
             assig.assignmentDoneLocked();
             assig.exitLock();
         }
@@ -341,25 +343,25 @@ BOOST_AUTO_TEST_CASE(testClausesAssigsReported) {
     // assigs for solver 0
     OneSolverAssigs& assig0 = fx.gpuClauseSharer.assigs->getAssigs(0);
     assig0.enterLock();
-    assig0.setVarLocked(0, l_False);
-    assig0.setVarLocked(1, l_True);
-    assig0.setVarLocked(2, l_True);
+    assig0.setVarLocked(0, gl_False);
+    assig0.setVarLocked(1, gl_True);
+    assig0.setVarLocked(2, gl_True);
     assig0.assignmentDoneLocked();
     assig0.exitLock();
 
     assig0.enterLock();
-    assig0.setVarLocked(0, l_True);
-    assig0.setVarLocked(1, l_False);
-    assig0.setVarLocked(2, l_False);
+    assig0.setVarLocked(0, gl_True);
+    assig0.setVarLocked(1, gl_False);
+    assig0.setVarLocked(2, gl_False);
     assig0.assignmentDoneLocked();
     assig0.exitLock();
 
     // assigs for solv 1
     OneSolverAssigs& assig1 = fx.gpuClauseSharer.assigs->getAssigs(1);
     assig1.enterLock();
-    assig1.setVarLocked(0, l_True);
-    assig1.setVarLocked(1, l_False);
-    assig1.setVarLocked(2, l_True);
+    assig1.setVarLocked(0, gl_True);
+    assig1.setVarLocked(1, gl_False);
+    assig1.setVarLocked(2, gl_True);
     assig1.assignmentDoneLocked();
     assig1.exitLock();
     execute(fx.gpuClauseSharer);
@@ -369,7 +371,7 @@ BOOST_AUTO_TEST_CASE(testClausesAssigsReported) {
     BOOST_CHECK_EQUAL(0, getReportedClausesCount(*fx.gpuClauseSharer.reported, 2));
 
     assig0.enterLock();
-    assig0.setVarLocked(1, l_True);
+    assig0.setVarLocked(1, gl_True);
     assig0.assignmentDoneLocked();
     assig0.exitLock();
     execute(fx.gpuClauseSharer);
@@ -390,9 +392,9 @@ BOOST_AUTO_TEST_CASE(testFindClausesMultiThread) {
 
     OneSolverAssigs &oneSolverAssigs = fx.gpuClauseSharer.assigs->getAssigs(0);
     oneSolverAssigs.enterLock();
-    oneSolverAssigs.setVarLocked(0, l_False);
-    oneSolverAssigs.setVarLocked(1, l_True);
-    oneSolverAssigs.setVarLocked(2, l_Undef);
+    oneSolverAssigs.setVarLocked(0, gl_False);
+    oneSolverAssigs.setVarLocked(1, gl_True);
+    oneSolverAssigs.setVarLocked(2, gl_Undef);
     oneSolverAssigs.assignmentDoneLocked();
     oneSolverAssigs.exitLock();
 
@@ -446,10 +448,10 @@ BOOST_AUTO_TEST_CASE(SolverImportBinary) {
     GpuFixture fx(ops, 3, 1);
     GpuHelpedSolver& solver = *(fx.solvers[0]);
     // level 0: var 0 is true
-    solver.uncheckedEnqueue(mkLit(0));
+    solver.uncheckedEnqueue(Glucose::mkLit(0));
     solver.newDecisionLevel();
     // level 1: var 2 is true
-    solver.uncheckedEnqueue(mkLit(2));
+    solver.uncheckedEnqueue(Glucose::mkLit(2));
     BOOST_CHECK((l_True == solver.value(2)));
 
     // add gpu clause: 0 implies 1
@@ -480,15 +482,15 @@ BOOST_AUTO_TEST_CASE(testOneAssignmentThenTwo) {
     copyToDeviceAsync(*fx.gpuClauseSharer.clauses, stream, getGpuDims(ops));
 
     solver.newDecisionLevel();
-    solver.uncheckedEnqueue(mkLit(0));
+    solver.uncheckedEnqueue(Glucose::mkLit(0));
     solver.tryCopyTrailForGpu(solver.decisionLevel());
     execute(fx.gpuClauseSharer);
 
     solver.newDecisionLevel();
-    solver.uncheckedEnqueue(mkLit(3));
+    solver.uncheckedEnqueue(Glucose::mkLit(3));
     solver.tryCopyTrailForGpu(solver.decisionLevel());
     solver.newDecisionLevel();
-    solver.uncheckedEnqueue(mkLit(1));
+    solver.uncheckedEnqueue(Glucose::mkLit(1));
     solver.tryCopyTrailForGpu(solver.decisionLevel());
     execute(fx.gpuClauseSharer);
     BOOST_CHECK_EQUAL(1, getReportedClausesCount(*fx.gpuClauseSharer.reported, 0));
@@ -504,12 +506,12 @@ BOOST_AUTO_TEST_CASE(SolverDoesntImportSameClauseTwice) {
     // Solver will copy two assignments to gpu, each one will get back the same clause
     // test that the solver only imports the clause once
     solver.newDecisionLevel();
-    solver.uncheckedEnqueue(mkLit(0));
+    solver.uncheckedEnqueue(Glucose::mkLit(0));
     solver.tryCopyTrailForGpu(1);
 
     solver.cancelUntil(0);
     solver.newDecisionLevel();
-    solver.uncheckedEnqueue(~mkLit(1));
+    solver.uncheckedEnqueue(~Glucose::mkLit(1));
     solver.tryCopyTrailForGpu(1);
     addClause(*fx.gpuClauseSharer.clauses, {~mkLit(0), mkLit(1)});
     // no need to call copyToDevice because execute does it
@@ -532,13 +534,13 @@ BOOST_AUTO_TEST_CASE(SolverDoesntImportSameClauseTwiceOnSuccessiveGpuExecutions)
     addClause(*fx.gpuClauseSharer.clauses, {~mkLit(0), mkLit(1)});
 
     solver.newDecisionLevel();
-    solver.uncheckedEnqueue(mkLit(0));
+    solver.uncheckedEnqueue(Glucose::mkLit(0));
     solver.tryCopyTrailForGpu(1);
     fx.gpuClauseSharer.gpuRun();
 
     solver.cancelUntil(0);
     solver.newDecisionLevel();
-    solver.uncheckedEnqueue(~mkLit(1));
+    solver.uncheckedEnqueue(~Glucose::mkLit(1));
     solver.tryCopyTrailForGpu(1);
     fx.gpuClauseSharer.gpuRun();
     bool foundEmptyClause;
@@ -563,9 +565,9 @@ BOOST_AUTO_TEST_CASE(SolverCanReimportClause) {
     addClause(*fx.gpuClauseSharer.clauses, {~mkLit(0), ~mkLit(1), mkLit(3)});
 
     solver.newDecisionLevel();
-    solver.uncheckedEnqueue(mkLit(0));
+    solver.uncheckedEnqueue(Glucose::mkLit(0));
     solver.newDecisionLevel();
-    solver.uncheckedEnqueue(mkLit(1));
+    solver.uncheckedEnqueue(Glucose::mkLit(1));
     BOOST_CHECK_EQUAL(0, (int) solver.stats[learnedFromGpu]);
     BOOST_CHECK_EQUAL(0, (int) solver.stats[nbImported]);
     fx.executeAndImportClauses();
@@ -578,9 +580,9 @@ BOOST_AUTO_TEST_CASE(SolverCanReimportClause) {
 
     solver.cancelUntil(0);
     solver.newDecisionLevel();
-    solver.uncheckedEnqueue(mkLit(0));
+    solver.uncheckedEnqueue(Glucose::mkLit(0));
     solver.newDecisionLevel();
-    solver.uncheckedEnqueue(mkLit(1));
+    solver.uncheckedEnqueue(Glucose::mkLit(1));
     // just so that the first clause doesn't need to be imported by the gpu
     solver.propagate();
     fx.executeAndImportClauses();
@@ -594,8 +596,8 @@ BOOST_AUTO_TEST_CASE(TwoSolverImportBinary) {
     setDefaultOptions(ops);
     GpuFixture fx(ops, 3, 2);
 
-    fx.solvers[0]->uncheckedEnqueue(mkLit(0));
-    fx.solvers[1]->uncheckedEnqueue(~mkLit(0));
+    fx.solvers[0]->uncheckedEnqueue(Glucose::mkLit(0));
+    fx.solvers[1]->uncheckedEnqueue(~Glucose::mkLit(0));
 
     fx.solvers[0]->propagate();
     fx.solvers[1]->propagate();
@@ -625,14 +627,14 @@ BOOST_AUTO_TEST_CASE(SolverUnsets) {
     // addClause(*fx.gpuClauseSharer.clauses, {mkLit(0), mkLit(1)});
     GpuHelpedSolver& solver = *fx.solvers[0];
     solver.newDecisionLevel();
-    solver.uncheckedEnqueue(mkLit(1));
+    solver.uncheckedEnqueue(Glucose::mkLit(1));
     vec<CRef> v;
     fx.executeAndImportClauses(v);
     fx.checkReportedImported(0, 0, false);
 
     solver.cancelUntil(0);
     solver.newDecisionLevel();
-    solver.uncheckedEnqueue(mkLit(0));
+    solver.uncheckedEnqueue(Glucose::mkLit(0));
 
     addClause(*fx.gpuClauseSharer.clauses, {~mkLit(0), mkLit(1)});
     fx.executeAndImportClauses(v);
@@ -646,7 +648,7 @@ BOOST_AUTO_TEST_CASE(SolverImportUnary) {
     GpuFixture fx(ops, 2, 1);
     GpuHelpedSolver& solver = *(fx.solvers[0]);
     solver.newDecisionLevel();
-    solver.uncheckedEnqueue(mkLit(1));
+    solver.uncheckedEnqueue(Glucose::mkLit(1));
 
     BOOST_CHECK((l_True == solver.value(1)));
 
@@ -694,7 +696,7 @@ BOOST_AUTO_TEST_CASE(SolverHasManyClausesReportedAllAtOnce) {
         // a third of the variables are already true, so the clauses won't be imported
         if (i % 3 == 0) {
             solver.newDecisionLevel();
-            solver.uncheckedEnqueue(mkLit(i));
+            solver.uncheckedEnqueue(Glucose::mkLit(i));
         }
         addClause(*fx.gpuClauseSharer.clauses, {mkLit(i)});
     }
@@ -704,7 +706,7 @@ BOOST_AUTO_TEST_CASE(SolverHasManyClausesReportedAllAtOnce) {
         // Those were set at the beginning, so their clauses haven't been imported, and they've
         // been unset because of the other literals added, so they're not set any more
         if (i % 3 == 0) BOOST_CHECK((l_Undef == solver.value(i)));
-        else ASSERT_OP_MSG(l_True, ==, solver.value(i), PRINT(i));
+        BOOST_CHECK((l_True == solver.value(i)));
     }
     fx.checkReportedImported(varCount - getRequired(varCount, 3), 0, true);
 }
@@ -723,12 +725,12 @@ BOOST_AUTO_TEST_CASE(OneInstanceTwoAssignments) {
     addClause(*fx.gpuClauseSharer.clauses, {~mkLit(1), mkLit(3)});
 
     solver.newDecisionLevel();
-    solver.uncheckedEnqueue(mkLit(0));
+    solver.uncheckedEnqueue(Glucose::mkLit(0));
 
     solver.tryCopyTrailForGpu(solver.decisionLevel());
     solver.cancelUntil(0);
     solver.newDecisionLevel();
-    solver.uncheckedEnqueue(mkLit(1));
+    solver.uncheckedEnqueue(Glucose::mkLit(1));
     solver.tryCopyTrailForGpu(solver.decisionLevel());
     solver.cancelUntil(0);
     BOOST_CHECK_EQUAL(0, fx.gpuClauseSharer.getOneSolverStat(0, reportedClauses));
@@ -739,13 +741,13 @@ BOOST_AUTO_TEST_CASE(OneInstanceTwoAssignments) {
     BOOST_CHECK_EQUAL(2, fx.gpuClauseSharer.getOneSolverStat(0, reportedClauses));
     BOOST_CHECK_EQUAL(2, solver.stats[nbImported]);
     solver.newDecisionLevel();
-    solver.uncheckedEnqueue(mkLit(0));
+    solver.uncheckedEnqueue(Glucose::mkLit(0));
     solver.propagate();
     BOOST_CHECK((l_True == solver.value(2)));
 
     solver.cancelUntil(0);
     solver.newDecisionLevel();
-    solver.uncheckedEnqueue(mkLit(1));
+    solver.uncheckedEnqueue(Glucose::mkLit(1));
     solver.propagate();
     BOOST_CHECK((l_True == solver.value(3)));
 }
@@ -757,10 +759,10 @@ BOOST_AUTO_TEST_CASE(SolverClauseKeptAfterImport) {
     GpuHelpedSolver& solver = *(fx.solvers[0]);
 
     solver.newDecisionLevel();
-    solver.uncheckedEnqueue(mkLit(0));
+    solver.uncheckedEnqueue(Glucose::mkLit(0));
 
     solver.newDecisionLevel();
-    solver.uncheckedEnqueue(mkLit(1));
+    solver.uncheckedEnqueue(Glucose::mkLit(1));
 
     addClause(*fx.gpuClauseSharer.clauses, {~mkLit(0), ~mkLit(1), mkLit(2)});
     fx.executeAndImportClauses();
@@ -775,7 +777,7 @@ BOOST_AUTO_TEST_CASE(SolverClauseKeptAfterImport) {
     BOOST_CHECK((l_Undef == solver.value(2)));
 
     solver.newDecisionLevel();
-    solver.uncheckedEnqueue(mkLit(1));
+    solver.uncheckedEnqueue(Glucose::mkLit(1));
     solver.propagate();
     BOOST_CHECK((l_True == solver.value(0)));
     BOOST_CHECK((l_True == solver.value(1)));
@@ -790,14 +792,14 @@ BOOST_AUTO_TEST_CASE(SolverImportFalseClauseDifferentLevel) {
     GpuFixture fx(ops, 3, 1);
     GpuHelpedSolver& solver = *(fx.solvers[0]);
 
-    solver.addClause(~mkLit(1), mkLit(2));
+    solver.addClause(~Glucose::mkLit(1), Glucose::mkLit(2));
 
     solver.newDecisionLevel();
-    solver.uncheckedEnqueue(mkLit(0));
+    solver.uncheckedEnqueue(Glucose::mkLit(0));
     solver.propagate();
 
     solver.newDecisionLevel();
-    solver.uncheckedEnqueue(mkLit(1));
+    solver.uncheckedEnqueue(Glucose::mkLit(1));
 
     solver.propagate();
     BOOST_CHECK((l_True == solver.value(0)));
@@ -828,7 +830,7 @@ BOOST_AUTO_TEST_CASE(testDeduceEmptyClause) {
     GpuFixture fx(ops, 1, 1);
     GpuHelpedSolver& solver = *(fx.solvers[0]);
 
-    solver.uncheckedEnqueue(mkLit(0));
+    solver.uncheckedEnqueue(Glucose::mkLit(0));
     solver.propagate();
     BOOST_CHECK((l_True == solver.value(0)));
 
@@ -847,7 +849,7 @@ BOOST_AUTO_TEST_CASE(findConflict) {
     GpuFixture fx(ops, 2, 1);
     GpuHelpedSolver& solver = *(fx.solvers[0]);
 
-    solver.addClause(~mkLit(0), mkLit(1));
+    solver.addClause(~Glucose::mkLit(0), Glucose::mkLit(1));
     solver.addClause(mkLit(0), ~mkLit(1));
     solver.newDecisionLevel();
 

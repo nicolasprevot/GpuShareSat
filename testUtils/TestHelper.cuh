@@ -21,16 +21,21 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 
 #include "gpuShareLib/GpuClauseSharerImpl.cuh"
 #include "gpuShareLib/GpuUtils.cuh"
+#include "core/Finisher.h"
+#include "satUtils/SolverTypes.h"
+
+namespace Glucose {
+    class GpuOptions;
+    class GpuHelpedSolver;
+}
 
 // Used by tests
-namespace Glucose {
+namespace GpuShare {
 
-class GpuOptions;
 class GpuRunner;
-class GpuHelpedSolver;
 class ContigCopier;
 
-void setDefaultOptions(GpuOptions &options);
+void setDefaultOptions(Glucose::GpuOptions &options);
 
 class GpuClauseSharerForTests : public GpuClauseSharerImpl {
     public:
@@ -45,16 +50,16 @@ class GpuClauseSharerForTests : public GpuClauseSharerImpl {
 
 class GpuFixture {
 public:
-    Finisher finisher;
-    vec<GpuHelpedSolver*> solvers;
+    Glucose::Finisher finisher;
+    vec<Glucose::GpuHelpedSolver*> solvers;
     GpuClauseSharerForTests gpuClauseSharer;
 
-    GpuFixture(GpuOptions options, int varCount, int solverCount, int initRepSize = 100);
+    GpuFixture(Glucose::GpuOptions &options, int varCount, int solverCount, int initRepSize = 100);
     ~GpuFixture();
 
     void execute();
-    CRef executeAndImportClauses();
-    void executeAndImportClauses(vec<CRef> &res);
+    Glucose::CRef executeAndImportClauses();
+    void executeAndImportClauses(vec<Glucose::CRef> &res);
     void checkReportedImported(int count, int instance, bool unit);
     void addClause(const vec<Lit> &cl);
 };

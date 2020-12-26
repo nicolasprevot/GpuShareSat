@@ -24,7 +24,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "gpuShareLib/CorrespArr.cuh"
 #include "gpuShareLib/GpuUtils.cuh"
 
-namespace Glucose {
+namespace GpuShare {
 
 BOOST_AUTO_TEST_SUITE( CorrespArrTest )
 

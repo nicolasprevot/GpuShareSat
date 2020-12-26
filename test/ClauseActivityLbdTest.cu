@@ -25,7 +25,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "mtl/Vec.h"
 #include <math.h>
 
-namespace Glucose {
+namespace GpuShare {
 
 __global__ void writeFirstLit(DClauses dClauses, Lit *ptr, int clSize) {
     *ptr = *dClauses.getStartAddrForClause(clSize, 0);

@@ -70,14 +70,6 @@ DimacsParser::DimacsParser(gzFile inputStream) :
         {
 }
 
-void writeClause(FILE *file, const vec<Lit>& lits) {
-    for (int i = 0; i < lits.size(); i++) {
-        int val = (var(lits[i]) + 1) * (sign(lits[i]) ? -1 : 1);
-        fprintf(file, "%d ", val);
-    }
-    fprintf(file, "0\n");
-}
-
 void DimacsParser::readClause(vec<Lit>& lits) {
     int parsed_lit, var;
     lits.clear();

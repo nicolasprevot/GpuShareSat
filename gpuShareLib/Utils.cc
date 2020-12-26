@@ -72,5 +72,11 @@ void printBinary(uint x) {
     }
 }
 
+long realTimeMicros() {
+    struct timeval time;
+    gettimeofday(&time, NULL);
+    return time.tv_usec + 1e6 * time.tv_sec;
+
+}
 
 }

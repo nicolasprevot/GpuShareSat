@@ -4,6 +4,7 @@
 #include "GpuClauseSharer.h"
 #include "BaseTypes.cuh"
 #include "GpuUtils.cuh"
+#include "Vec.h"
 #include <memory>
 
 
