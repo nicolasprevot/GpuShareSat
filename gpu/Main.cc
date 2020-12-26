@@ -23,7 +23,6 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include <thread>
 #include <csignal>
 
-#include "gpuShareLib/Helper.cuh"
 #include "GpuMultiSolver.h"
 #include "satUtils/Dimacs.h"
 #include "CompositionRoot.h"
