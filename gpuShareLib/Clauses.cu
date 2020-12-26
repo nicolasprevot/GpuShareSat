@@ -27,7 +27,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "Clauses.cuh"
 #include <stdio.h>
 #include <math.h>
-#include "utils/Assert.h"
+#include "Assert.h"
 #include "utils/Utils.h"
 #include "satUtils/SolverTypes.h"
 #include "GpuUtils.cuh"

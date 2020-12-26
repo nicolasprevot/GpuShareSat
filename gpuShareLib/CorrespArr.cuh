@@ -23,7 +23,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #define DEF_CORRESP_ARR
 #include <exception>
 #include "Helper.cuh"
-#include "utils/Assert.h"
+#include "Assert.h"
 #include "BaseTypes.cuh"
 #include "GpuUtils.cuh"
 

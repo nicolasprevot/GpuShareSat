@@ -22,7 +22,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #define Glucose_Alg_h
 
 #include "mtl/Vec.h"
-#include "utils/Assert.h"
+#include "gpuShareLib/Assert.h"
 
 namespace Glucose {
 

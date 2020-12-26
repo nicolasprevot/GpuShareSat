@@ -28,7 +28,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "mtl/XAlloc.h"
 
 #include "utils/Utils.h"
-#include "utils/Assert.h"
+#include "gpuShareLib/Assert.h"
 
 #include<string.h>
 
