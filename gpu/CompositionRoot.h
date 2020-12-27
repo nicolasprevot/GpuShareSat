@@ -47,7 +47,6 @@ public:
     IntOption writeClausesPeriodSec;
     IntOption writeStatsPeriodSec;
     IntOption minGpuLatencyMicros;
-    BoolOption gpuActOnly;
     GpuHelpedSolverOptions gpuHelpedSolverOptions;
     IntOption solverCount;
     IntOption maxSolverCount;

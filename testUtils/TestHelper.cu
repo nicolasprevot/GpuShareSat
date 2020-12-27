@@ -31,7 +31,6 @@ namespace GpuShare {
 void setDefaultOptions(GpuOptions &options) {
     options.blockCount = 3;
     options.threadsPerBlock = 32;
-    options.gpuActOnly = false;
     options.minGpuLatencyMicros = 50;
 }
 

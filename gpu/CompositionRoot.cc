@@ -35,21 +35,20 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 namespace Glucose {
 
 GpuOptions::GpuOptions():
-    blockCount("GPU", "block-count", "Guideline for number of gpu blocks. 0 for auto adjust", 0, IntRange(0, INT32_MAX)),
-    threadsPerBlock("GPU", "threads-per-block", "Number of threads per block", 512),
-    gpuClauseActivityDecay("GPU", "gpu-cl-decay", "activity decay for gpu clauses", 0.99999),
+    blockCount("GPU", "block-count", "Guideline for number of gpu blocks. -1 for auto adjust", -1, IntRange(-1, INT32_MAX)),
+    threadsPerBlock("GPU", "threads-per-block", "Number of threads per block. -1 for default", -1),
+    gpuClauseActivityDecay("GPU", "gpu-cl-decay", "activity decay for gpu clauses, -1 for default", -1),
     gpuFirstReduceDb("GPU", "gpu-first-reduce-db", "Wait until there are that many clauses on the gpu before the first reduce DB",
             800000, IntRange(0, INT32_MAX)),
     gpuIncReduceDb("GPU", "gpu-inc-reduce-db", "Increase the reduce db count by this much each time we reduce",
             30000, IntRange(0, INT32_MAX)),
     writeClausesPeriodSec("GPU", "write-clauses-period-sec", "Each time this interval is passed, write all clauses", -1),
     writeStatsPeriodSec("GPU", "write-stats-period-sec", "Each time this interval is passed, write all stats. Set to -1 to never write them", 5),
-    minGpuLatencyMicros("GPU", "min-gpu-latency-micros", "If a gpu run takes less than this amount of time, wait for the remaining time", 50),
-    gpuActOnly("GPU", "gpu-act-only", "Only consider activity (not lbd) when removing gpu clauses", true),
+    minGpuLatencyMicros("GPU", "min-gpu-latency-micros", "If a gpu run takes less than this amount of time, wait for the remaining time, -1 for default", -1),
     solverCount("GPU", "thread-count", "Number of core CPU threads for syrup (0 for automatic)", 0),
     maxSolverCount("GPU", "max-thread-count", "Maximum number of core CPU threads to ask for (when thread-count=0). 0 (default) stands for concurrency - 1", 0),
     maxMemory("GPU", "max-memory", "Maximum memory to use (in Mb, 0 for no software limit)", 8000),
-    quickProf("GPU", "quick-prof", "if we do some quick and simple profiling. It still makes things slower, but not by too much. It is meant to be used in release, with no additional external tools", false)
+    quickProf("GPU", "quick-prof", "if we do some quick and simple profiling. It still makes things slower, but not by too much. It is meant to be used in releases", false)
 {
 
 }
