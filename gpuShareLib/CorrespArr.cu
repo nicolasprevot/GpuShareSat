@@ -19,11 +19,11 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "CorrespArr.cuh"
 #include <cstdlib>
 
+
+namespace GpuShare {
 // one gig
 size_t maxPageLockedMem = 1e9;
 // #define LOG_MEM
-
-namespace GpuShare {
 
 void assertIsDevicePtr(void *mem) {
 #ifndef NDEBUG
@@ -213,7 +213,7 @@ void* allocateMemoryHost(size_t amount, bool &pageLocked) {
     ASSERT_OP(amount, >, 0);
     if (amount >= maxPageLockedMem) {
         pageLocked = false;
-        printf("c switching memory from page locked to paged because amount is to high: %zu\n", amount);
+        printf("c switching memory from page locked to paged because amount is too high: %zu, maximum is %zu\n", amount, maxPageLockedMem);
     }
     if (pageLocked) {
         // If we allocate 0, then we can't use free on the result

@@ -11,9 +11,15 @@
 
 namespace GpuShare {
 
+extern size_t maxPageLockedMem;
 
 GpuClauseSharer* makeGpuClauseSharerPtr(GpuClauseSharerOptions opts, int varCount) {
     return new GpuClauseSharerImpl(opts, varCount);
+}
+
+void writeMessageAndThrow(const char *message) {
+    fprintf(stderr, "%s", message);
+    THROW();
 }
 
 GpuClauseSharerImpl::GpuClauseSharerImpl(GpuClauseSharerOptions _opts, /* TODO: we should be able to increase it */ int _varCount) {
@@ -29,17 +35,35 @@ GpuClauseSharerImpl::GpuClauseSharerImpl(GpuClauseSharerOptions _opts, /* TODO: 
     globalStats.resize(globalStatNames.size());
 
     opts = _opts;
-    varCount = _varCount;
-    GpuDims gpuDims {0, 0};
-    if (opts.gpuBlockCountGuideline > 0) {
-        gpuDims.blockCount = opts.gpuBlockCountGuideline;
-    } else {
+    if (opts.minGpuLatencyMicros < 0) opts.minGpuLatencyMicros = 50;
+    if (opts.clauseActivityDecay < 0) opts.clauseActivityDecay = 0.99999;
+    if (opts.maxPageLockedMemory < 0) {
+        size_t freeGpuMem, totalGpuMem;
+        getGpuMemInfo(freeGpuMem, totalGpuMem);
+        // This is a bit wrong because page locked memory is host memory. However, there is no simple API which gives us the physical
+        // memory on the host while there is one for the device.
+        opts.maxPageLockedMemory = totalGpuMem / 3;
+    }
+    if (opts.gpuBlockCountGuideline < 0) {
         cudaDeviceProp props;
         exitIfError(cudaGetDeviceProperties(&props, 0), POSITION);
-        gpuDims.blockCount = props.multiProcessorCount * 2;
-        if (opts.verbosity > 0) printf("c Setting block count guideline to %d (twice the number of multiprocessors)\n", gpuDims.blockCount);
+        opts.gpuBlockCountGuideline = props.multiProcessorCount * 2;
+        if (opts.verbosity > 0) printf("c Setting block count guideline to %d (twice the number of multiprocessors)\n", opts.gpuBlockCountGuideline);
     }
-    gpuDims.threadsPerBlock = opts.gpuThreadsPerBlockGuideline;
+    if (opts.gpuThreadsPerBlockGuideline < 0) opts.gpuThreadsPerBlockGuideline = 512;
+
+    if (opts.clauseActivityDecay >= 1) writeMessageAndThrow("Clause activity decay must be strictly smaller than 1");
+
+    if (opts.initReportCountPerCategory < 0) opts.initReportCountPerCategory = 10;
+
+    if (opts.initReportCountPerCategory == 0) writeMessageAndThrow("initReportCountPerCategory must not be 0");
+    if (opts.gpuThreadsPerBlockGuideline == 0) writeMessageAndThrow("gpuThreadsPerBlockGuideline must not be 0");
+    if (opts.gpuBlockCountGuideline == 0) writeMessageAndThrow("gpuBlockCountGuideline must not be 0");
+
+    varCount = _varCount;
+    GpuDims gpuDims {opts.gpuBlockCountGuideline, opts.gpuThreadsPerBlockGuideline};
+
+    maxPageLockedMem = opts.maxPageLockedMemory;
     assigs = my_make_unique<HostAssigs>(varCount, gpuDims);  
     clauses = my_make_unique<HostClauses>(gpuDims, opts.clauseActivityDecay, true, globalStats);
     reported = my_make_unique<Reported>(*clauses, oneSolverStats);

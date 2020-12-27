@@ -84,12 +84,6 @@ int main(int argc, char **argv)
 
         DimacsParser parser(in);
 
-        // Note: seems this flag has to be set before a stream is created (rather than on the thread using the stream)
-        // The reason for setting it here instead of composition root is that:
-        // If set in comp root, it would be set for some unit tests but not other
-        // but this flag needs to be set before the device starts to run, so it wouldn't work
-        // this flag is good if there are few threads
-        // exitIfError(cudaSetDeviceFlags(cudaDeviceBlockingSync), POSITION);
         CompositionRoot compRoot(gpuOptions, commonOptions, finisher, parser.nVars());
 
         // Note: cuda uses a gigantic amount (gigabytes) of virtual memory that is almost never used, to get the whole physical memory into virtual

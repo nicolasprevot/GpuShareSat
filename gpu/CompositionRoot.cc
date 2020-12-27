@@ -32,8 +32,6 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include <thread>
 #include <stdio.h>
 
-extern size_t maxPageLockedMem;
-
 namespace Glucose {
 
 GpuOptions::GpuOptions():
@@ -65,6 +63,7 @@ GpuShare::GpuClauseSharerOptions GpuOptions::toGpuClauseSharerOptions(int verbos
     csOpts.clauseActivityDecay = gpuClauseActivityDecay;
     csOpts.quickProf = quickProf;
     csOpts.initReportCountPerCategory = initRepCountPerCategory;
+    csOpts.maxPageLockedMemory = -1; // set to default
     return csOpts;
 }
 
@@ -103,8 +102,6 @@ CompositionRoot::CompositionRoot(GpuOptions opts, CommonOptions commonOpts, Fini
     GpuShare::GpuClauseSharerOptions csOpts = opts.toGpuClauseSharerOptions(verb.global);
     verb.writeStatsPeriodSec = (verb.global > 0) ? opts.writeStatsPeriodSec : -1;
 
-    // don't page lock more than 10 % of memory in one go
-    maxPageLockedMem = 1e6 * opts.maxMemory / 10;
     double initMemUsed = memUsed();
 
     gpuClauseSharer = std::unique_ptr<GpuShare::GpuClauseSharer>(GpuShare::makeGpuClauseSharerPtr(csOpts, varCount));

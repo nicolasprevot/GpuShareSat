@@ -26,25 +26,33 @@ struct GpuClauseSharerOptions {
     int gpuBlockCountGuideline;
     // A guideline (might not be exactly respected) of the number of threads per block to use on the GPU. -1 for the default.
     int gpuThreadsPerBlockGuideline;
-    // Make sure that each GPU run lasts at least this time, in microseconds. -1 for the default
+    // Make sure that each GPU run lasts at least this time, in microseconds. This is useful when there are very few clauses on the GPU
+    // since a GPU run would last a very short time, but it would negatively impact CPU performance. -1 for the default
     int minGpuLatencyMicros;
     // 0 for no verbosity, 1 for some verbosity
     int verbosity;
-    // How quicly the activity of a clause decreases. The activity is bumped whenever a clause is reported.
+    // How quicly the activity of a clause decreases. The activity is bumped whenever a clause is reported. Set to a value strictly higher
+    // than 0 and strictly smaller than one, or a negative value for the default.
     double clauseActivityDecay;
-    // If true, will measure how much time some operations take.
+    // If true, will measure how much time some operations take and compute statistics for them.
     bool quickProf;
-    
+
+    // Set to -1 for the default. This is the maximum number of clauses reported by the GPU for each category at the start.
     int initReportCountPerCategory;
+
+    // Page locked memory allows faster transfers between the host and the device (GPU). This is the maximum amount of memory in bytes to 
+    // page lock in one allocation. If we try to allocate more than that, the memory will not be paged locked. Set to -1 to try to infer
+    // it from the machine spec.
+    int maxPageLockedMemory;
 
     GpuClauseSharerOptions() {
         gpuBlockCountGuideline = -1;
         gpuThreadsPerBlockGuideline = -1;
         minGpuLatencyMicros = -1;
         verbosity = 1;
-        clauseActivityDecay = 0.99999;
+        clauseActivityDecay = -1;
         quickProf = true;
-        initReportCountPerCategory = 10;
+        initReportCountPerCategory = -1;
     }
 };
 
