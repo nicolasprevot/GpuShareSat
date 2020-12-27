@@ -23,9 +23,10 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 
 #include <assert.h>
 #include <new>
+#include <errno.h>
 
-#include "mtl/IntTypes.h"
-#include "mtl/XAlloc.h"
+#include <limits.h>
+#include <stdio.h>
 #include <initializer_list>
 
 

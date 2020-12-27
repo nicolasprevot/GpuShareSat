@@ -24,7 +24,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include <chrono>
 #include <atomic>
 #include <functional>
-#include "gpuShareLib/my_make_unique.h"
+#include "my_make_unique.h"
 
 #define WARP_SIZE 32
 

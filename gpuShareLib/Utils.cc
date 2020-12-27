@@ -21,7 +21,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include <random>
 #include <assert.h>
 #include <limits.h>
-#include "utils/System.h"
+#include <sys/time.h>
 
 namespace GpuShare {
 

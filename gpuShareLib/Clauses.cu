@@ -28,12 +28,10 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include <stdio.h>
 #include <math.h>
 #include "Assert.h"
-#include "gpuShareLib/Utils.h"
-#include "satUtils/SolverTypes.h"
+#include "Utils.h"
 #include "GpuUtils.cuh"
 #include "BaseTypes.cuh"
 #include "my_make_unique.h"
-#include "satUtils/Dimacs.h"
 #include "GpuClauseSharer.h"
 #include <limits>
 
