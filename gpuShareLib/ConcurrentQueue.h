@@ -22,9 +22,9 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 
 #include <atomic>
 #include <memory>
-#include "mtl/Vec.h"
+#include "Vec.h"
 #include "Utils.h"
-namespace Glucose {
+namespace GpuShare {
 
 // this class is NOT thread safe
 // It's a like a queue, but all the elements can be accessed via an index

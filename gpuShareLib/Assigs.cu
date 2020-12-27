@@ -155,7 +155,7 @@ OneSolverAssigs::OneSolverAssigs(int varCount, int &warpsPerBlock, int warpCount
     currentId(0),
     firstIdUsed(0),
     varToUpdatePos(varCount, -1),
-    lastVarVal(varCount, l_Undef),
+    lastVarVal(varCount, gl_Undef),
     updatesSent(0) {
         initDArr(multiLBool.getDArr(), MultiLBool {0, 0}, warpsPerBlock, warpCount);
 }
@@ -169,16 +169,16 @@ Vals setOnMask(Vals &x, Vals mask, bool onMask, bool notOnMask) {
 }
 
 void OneSolverAssigs::setVarLocked(Var var, lbool val) {
-    bool isSet = val != l_Undef;
-    bool isTrue = val == l_True;
+    bool isSet = val != gl_Undef;
+    bool isTrue = val == gl_True;
     int updatePos = varToUpdatePos[var];
     if (updatePos == -1 || updates.size() <= updatePos || updates[updatePos].var != var) {
         updates.resize(updates.size() + 1);
         VarUpdate& vu = updates[updates.size() - 1];
         // For the not completed ones: set the new values
         // For the already completed ones: set the values they had already on the gpu, which we can get from lastVarVal
-        vu.newMultiLBool.isDef = setOnMask(vu.newMultiLBool.isDef, notCompletedMask, isSet, lastVarVal[var] != l_Undef);
-        vu.newMultiLBool.isTrue = setOnMask(vu.newMultiLBool.isTrue, notCompletedMask, isTrue, lastVarVal[var] == l_True);
+        vu.newMultiLBool.isDef = setOnMask(vu.newMultiLBool.isDef, notCompletedMask, isSet, lastVarVal[var] != gl_Undef);
+        vu.newMultiLBool.isTrue = setOnMask(vu.newMultiLBool.isTrue, notCompletedMask, isTrue, lastVarVal[var] == gl_True);
         vu.var = var;
         varToUpdatePos[var] = updates.size() - 1;
     }
@@ -364,14 +364,6 @@ void setAllAssigsToLastAsync(int warpsPerBlock, int warpCount, AssigsAndUpdates 
 DAssigAggregates HostAssigs::getDAssigAggregates(Vals aggStartVals) {
     dAssigAggregates.startVals = aggStartVals;
     return dAssigAggregates;
-}
-
-void HostAssigs::printStats() {
-    long updatesSent = 0;
-    for (int i = 0; i < solverAssigs.size(); i++) {
-        updatesSent += solverAssigs[i]->getUpdatesSent();
-    }
-    writeAsJson("varUpdatesSentToGpu", updatesSent);
 }
 
 void assignAggBitsToSolver(int &currentBit, OneSolverAssigs &solverAssig, int bitCount) {

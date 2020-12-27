@@ -99,7 +99,6 @@ inline  Lit  operator ^(Lit p, bool b)      { Lit q; q.x = p.x ^ (unsigned int)b
 inline  bool sign      (Lit p)              { return p.x & 1; }
 inline  int  var       (Lit p)              { return p.x >> 1; }
 
-void printV(const Lit& lit);
 
 // Mapping Literals to and from compact integers suitable for array indexing:
 inline  int  toInt     (Var v)              { return v; } 
@@ -162,7 +161,6 @@ public:
 inline int   toInt  (lbool l) { return l.value; }
 inline lbool toLbool(int   v) { return lbool((uint8_t)v);  }
 
-void printV(lbool lb);
 
 
 //=================================================================================================

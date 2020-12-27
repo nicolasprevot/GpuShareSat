@@ -80,7 +80,6 @@ public:
     GpuRunner(HostClauses &_hostClauses, HostAssigs &_hostAssigs, Reported &_reported, GpuDims gpuDimsGuideline, bool _quickProf, int _countPerCategory, cudaStream_t &stream, vec<unsigned long> &globalStats);
 
     void wholeRun(bool canStart);
-    void printStats();
     bool getHasRunOutOfGpuMemoryOnce() { return hasRunOutOfGpuMemoryOnce; }
     long getClauseTestsOnAssigs();
 };

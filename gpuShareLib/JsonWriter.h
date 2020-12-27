@@ -32,7 +32,7 @@ void setNeedNewlineAndComma();
 void writeJsonString(const char *name, const char *val);
 
 // here because Solver doesn't use printV
-void writeAsJson(const char *name, unsigned long val) {
+inline void writeAsJson(const char *name, unsigned long val) {
     writeJsonField(name);
     printf("%ld", val);
     setNeedNewlineAndComma();

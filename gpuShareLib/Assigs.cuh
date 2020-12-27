@@ -226,8 +226,6 @@ public:
 
     AssigsAndUpdates fillAssigsAsync(ContigCopier &cc, vec<AssigIdsPerSolver> &assigIdsPerSolver, cudaStream_t &stream);
 
-    void printStats();
-
     void printAll();
 };
 

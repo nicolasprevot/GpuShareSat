@@ -52,24 +52,8 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "satUtils/SolverTypes.h"
 namespace Glucose {
 
-void printV(const Lit& lit) {
-    printf("%d", var(lit));
-    if (sign(lit)) printf("-");
-    else printf("+");
-}
-
 void printV(Clause& c) {
     printf("clause lbd %d size %d", c.lbd(), c.size());
-#ifdef PRINT_DETAILS_LITS
-    printf(" [");
-    for (int i = 0; i < c.size(); i++) {
-        printV(c[i]);
-        if (i != c.size() - 1) {
-            printf(", ");
-        }
-    }
-    printf("]");
-#endif
 }
 
 void printV(lbool lb) {

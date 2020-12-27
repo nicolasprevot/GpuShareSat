@@ -194,10 +194,6 @@ void Reported::removeOldestClauses(int solvId) {
     repClauses[solvId]->removeMin();
 }
 
-
-void Reported::printStats() {
-}
-
 Reported::~Reported() {
 
 }

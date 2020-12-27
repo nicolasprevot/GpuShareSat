@@ -1960,7 +1960,7 @@ void Solver::printEncapsulatedStats() {
     printStats();
 }
 
-double luby(double y, int x) {
+double Glucose::luby(double y, int x) {
     // Find the finite subsequence that contains index 'x', and the
     // size of that subsequence:
     int size, seq;

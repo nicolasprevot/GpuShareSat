@@ -20,7 +20,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include <boost/test/unit_test.hpp>
 #include "gpuShareLib/ConcurrentQueue.h"
 
-namespace Glucose {
+namespace GpuShare {
 
 BOOST_AUTO_TEST_SUITE( ConcurrentQueueTest )
 

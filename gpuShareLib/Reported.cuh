@@ -28,7 +28,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "CorrespArr.cuh"
 #include "BaseTypes.cuh"
 #include "GpuUtils.cuh"
-#include "mtl/Vec.h"
+#include "Vec.h"
 #include <set>
 
 namespace GpuShare {
@@ -111,7 +111,6 @@ public:
 
     long getLastAssigAllReported(int cpuSolverId) {return lastAssigAllReported[cpuSolverId]; }
 
-    void printStats();
     ~Reported();
 };
 

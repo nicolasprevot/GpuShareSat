@@ -55,8 +55,6 @@ printf(" ");\
 
 #define PRINTLN(x) { PRINT(x); NL }
 
-timespec getNextTimePrintStats();
-
 bool operator ==(const timespec& lhs, const timespec& rhs);
 bool operator !=(const timespec& lhs, const timespec& rhs);
 
