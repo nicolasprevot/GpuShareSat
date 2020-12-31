@@ -45,7 +45,7 @@ class GpuClauseSharerForTests : public GpuClauseSharerImpl {
     using GpuClauseSharerImpl::clauses;
     using GpuClauseSharerImpl::sp;
 
-    GpuClauseSharerForTests(GpuClauseSharerOptions opts, int varCount);
+    GpuClauseSharerForTests(GpuClauseSharerOptions opts);
 };
 
 class GpuFixture {

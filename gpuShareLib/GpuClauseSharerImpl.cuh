@@ -37,7 +37,9 @@ class GpuClauseSharerImpl : public GpuClauseSharer {
     void unsetPendingLocked(int threadId);
 
     public:
-    GpuClauseSharerImpl(GpuClauseSharerOptions opts, /* TODO: we should be able to increase it */ int varCount);
+    GpuClauseSharerImpl(GpuClauseSharerOptions opts);
+
+    void setVarCount(int newCount);
 
     void gpuRun();
 

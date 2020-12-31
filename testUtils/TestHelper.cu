@@ -35,8 +35,9 @@ void setDefaultOptions(GpuOptions &options) {
 }
 
 GpuFixture::GpuFixture(GpuOptions &options, int varCount, int _solverCount, int initRepCountPerCategory) :
-        gpuClauseSharer(options.toGpuClauseSharerOptions(2, initRepCountPerCategory), varCount)
+        gpuClauseSharer(options.toGpuClauseSharerOptions(2, initRepCountPerCategory))
 {
+    gpuClauseSharer.setVarCount(varCount);
     gpuClauseSharer.setCpuSolverCount(_solverCount);
     for (int s = 0; s < _solverCount; s++) {
         GpuHelpedSolver *solv = new GpuHelpedSolver(finisher, s, options.gpuHelpedSolverOptions.toParams(), gpuClauseSharer, options.quickProf);
@@ -47,7 +48,7 @@ GpuFixture::GpuFixture(GpuOptions &options, int varCount, int _solverCount, int 
     }
 }
 
-GpuClauseSharerForTests::GpuClauseSharerForTests(GpuClauseSharerOptions opts, int varCount): GpuClauseSharerImpl(opts, varCount) {
+GpuClauseSharerForTests::GpuClauseSharerForTests(GpuClauseSharerOptions opts): GpuClauseSharerImpl(opts) {
 }
 
 void execute(GpuClauseSharer &gpuClauseSharer) {

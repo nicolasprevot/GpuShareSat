@@ -183,6 +183,7 @@ private:
 
 public:
     OneSolverAssigs(int varCount, int &warpsPerBlock, int warpCount);
+    void setVarCount(int varCount, cudaStream_t &stream, int &warpsPerBlock, int totalWarps);
     void setVarLocked(Var var, lbool val);
     void enterLock() { lock.lock(); }
     bool tryLock() { return lock.try_lock(); }
@@ -215,7 +216,10 @@ private:
     int warpCountForInit;
 
 public:
-    HostAssigs(int varCount, GpuDims gpuDims);
+    HostAssigs(GpuDims gpuDims);
+
+    void setVarCount(int varCount, cudaStream_t &stream);
+
     long getChangeCount();
 
     void growSolverAssigs(int newCount);

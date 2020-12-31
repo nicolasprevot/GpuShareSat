@@ -79,7 +79,8 @@ BOOST_AUTO_TEST_CASE(testAssigsTwoSolvers) {
     StreamPointer sp;
     GpuDims gpuDims {2, WARP_SIZE};
     ContigCopier cc; 
-    HostAssigs hostAssigs(2, gpuDims);
+    HostAssigs hostAssigs(gpuDims);
+    hostAssigs.setVarCount(2, sp.get());
     hostAssigs.growSolverAssigs(2);
 
     OneSolverAssigs& assig0 = hostAssigs.getAssigs(0);
@@ -121,7 +122,8 @@ BOOST_AUTO_TEST_CASE(testAssigsTwoSolvers) {
 BOOST_AUTO_TEST_CASE(testAssigsTwoAssignments) {
     StreamPointer sp;
     GpuDims gpuDims {2, WARP_SIZE};
-    HostAssigs hostAssigs(2, gpuDims);
+    HostAssigs hostAssigs(gpuDims);
+    hostAssigs.setVarCount(2,sp.get());
     hostAssigs.growSolverAssigs(1);
 
     OneSolverAssigs& assig = hostAssigs.getAssigs(0);
@@ -159,7 +161,8 @@ BOOST_AUTO_TEST_CASE(testAssigsTwoAssignments) {
 BOOST_AUTO_TEST_CASE(testManyAssignments) {
     StreamPointer sp;
     GpuDims gpuDims {2, WARP_SIZE};
-    HostAssigs hostAssigs(assigCount(), gpuDims);
+    HostAssigs hostAssigs(gpuDims);
+    hostAssigs.setVarCount(assigCount(), sp.get());
     hostAssigs.growSolverAssigs(1);
 
     OneSolverAssigs& assig = hostAssigs.getAssigs(0);
@@ -207,7 +210,8 @@ BOOST_AUTO_TEST_CASE(testManyAssignments) {
 BOOST_AUTO_TEST_CASE(testAssigAggregates) {
     StreamPointer sp;
     GpuDims gpuDims {2, WARP_SIZE};
-    HostAssigs hostAssigs(1, gpuDims);
+    HostAssigs hostAssigs(gpuDims);
+    hostAssigs.setVarCount(1, sp.get());
     hostAssigs.growSolverAssigs(2);
     int assigsPerSolver = sizeof(Vals) * 8;
     for (int solv = 0; solv < 2; solv++) {

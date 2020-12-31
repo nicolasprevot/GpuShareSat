@@ -103,7 +103,8 @@ CompositionRoot::CompositionRoot(GpuOptions opts, CommonOptions commonOpts, Fini
 
     double initMemUsed = memUsed();
 
-    gpuClauseSharer = std::unique_ptr<GpuShare::GpuClauseSharer>(GpuShare::makeGpuClauseSharerPtr(csOpts, varCount));
+    gpuClauseSharer = std::unique_ptr<GpuShare::GpuClauseSharer>(GpuShare::makeGpuClauseSharerPtr(csOpts));
+    gpuClauseSharer->setVarCount(varCount);
 
     gpuMultiSolver = my_make_unique<GpuMultiSolver>(finisher, *gpuClauseSharer,
                 std::function<GpuHelpedSolver* (int)> ([&](int cpuThreadId) {

@@ -13,8 +13,8 @@ namespace GpuShare {
 
 extern size_t maxPageLockedMem;
 
-GpuClauseSharer* makeGpuClauseSharerPtr(GpuClauseSharerOptions opts, int varCount) {
-    return new GpuClauseSharerImpl(opts, varCount);
+GpuClauseSharer* makeGpuClauseSharerPtr(GpuClauseSharerOptions opts) {
+    return new GpuClauseSharerImpl(opts);
 }
 
 void writeMessageAndThrow(const char *message) {
@@ -22,7 +22,7 @@ void writeMessageAndThrow(const char *message) {
     THROW();
 }
 
-GpuClauseSharerImpl::GpuClauseSharerImpl(GpuClauseSharerOptions _opts, /* TODO: we should be able to increase it */ int _varCount) {
+GpuClauseSharerImpl::GpuClauseSharerImpl(GpuClauseSharerOptions _opts) {
 // assumes the enum values start at 0
 #define X(v) globalStatNames.push(#v);
 #include "GlobalStats.h"
@@ -60,15 +60,20 @@ GpuClauseSharerImpl::GpuClauseSharerImpl(GpuClauseSharerOptions _opts, /* TODO: 
     if (opts.gpuThreadsPerBlockGuideline == 0) writeMessageAndThrow("gpuThreadsPerBlockGuideline must not be 0");
     if (opts.gpuBlockCountGuideline == 0) writeMessageAndThrow("gpuBlockCountGuideline must not be 0");
 
-    varCount = _varCount;
+    varCount = 0;
     GpuDims gpuDims {opts.gpuBlockCountGuideline, opts.gpuThreadsPerBlockGuideline};
 
     maxPageLockedMem = opts.maxPageLockedMemory;
-    assigs = my_make_unique<HostAssigs>(varCount, gpuDims);  
+    assigs = my_make_unique<HostAssigs>(gpuDims);  
     clauses = my_make_unique<HostClauses>(gpuDims, opts.clauseActivityDecay, true, globalStats);
     reported = my_make_unique<Reported>(*clauses, oneSolverStats);
     gpuRunner = my_make_unique<GpuRunner>(*clauses, *assigs, *reported, gpuDims, opts.quickProf, _opts.initReportCountPerCategory, sp.get(), globalStats);
 
+}
+
+void GpuClauseSharerImpl::setVarCount(int newVarCount) {
+    varCount = newVarCount;
+    assigs->setVarCount(newVarCount, sp.get());
 }
 
 void GpuClauseSharerImpl::gpuRun() {

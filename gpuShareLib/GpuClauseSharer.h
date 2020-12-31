@@ -80,6 +80,7 @@ class GpuClauseSharer {
     // Once this method completes, it is not guaranteed that all clauses for all assignments ready have been reported.
     virtual void gpuRun() = 0;
 
+
     // Delete half of the GPU clauses (those with the lowest activity).
     virtual void reduceDb() = 0;
 
@@ -99,6 +100,7 @@ class GpuClauseSharer {
 
     virtual void writeClausesInCnf(FILE *file) = 0;
 
+    virtual void setVarCount(int newCount) = 0;
 
     /* not thread safe with any other method in this class */
     virtual void setCpuSolverCount(int count) = 0;
@@ -155,7 +157,7 @@ class GpuClauseSharer {
 
 };
 
-GpuClauseSharer* makeGpuClauseSharerPtr(GpuClauseSharerOptions opts, int varCount);
+GpuClauseSharer* makeGpuClauseSharerPtr(GpuClauseSharerOptions opts);
 }
 
 #endif

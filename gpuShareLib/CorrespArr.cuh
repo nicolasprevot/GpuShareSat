@@ -189,17 +189,17 @@ template<typename T> void printV(DArr<T> darr) {
     printf("DArr: { size: %ld, addr: %p}", darr.size(), darr.getPtr());
 }
 
-template<typename T> __global__ void setAllTo(DArr<T> darr, T value) {
+template<typename T> __global__ void setAllTo(DArr<T> darr, T value, int from, int to) {
     int min, max;
-    assignToThread(darr.size(), min, max);
+    assignToThread(to - from, min, max);
     for (int i = min; i < max; i++) {
-        darr[i] = value;
+        darr[i + from] = value;
     }
 }
 
-template<typename T> void initDArr(DArr<T> darr, T value, int &warpsPerBlock, int totalWarps) {
+template<typename T> void initDArr(DArr<T> darr, T value, int &warpsPerBlock, int totalWarps, int from = 0, int /* -1 means the end of the array */ to = -1) {
     runGpuAdjustingDims(warpsPerBlock, totalWarps, [&] (int blockCount, int threadsPerBlock) {
-        setAllTo<<<blockCount, threadsPerBlock>>>(darr, value);
+        setAllTo<<<blockCount, threadsPerBlock>>>(darr, value, from, to == -1 ? darr.size() : to);
     });
     exitIfError(cudaDeviceSynchronize(), POSITION);
 }
