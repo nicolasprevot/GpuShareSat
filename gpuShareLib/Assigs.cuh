@@ -27,7 +27,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "CorrespArr.cuh"
 #include "GpuUtils.cuh"
 #include "ContigCopy.cuh"
-#include "Vec.h"
+#include <vector>
 
 #include <atomic>
 #include <memory>
@@ -155,13 +155,13 @@ private:
     long updatesSent;
 
     // tells us the last value set for a var
-    vec<lbool> lastVarVal;
+    std::vector<lbool> lastVarVal;
 
-    vec<VarUpdate> updates;
+    std::vector<VarUpdate> updates;
 
     // the update pos in updates for a var if there's already one, -1 otherwise
     // values here may not actually be right (they may be for a previous run)
-    vec<int> varToUpdatePos;
+    std::vector<int> varToUpdatePos;
 
     // This is the first id for which the assignment is used. Can be equal to currentId, in which case it is not
     long firstIdUsed;
@@ -203,8 +203,8 @@ private:
     int varCount;
     // The reason to have unique_ptr rather than the raw objects is:
     // OneSolverAssigs have locks as members, and they don't seem to enjoy
-    // being realloced directly, which vec does
-    vec<std::unique_ptr<OneSolverAssigs>> solverAssigs;
+    // being realloced directly, which std::vector does
+    std::vector<std::unique_ptr<OneSolverAssigs>> solverAssigs;
 
     ArrAllocator<MultiAgg> multiAggAlloc;
     DAssigAggregates dAssigAggregates;
@@ -228,7 +228,7 @@ public:
 
     OneSolverAssigs& getAssigs(int solverId);
 
-    AssigsAndUpdates fillAssigsAsync(ContigCopier &cc, vec<AssigIdsPerSolver> &assigIdsPerSolver, cudaStream_t &stream);
+    AssigsAndUpdates fillAssigsAsync(ContigCopier &cc, std::vector<AssigIdsPerSolver> &assigIdsPerSolver, cudaStream_t &stream);
 
     void printAll();
 };

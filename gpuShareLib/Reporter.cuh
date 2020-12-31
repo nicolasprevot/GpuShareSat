@@ -24,7 +24,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "ContigCopy.cuh"
 #include "GpuUtils.cuh"
 #include "Helper.cuh"
-#include "Vec.h"
+#include <vector>
 #include <algorithm>
 #include <functional>
 
@@ -100,7 +100,7 @@ public:
 
     // assumes that the contig copier has copied things to the host
     // returns if we should double the count per category
-    bool getCopiedToHost(vec<T> &res) {
+    bool getCopiedToHost(std::vector<T> &res) {
         assert(!isDone);
         isDone = true;
         bool doubleSize = false;
@@ -119,7 +119,7 @@ public:
         int current = 0;
         for (int cat = 0; cat < hostPos.size(); cat++) {
             int c = min(hostPos[cat] - cat * countPerCategory, countPerCategory);
-            if (c > 0) memcpy(res.getData() + current, hostReport.getPtr() + cat * countPerCategory, c * sizeof(T));
+            if (c > 0) memcpy(&res[current], hostReport.getPtr() + cat * countPerCategory, c * sizeof(T));
             current += c;
         }
         return doubleSize;

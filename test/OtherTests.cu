@@ -148,7 +148,7 @@ BOOST_AUTO_TEST_CASE(RollingReportTestOne) {
         dReport<<<1, 1, 0, sp.get()>>>(5, dReporter);
         exitIfFalse(cc.tryCopyAsync(cudaMemcpyDeviceToHost, sp.get()), POSITION);
         exitIfError(cudaStreamSynchronize(sp.get()), POSITION);
-        vec<int> l;
+        std::vector<int> l;
         rr.getCopiedToHost(l);
         BOOST_CHECK_EQUAL(2, l.size());
         BOOST_CHECK_EQUAL(2, l[0]);
@@ -164,7 +164,7 @@ BOOST_AUTO_TEST_CASE(RollingReportTestOne) {
         dReport<<<1, 1, 0, sp.get()>>>(7, dReporter);
         exitIfFalse(cc.tryCopyAsync(cudaMemcpyDeviceToHost, sp.get()), POSITION);
         exitIfError(cudaStreamSynchronize(sp.get()), POSITION);
-        vec<int> l;
+        std::vector<int> l;
         rr.getCopiedToHost(l);
         BOOST_CHECK_EQUAL(2, l.size());
         BOOST_CHECK_EQUAL(1, l[0]);

@@ -38,19 +38,19 @@ ClauseBatch::ClauseBatch():
 }
 
 void ClauseBatch::clear() {
-    clauseDatas.clear(false);
-    lits.clear(false);
+    clauseDatas.clear();
+    lits.clear();
     nextClauseToPop = 0;
     hadSomeReported = 0;
 }
 
 void ClauseBatch::addClause(GpuClauseId clId) {
-    ClauseData clData {clId, lits.size()};
-    clauseDatas.push(clData);
+    ClauseData clData {clId, (int) lits.size()};
+    clauseDatas.push_back(clData);
 }
 
 void ClauseBatch::addLit(Lit lit) {
-    lits.push(lit);
+    lits.push_back(lit);
 }
 
 bool ClauseBatch::popClause(MinHArr<Lit> &clLits, GpuClauseId &gpuClauseId) {
@@ -64,28 +64,28 @@ bool ClauseBatch::popClause(MinHArr<Lit> &clLits, GpuClauseId &gpuClauseId) {
     return true;
 }
 
-const vec<ClauseData>& ClauseBatch::getClauseDatas() {
+const std::vector<ClauseData>& ClauseBatch::getClauseDatas() {
     return clauseDatas;
 }
 
-Reported::Reported(HostClauses &_hostClauses,  vec<vec<unsigned long>> &_oneSolverStats) :
+Reported::Reported(HostClauses &_hostClauses,  std::vector<std::vector<unsigned long>> &_oneSolverStats) :
         hostClauses(_hostClauses),
         oneSolverStats(_oneSolverStats) {
 }
 
 void Reported::setSolverCount(int solverCount) {
     repClauses.resize(solverCount);
-    clausesToNotImportAgain.growTo(solverCount);
-    currentClauseBatches.growTo(solverCount, NULL);
-    lastSentAssigId.growTo(solverCount, 0);
-    lastAssigAllReported.growTo(solverCount, 0);
+    clausesToNotImportAgain.resize(solverCount);
+    currentClauseBatches.resize(solverCount, NULL);
+    lastSentAssigId.resize(solverCount, 0);
+    lastAssigAllReported.resize(solverCount, 0);
     for (int s = 0; s < solverCount; s++) {
         // There can be at most 3 sets of 32 assignments in flight for a given solver
         repClauses[s] = my_make_unique<ConcurrentQueue<ClauseBatch>>(3);
     }
 }
 
-ClauseBatch& Reported::getClauseBatch(vec<ClauseBatch*> &perSolverBatches, int solverId) {
+ClauseBatch& Reported::getClauseBatch(std::vector<ClauseBatch*> &perSolverBatches, int solverId) {
     if (perSolverBatches[solverId] == NULL) {
         perSolverBatches[solverId] = &(repClauses[solverId]->getNew());
         perSolverBatches[solverId]->clear();
@@ -136,11 +136,11 @@ bool Reported::popReportedClause(int solverId, MinHArr<Lit> &lits, GpuClauseId &
     }
 }
 
-void Reported::fill(vec<AssigIdsPerSolver> &solvAssigIds, vec<ReportedClause> &wrongClauses) {
+void Reported::fill(std::vector<AssigIdsPerSolver> &solvAssigIds, std::vector<ReportedClause> &wrongClauses) {
 
     // the batches for this run. Not all solvers have assignments for this run
     // We're going to set a ClauseBatch for the solvers which have one, whether some clauses were reported for them or not
-    vec<ClauseBatch*> perSolverBatches(repClauses.size(), NULL);
+    std::vector<ClauseBatch*> perSolverBatches(repClauses.size(), NULL);
 
     // This doesn't look at the wrong (reported) clauses at all
     for (int s = 0; s < solvAssigIds.size(); s++) {

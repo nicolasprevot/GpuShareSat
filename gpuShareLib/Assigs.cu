@@ -233,10 +233,8 @@ void OneSolverAssigs::getCurrentAssignment(uint8_t *assig) {
 
 void OneSolverAssigs::setVarCount(int varCount, cudaStream_t &stream, int &warpsPerBlock, int totalWarps) {
     std::lock_guard<std::mutex> lockGuard(lock);
-    if (lastVarVal.size() > varCount) lastVarVal.resize(varCount);
-    else lastVarVal.growTo(varCount, gl_Undef);
-    if (varToUpdatePos.size() > varCount) varToUpdatePos.resize(varCount);
-    else varToUpdatePos.growTo(varCount, -1);
+    lastVarVal.resize(varCount, gl_Undef);
+    varToUpdatePos.resize(varCount, -1);
     
     int oldSize = multiLBool.size();
     // There may be something using multiLBool so sync the stream using it before changing capacity
@@ -298,7 +296,7 @@ DOneSolverAssigs OneSolverAssigs::copyUpdatesLocked(ArrPair<VarUpdate> &varUpdat
     res.allAggBits = getMaskFromTo(startAggBitPos, endAggBitPos);
     assert(res.multiLBools.size() > 0);
 
-    updates.clear(false);
+    updates.clear();
     firstIdUsed = currentId;
     notCompletedMask = ~0;
     return res;
@@ -327,7 +325,7 @@ template<typename T> ArrPair<T> makeArrPair(ContigCopier &cc, MinHArr<T> &vals) 
     return res;
 }
 
-AssigsAndUpdates HostAssigs::fillAssigsAsync(ContigCopier &cc, vec<AssigIdsPerSolver> &assigIdsPerSolver, cudaStream_t &stream) {
+AssigsAndUpdates HostAssigs::fillAssigsAsync(ContigCopier &cc, std::vector<AssigIdsPerSolver> &assigIdsPerSolver, cudaStream_t &stream) {
     int solverCount = solverAssigs.size();
     assigIdsPerSolver.resize(solverCount);
 
@@ -398,7 +396,7 @@ void HostAssigs::setVarCount(int newVarCount, cudaStream_t &stream) {
 
 void HostAssigs::growSolverAssigs(int solverCount) {
     int oldCount = solverAssigs.size();
-    solverAssigs.growTo(solverCount);
+    solverAssigs.resize(solverCount);
     for (int i = oldCount; i < solverCount; i++) {
         solverAssigs[i] = my_make_unique<OneSolverAssigs>(varCount, warpsPerBlockForInit, warpCountForInit);
     }

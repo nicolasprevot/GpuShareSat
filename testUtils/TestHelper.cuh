@@ -51,7 +51,7 @@ class GpuClauseSharerForTests : public GpuClauseSharerImpl {
 class GpuFixture {
 public:
     Glucose::Finisher finisher;
-    vec<Glucose::GpuHelpedSolver*> solvers;
+    std::vector<Glucose::GpuHelpedSolver*> solvers;
     GpuClauseSharerForTests gpuClauseSharer;
 
     GpuFixture(Glucose::GpuOptions &options, int varCount, int solverCount, int initRepSize = 100);
@@ -59,9 +59,9 @@ public:
 
     void execute();
     Glucose::CRef executeAndImportClauses();
-    void executeAndImportClauses(vec<Glucose::CRef> &res);
+    void executeAndImportClauses(std::vector<Glucose::CRef> &res);
     void checkReportedImported(int count, int instance, bool unit);
-    void addClause(const vec<Lit> &cl);
+    void addClause(const std::vector<Lit> &cl);
 };
 
 void execute(GpuClauseSharer &gpuClauseSharer);
@@ -69,7 +69,7 @@ void execute(GpuClauseSharer &gpuClauseSharer);
 void copyToDeviceAsync(HostClauses &hCls, cudaStream_t &stream, GpuDims gpuDims);
 void copyToDeviceAsync(HostClauses &hCls, cudaStream_t &stream, ContigCopier &cc, GpuDims gpuDims);
 
-void addClause(HostClauses &hostClauses, const vec<Lit> &cl);
+void addClause(HostClauses &hostClauses, const std::vector<Lit> &cl);
 
 }
 
