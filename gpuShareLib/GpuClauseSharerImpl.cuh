@@ -4,7 +4,7 @@
 #include "GpuClauseSharer.h"
 #include "BaseTypes.cuh"
 #include "GpuUtils.cuh"
-#include "Vec.h"
+#include <vector>
 #include <memory>
 
 
@@ -22,13 +22,13 @@ class GpuClauseSharerImpl : public GpuClauseSharer {
     std::unique_ptr<Reported> reported;
     std::unique_ptr<HostClauses> clauses;
 
-    vec<unsigned long> globalStats;
-    vec<vec<unsigned long>> oneSolverStats;
+    std::vector<unsigned long> globalStats;
+    std::vector<std::vector<unsigned long>> oneSolverStats;
 
-    vec<const char*> globalStatNames;
-    vec<const char*> oneSolverStatNames;
+    std::vector<const char*> globalStatNames;
+    std::vector<const char*> oneSolverStatNames;
 
-    vec<vec<Lit>> toUnset;
+    std::vector<std::vector<Lit>> toUnset;
     GpuClauseSharerOptions opts;
 
     StreamPointer sp;

@@ -32,7 +32,7 @@ __global__ void writeFirstLit(DClauses dClauses, Lit *ptr, int clSize) {
 }
 
 struct TestFixture {
-    vec<unsigned long> globalStats;
+    std::vector<unsigned long> globalStats;
     StreamPointer sp;
     HostClauses hCls;
 
@@ -46,7 +46,7 @@ struct TestFixture {
     }
 
     void getRemovingLbdAndAct(int &minLimLbd, int &maxLimLbd, float &remAct) {
-        vec<int> clCountsAtLbd(MAX_CL_SIZE + 1, 0);
+        std::vector<int> clCountsAtLbd(MAX_CL_SIZE + 1, 0);
         hCls.fillClauseCountsAtLbds(clCountsAtLbd);
         hCls.getRemovingLbdAndAct(minLimLbd, maxLimLbd, remAct, clCountsAtLbd);
     }
@@ -118,19 +118,19 @@ void setLbdAndAct(int lbd, int act, HostClauses &hCls, int &currentLit, cudaStre
     }
 }
 
-void setLbdsAndActs(vec<LbdAndAct> &lbdsAndActs, HostClauses &hCls, cudaStream_t &stream) {
+void setLbdsAndActs(std::vector<LbdAndAct> &lbdsAndActs, HostClauses &hCls, cudaStream_t &stream) {
     int currentLit = 0;
     for (int i = 0; i < lbdsAndActs.size(); i++) {
         setLbdAndAct(lbdsAndActs[i].lbd, lbdsAndActs[i].act, hCls, currentLit, stream);
     }
 }
 
-void innerTestApproxNthLargestAct(vec<int> &act, float expMin, float expMax, int n) {
+void innerTestApproxNthLargestAct(std::vector<int> &act, float expMin, float expMax, int n) {
     TestFixture tf(false, 1.0);
     HostClauses& hCls(tf.hCls);
-    vec<LbdAndAct> lbdAndActs(0);
+    std::vector<LbdAndAct> lbdAndActs(0);
     for (int i = 0; i < act.size(); i++) {
-        lbdAndActs.push(LbdAndAct {3, act[i]});
+        lbdAndActs.push_back(LbdAndAct {3, act[i]});
     }
     setLbdsAndActs(lbdAndActs, hCls, tf.getStream());
     float apprMedian = hCls.approxNthAct(3, 4, n);
@@ -139,7 +139,7 @@ void innerTestApproxNthLargestAct(vec<int> &act, float expMin, float expMax, int
     BOOST_CHECK(apprMedian <= expMax);
 }
 
-void innerTestRemovingLbdActAct(vec<LbdAndAct> &lbdAndActs, float expMin, float expMax, int expMinLimLbd, int expMaxLimLbd, bool actOnly = false) {
+void innerTestRemovingLbdActAct(std::vector<LbdAndAct> &lbdAndActs, float expMin, float expMax, int expMinLimLbd, int expMaxLimLbd, bool actOnly = false) {
     TestFixture tf(actOnly, 1.0);
     HostClauses& hCls(tf.hCls);
     setLbdsAndActs(lbdAndActs, hCls, tf.getStream());
@@ -160,14 +160,8 @@ void innerTestRemovingLbdActAct(vec<LbdAndAct> &lbdAndActs, float expMin, float 
     printf("act is %f exp min is %f exp max is %f\n", remAct, expMin, expMax);
 }
 
-// The reason for this method is that vec.push requires a reference, and we can't that easily get
-// one in the case of a struct
-template<typename T> void pushVec(vec<T>& vector, T elm) {
-    vector.push(elm);
-}
-
 BOOST_AUTO_TEST_CASE(testApproxNthLargestAct) {
-    vec<int> vec(3);
+    std::vector<int> vec(3);
     vec[0] = 1;
     vec[1] = 2;
     vec[2] = 3;
@@ -177,7 +171,7 @@ BOOST_AUTO_TEST_CASE(testApproxNthLargestAct) {
 }
 
 BOOST_AUTO_TEST_CASE(testApproxNthLargestActOneBig) {
-    vec<int> vec(6);
+    std::vector<int> vec(6);
     vec[0] = 1;
     vec[1] = 1;
     vec[2] = 1;
@@ -188,7 +182,7 @@ BOOST_AUTO_TEST_CASE(testApproxNthLargestActOneBig) {
 }
 
 BOOST_AUTO_TEST_CASE(testApproxNthLargestActOneVal) {
-    vec<int> vec(5);
+    std::vector<int> vec(5);
     vec[0] = 1;
     vec[1] = 1;
     vec[2] = 1;
@@ -198,38 +192,38 @@ BOOST_AUTO_TEST_CASE(testApproxNthLargestActOneVal) {
 }
 
 BOOST_AUTO_TEST_CASE(testRemLbdAct) {
-    vec<LbdAndAct> lbdsActs;
+    std::vector<LbdAndAct> lbdsActs;
     // better to use pushVec, because if hardcoding the size, we can make mistakes
-    pushVec(lbdsActs, LbdAndAct { 2, 1 });
-    pushVec(lbdsActs, LbdAndAct { 2, 2 });
-    pushVec(lbdsActs, LbdAndAct { 3, 4 });
-    pushVec(lbdsActs, LbdAndAct { 4, 6 });
+    lbdsActs.push_back(LbdAndAct { 2, 1 });
+    lbdsActs.push_back(LbdAndAct { 2, 2 });
+    lbdsActs.push_back(LbdAndAct { 3, 4 });
+    lbdsActs.push_back(LbdAndAct { 4, 6 });
     innerTestRemovingLbdActAct(lbdsActs, -0.1, 1.0, 2, 3);
 }
 
 BOOST_AUTO_TEST_CASE(testRemLbdAct2) {
-    vec<LbdAndAct> lbdsActs;
-    pushVec(lbdsActs, LbdAndAct { 2, 1 });
-    pushVec(lbdsActs, LbdAndAct { 3, 4 });
-    pushVec(lbdsActs, LbdAndAct { 3, 9 });
-    pushVec(lbdsActs, LbdAndAct { 4, 15 });
+    std::vector<LbdAndAct> lbdsActs;
+    lbdsActs.push_back(LbdAndAct { 2, 1 });
+    lbdsActs.push_back(LbdAndAct { 3, 4 });
+    lbdsActs.push_back(LbdAndAct { 3, 9 });
+    lbdsActs.push_back(LbdAndAct { 4, 15 });
     innerTestRemovingLbdActAct(lbdsActs, 4.0, 9.0, 3, 4);
 }
 
 BOOST_AUTO_TEST_CASE(testDontRemoveLbd2Clauses) {
-    vec<LbdAndAct> lbdsActs;
-    pushVec(lbdsActs, LbdAndAct { 2, 1 });
-    pushVec(lbdsActs, LbdAndAct { 2, 3 });
-    pushVec(lbdsActs, LbdAndAct { 2, 4 });
-    pushVec(lbdsActs, LbdAndAct { 2, 5 });
-    pushVec(lbdsActs, LbdAndAct { 3, 1 });
+    std::vector<LbdAndAct> lbdsActs;
+    lbdsActs.push_back(LbdAndAct { 2, 1 });
+    lbdsActs.push_back(LbdAndAct { 2, 3 });
+    lbdsActs.push_back(LbdAndAct { 2, 4 });
+    lbdsActs.push_back(LbdAndAct { 2, 5 });
+    lbdsActs.push_back(LbdAndAct { 3, 1 });
     innerTestRemovingLbdActAct(lbdsActs, -0.1, 1.0, 2, 3);
 }
 
 BOOST_AUTO_TEST_CASE(testActOnly) {
-    vec<LbdAndAct> lbdsActs;
-    pushVec(lbdsActs, LbdAndAct { 2, 1 });
-    pushVec(lbdsActs, LbdAndAct { 8, 5 });
+    std::vector<LbdAndAct> lbdsActs;
+    lbdsActs.push_back(LbdAndAct { 2, 1 });
+    lbdsActs.push_back(LbdAndAct { 8, 5 });
     innerTestRemovingLbdActAct(lbdsActs, 1, 5, 0, 100, true);
 }
 
@@ -237,7 +231,7 @@ BOOST_AUTO_TEST_CASE(testActOnlyHugeDifferences) {
     float decay = 0.5;
     TestFixture tf(true, decay);
     HostClauses& hCls(tf.hCls);
-    vec<Lit> lits(0);
+    std::vector<Lit> lits(0);
     int currentLit = 0;
     // will have an act of 2
     setLbdAndAct(3, 1, hCls, currentLit, tf.getStream());
@@ -262,7 +256,7 @@ BOOST_AUTO_TEST_CASE(testRescale) {
     StreamPointer sp;
 
     // each decays multiplies activity inc by RESCALE_CONST * 10
-    vec<unsigned long> globalStats(100, 0);
+    std::vector<unsigned long> globalStats(100, 0);
     HostClauses hCls(GpuDims(1, 1), 1 / (RESCALE_CONST * 10), false, globalStats);
     addClause(hCls, {mkLit(0)});
 

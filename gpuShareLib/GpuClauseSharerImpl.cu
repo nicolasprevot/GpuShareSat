@@ -24,12 +24,12 @@ void writeMessageAndThrow(const char *message) {
 
 GpuClauseSharerImpl::GpuClauseSharerImpl(GpuClauseSharerOptions _opts) {
 // assumes the enum values start at 0
-#define X(v) globalStatNames.push(#v);
+#define X(v) globalStatNames.push_back(#v);
 #include "GlobalStats.h"
 #undef X
 
 // assumes the enum values start at 0
-#define X(v) oneSolverStatNames.push(#v);
+#define X(v) oneSolverStatNames.push_back(#v);
 #include "OneSolverStats.h"
 #undef X
     globalStats.resize(globalStatNames.size());
@@ -94,7 +94,7 @@ void GpuClauseSharerImpl::setCpuSolverCount(int solverCount) {
     toUnset.resize(solverCount);
     int c = oneSolverStats.size();
     oneSolverStats.resize(solverCount);
-    for (int i = c; i < solverCount; i++) oneSolverStats[i].growToInit(oneSolverStatNames.size(), 0);
+    for (int i = c; i < solverCount; i++) oneSolverStats[i].resize(oneSolverStatNames.size(), 0);
 }
 
 void GpuClauseSharerImpl::reduceDb() {
@@ -140,7 +140,7 @@ bool GpuClauseSharerImpl::trySetSolverValues(int solverId, int *lits, int count)
 }
 
 void GpuClauseSharerImpl::unsetPendingLocked(int solverId) {
-    vec<Lit> &unset = toUnset[solverId];
+    std::vector<Lit> &unset = toUnset[solverId];
     OneSolverAssigs& sAssigs = assigs->getAssigs(solverId);
     for (int i = 0; i < unset.size(); i++) {
         sAssigs.setVarLocked(var(unset[i]), gl_Undef);
@@ -160,7 +160,7 @@ void GpuClauseSharerImpl::unsetSolverValues(int solverId, int *lits, int count) 
         }
         oneSolverStats[solverId][varUpdatesSentToGpu] += litsToUnset.size();
     } else {
-        vec<Lit> &unset = toUnset[solverId];
+        std::vector<Lit> &unset = toUnset[solverId];
         int start = unset.size();
         unset.resize(start + litsToUnset.size());
         memcpy(&unset[start], &litsToUnset[0], sizeof(Lit) * litsToUnset.size());

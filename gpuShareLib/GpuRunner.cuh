@@ -24,7 +24,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "GpuUtils.cuh"
 #include <memory>
 #include "Profiler.h"
-#include "Vec.h"
+#include <vector>
 
 namespace GpuShare {
 
@@ -52,9 +52,9 @@ private:
     EventPointer gpuToCpuCopyDone;
     EventPointer cpuToGpuCopyDone;
 
-    vec<ReportedClause> reportedCls;
+    std::vector<ReportedClause> reportedCls;
     int lastInAssigIdsPerSolver;
-    vec<AssigIdsPerSolver> assigIdsPerSolver[2];
+    std::vector<AssigIdsPerSolver> assigIdsPerSolver[2];
     std::unique_ptr<Reporter<ReportedClause>> prevReporter;
 
     CorrespArr<long> clauseTestsOnAssigs;
@@ -70,14 +70,14 @@ private:
 
     float timeToWaitSec;
     cudaStream_t &stream;
-    vec<unsigned long> &globalStats;
+    std::vector<unsigned long> &globalStats;
 
-    void startGpuRunAsync(cudaStream_t &stream, vec<AssigIdsPerSolver> &assigIdsPerSolver, std::unique_ptr<Reporter<ReportedClause>> &reporter, bool &started, bool &notEnoughGpuMemory);
+    void startGpuRunAsync(cudaStream_t &stream, std::vector<AssigIdsPerSolver> &assigIdsPerSolver, std::unique_ptr<Reporter<ReportedClause>> &reporter, bool &started, bool &notEnoughGpuMemory);
     void scheduleGpuToCpuCopyAsync(cudaStream_t &stream);
-    void gatherGpuRunResults(vec<AssigIdsPerSolver> &assigIdsPerSolver, Reporter<ReportedClause> &reporter);
+    void gatherGpuRunResults(std::vector<AssigIdsPerSolver> &assigIdsPerSolver, Reporter<ReportedClause> &reporter);
 
 public:
-    GpuRunner(HostClauses &_hostClauses, HostAssigs &_hostAssigs, Reported &_reported, GpuDims gpuDimsGuideline, bool _quickProf, int _countPerCategory, cudaStream_t &stream, vec<unsigned long> &globalStats);
+    GpuRunner(HostClauses &_hostClauses, HostAssigs &_hostAssigs, Reported &_reported, GpuDims gpuDimsGuideline, bool _quickProf, int _countPerCategory, cudaStream_t &stream, std::vector<unsigned long> &globalStats);
 
     void wholeRun(bool canStart);
     bool getHasRunOutOfGpuMemoryOnce() { return hasRunOutOfGpuMemoryOnce; }

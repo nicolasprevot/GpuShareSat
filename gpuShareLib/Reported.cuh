@@ -28,7 +28,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "CorrespArr.cuh"
 #include "BaseTypes.cuh"
 #include "GpuUtils.cuh"
-#include "Vec.h"
+#include <vector>
 #include <set>
 
 namespace GpuShare {
@@ -47,8 +47,8 @@ struct ClauseData {
 
 class ClauseBatch {
 private:
-    vec<Lit> lits;
-    vec<ClauseData> clauseDatas;
+    std::vector<Lit> lits;
+    std::vector<ClauseData> clauseDatas;
     int nextClauseToPop;
 
 public:
@@ -67,7 +67,7 @@ public:
     // once clear is called, the MinHArr won't be valid any more
     bool popClause(MinHArr<Lit> &lits, GpuClauseId &gpuClauseId);
 
-    const vec<ClauseData>& getClauseDatas();
+    const std::vector<ClauseData>& getClauseDatas();
 };
 
 template<typename T> class ConcurrentQueue;
@@ -75,20 +75,20 @@ template<typename T> class ConcurrentQueue;
 // This class gets the output from a gpu run and then rearranges it in a way which is efficient to query by a solver
 class Reported {
 private:
-    vec<std::unique_ptr<ConcurrentQueue<ClauseBatch>>> repClauses; // first index: solver
+    std::vector<std::unique_ptr<ConcurrentQueue<ClauseBatch>>> repClauses; // first index: solver
 
-    vec<vec<unsigned long>> &oneSolverStats;
+    std::vector<std::vector<unsigned long>> &oneSolverStats;
     // only used from the solver threads
-    vec<std::set<GpuClauseId>> clausesToNotImportAgain;
+    std::vector<std::set<GpuClauseId>> clausesToNotImportAgain;
     // this is only accessed from the solver threads
-    vec<ClauseBatch*> currentClauseBatches;
-    vec<long> lastSentAssigId;
-    vec<Lit> tempLits;
+    std::vector<ClauseBatch*> currentClauseBatches;
+    std::vector<long> lastSentAssigId;
+    std::vector<Lit> tempLits;
     HostClauses &hostClauses;
 
-    vec<long> lastAssigAllReported;
+    std::vector<long> lastAssigAllReported;
 
-    ClauseBatch& getClauseBatch(vec<ClauseBatch*> &perSolverBatches, int solverId);
+    ClauseBatch& getClauseBatch(std::vector<ClauseBatch*> &perSolverBatches, int solverId);
     void addClause(ClauseBatch &clauseBatch, ReportedClause wc);
 
     // called by the solver threads
@@ -97,13 +97,13 @@ private:
     void removeOldestClauses(int solvId);
 
 public:
-    Reported(HostClauses &hostClauses, vec<vec<unsigned long>> &oneSolverStats);
+    Reported(HostClauses &hostClauses, std::vector<std::vector<unsigned long>> &oneSolverStats);
 
     // This isn't known yet when the object is created which is why we have to set it later
     void setSolverCount(int solverCount);
 
     // solvAssigs tell us the solver id / and solverAssigId for a given position in the reported clauses
-    void fill(vec<AssigIdsPerSolver> &solvAssigs, vec<ReportedClause> &wrongClauses);
+    void fill(std::vector<AssigIdsPerSolver> &solvAssigs, std::vector<ReportedClause> &wrongClauses);
 
     void assigWasSent(int solverId, long solverAssigId) { lastSentAssigId[solverId] = solverAssigId; }
     // called by the solver threads
