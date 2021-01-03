@@ -54,7 +54,7 @@ public:
     std::vector<Glucose::GpuHelpedSolver*> solvers;
     GpuClauseSharerForTests gpuClauseSharer;
 
-    GpuFixture(GpuClauseSharerOptions &options, int varCount, int solverCount, int initRepSize = 100);
+    GpuFixture(GpuClauseSharerOptions &options, int varCount, int solverCount);
     ~GpuFixture();
 
     void execute();

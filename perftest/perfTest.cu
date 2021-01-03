@@ -45,7 +45,7 @@ int getDiffMicros(timespec begin, timespec end) {
     return (end.tv_sec - begin.tv_sec) * 1000000 + (end.tv_nsec - begin.tv_nsec) / 1000;
 }
 
-std::unique_ptr<GpuClauseSharerOptions> getOptions(int clCount, int clMinSize, int clMaxSize) {
+std::unique_ptr<GpuClauseSharerOptions> getOptions(int clCount, int clMinSize, int clMaxSize, int initReportCount) {
     auto ptr = my_make_unique<GpuClauseSharerOptions>();
     ptr -> gpuBlockCountGuideline = 10;
 #ifndef NDEBUG
@@ -53,6 +53,7 @@ std::unique_ptr<GpuClauseSharerOptions> getOptions(int clCount, int clMinSize, i
 #else
     ptr -> gpuThreadsPerBlockGuideline = 1024;
 #endif
+    ptr -> initReportCountPerCategory = initReportCount;
     return ptr;
 }
 
@@ -97,9 +98,9 @@ PerfFixture::PerfFixture(int _clauseCount, int _clMinSize, int _clMaxSize, int n
     clauseCount(_clauseCount),
     clMinSize(_clMinSize),
     clMaxSize(_clMaxSize),
-    GpuFixture(*(getOptions(_clauseCount, _clMinSize, _clMaxSize)), nVars, solverCount, 2000) {
+    GpuFixture(*(getOptions(_clauseCount, _clMinSize, _clMaxSize, 2000)), nVars, solverCount) {
     srand(25);
-    vec<Lit> lits;
+    std::vector<Lit> lits;
     ContigCopier cc(true);
     cudaStream_t &stream = gpuClauseSharer.sp.get();
     GpuDims gpuDims {10, 256};
@@ -108,7 +109,7 @@ PerfFixture::PerfFixture(int _clauseCount, int _clMinSize, int _clMaxSize, int n
         lits.clear();
         int size = Glucose::irand(seed, clMinSize, clMaxSize);
         for (int l = 0; l < size; l++) {
-            lits.push(randomLit(seed, nVars));
+            lits.push_back(randomLit(seed, nVars));
         }
         gpuClauseSharer.clauses->addClause(MinHArr<Lit>(lits.size(), &lits[0]), 5);
         // HClauses is designed to copy clauses in small chunks, not a large amount at once
@@ -166,7 +167,7 @@ BOOST_AUTO_TEST_CASE(testPerf) {
 #endif
 
     double seed = 0.6;
-    printf("solver count: %d\n", fx.solvers.size());
+    printf("solver count: %ld\n", fx.solvers.size());
     for (int i = 0; i < n; i++) {
         for (int j = 0; j < fx.solvers.size(); j++) {
             resetAllVariables(seed, *(fx.solvers[j]));
@@ -223,8 +224,6 @@ BOOST_AUTO_TEST_CASE(testReportedAreValid) {
         Glucose::CRef conflict = solver.gpuImportClauses(foundEmptyClause);
         int reported = solver.stats[Glucose::nbImported], importedValid = solver.stats[Glucose::nbImportedValid];
         printf("%d clauses imported out of which %d valid\n", reported, importedValid);
-
-        vec<Lit> clauseLits;
 
         // continue as long as we get some clauses
         if (solver.stats[Glucose::nbImported] == importedLastTime) {

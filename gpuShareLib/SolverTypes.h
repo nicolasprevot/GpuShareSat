@@ -70,7 +70,11 @@ inline  Lit  toLit     (int i)              { Lit p; p.x = i; return p; }
 const Lit lit_Undef = { -2 };  // }- Useful special constants.
 const Lit lit_Error = { -1 };  // }
 
-void printV(const Lit& lit);
+inline void printV(const Lit& lit) {
+    printf("%d", var(lit));
+    if (sign(lit)) printf("-");
+    else printf("+");
+}
 
 //=================================================================================================
 // Lifted booleans:

@@ -691,9 +691,10 @@ BOOST_AUTO_TEST_CASE(SolverHasManyClausesReportedAllAtOnce) {
     setDefaultOptions(ops);
     ops.gpuBlockCountGuideline = 2;
     ops.gpuThreadsPerBlockGuideline = 32;
+    ops.initReportCountPerCategory = 5000;
     // The point of having that many is to have more than one clause per thread
     int varCount = 4000;
-    GpuFixture fx(ops, varCount, 1, 5000);
+    GpuFixture fx(ops, varCount, 1);
     GpuHelpedSolver& solver = *(fx.solvers[0]);
 
     for (int i = 0; i < varCount; i++) {
@@ -941,7 +942,8 @@ BOOST_AUTO_TEST_CASE(testMods) {
 BOOST_AUTO_TEST_CASE(testSolverPassesManyAssignments) {
     GpuClauseSharerOptions ops;
     setDefaultOptions(ops);
-    GpuFixture fx(ops, 64, 3, 100);
+    ops.initReportCountPerCategory = 100;
+    GpuFixture fx(ops, 64, 3);
 
     GpuHelpedSolver& solver = *(fx.solvers[0]);
     for (int i = 0; i < 32; i++) {

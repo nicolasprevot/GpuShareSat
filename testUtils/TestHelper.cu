@@ -34,14 +34,14 @@ void setDefaultOptions(GpuClauseSharerOptions &options) {
     options.minGpuLatencyMicros = 50;
 }
 
-GpuFixture::GpuFixture(GpuClauseSharerOptions &options, int varCount, int _solverCount, int initRepCountPerCategory) :
+GpuFixture::GpuFixture(GpuClauseSharerOptions &options, int varCount, int _solverCount) :
         gpuClauseSharer(options)
 {
     gpuClauseSharer.setVarCount(varCount);
     gpuClauseSharer.setCpuSolverCount(_solverCount);
     for (int s = 0; s < _solverCount; s++) {
         GpuHelpedSolver *solv = new GpuHelpedSolver(finisher, s, GpuHelpedSolverParams {true}, gpuClauseSharer, options.quickProf);
-        solvers.push(solv);
+        solvers.push_back(solv);
         for (int i = 0; i < varCount; i++) {
             solv->newVar();
         }
