@@ -22,7 +22,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "gpuShareLib/Profiler.h"
 #include "core/Finisher.h"
 #include "utils/Utils.h"
-#include "gpuShareLib/JsonWriter.h"
+#include "utils/JsonWriter.h"
 
 #include <chrono>
 #include <thread>
@@ -314,11 +314,11 @@ GpuHelpedSolverParams GpuHelpedSolverOptions::toParams() {
 }
 
 void GpuHelpedSolver::printStats() {
-    GpuShare::JObj jo;
+    Glucose::JObj jo;
     Solver::printStats();
     for (int i = 0; i < gpuClauseSharer.getOneSolverStatCount(); i++) {
         GpuShare::OneSolverStats oss = static_cast<GpuShare::OneSolverStats>(i);
-        GpuShare::writeAsJson(gpuClauseSharer.getOneSolverStatName(oss), gpuClauseSharer.getOneSolverStat(cpuThreadId, oss));
+        writeAsJson(gpuClauseSharer.getOneSolverStatName(oss), gpuClauseSharer.getOneSolverStat(cpuThreadId, oss));
     }
 }
 

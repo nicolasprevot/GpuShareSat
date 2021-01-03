@@ -59,7 +59,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "core/Solver.h"
 #include "core/Constants.h"
 #include "simp/SimpSolver.h"
-#include "gpuShareLib/JsonWriter.h"
+#include "utils/JsonWriter.h"
 #include "Finisher.h"
 
 using namespace Glucose;
@@ -1948,15 +1948,15 @@ CRef Solver::gpuImportClauses(bool &foundEmptyClause) {
 
 void Solver::printStats() {
     for (auto const& e : statNames) {
-        GpuShare::writeAsJson(e.second.c_str(), stats[e.first]);
+        writeAsJson(e.second.c_str(), stats[e.first]);
     }
-    GpuShare::writeAsJson("original", (unsigned long) clauses.size());
-    GpuShare::writeAsJson("conflicts", conflicts);
-    GpuShare::writeAsJson("nbClausesBeforeReduce", (unsigned long) nbclausesbeforereduce);
+    writeAsJson("original", (unsigned long) clauses.size());
+    writeAsJson("conflicts", conflicts);
+    writeAsJson("nbClausesBeforeReduce", (unsigned long) nbclausesbeforereduce);
 }
 
 void Solver::printEncapsulatedStats() {
-    GpuShare::JStats jstats;
+    JStats jstats;
     printStats();
 }
 
