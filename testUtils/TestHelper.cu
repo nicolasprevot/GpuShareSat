@@ -28,19 +28,19 @@ using namespace Glucose;
 
 namespace GpuShare {
 
-void setDefaultOptions(GpuOptions &options) {
-    options.blockCount = 3;
-    options.threadsPerBlock = 32;
+void setDefaultOptions(GpuClauseSharerOptions &options) {
+    options.gpuBlockCountGuideline = 3;
+    options.gpuThreadsPerBlockGuideline = 32;
     options.minGpuLatencyMicros = 50;
 }
 
-GpuFixture::GpuFixture(GpuOptions &options, int varCount, int _solverCount, int initRepCountPerCategory) :
-        gpuClauseSharer(options.toGpuClauseSharerOptions(2, initRepCountPerCategory))
+GpuFixture::GpuFixture(GpuClauseSharerOptions &options, int varCount, int _solverCount, int initRepCountPerCategory) :
+        gpuClauseSharer(options)
 {
     gpuClauseSharer.setVarCount(varCount);
     gpuClauseSharer.setCpuSolverCount(_solverCount);
     for (int s = 0; s < _solverCount; s++) {
-        GpuHelpedSolver *solv = new GpuHelpedSolver(finisher, s, options.gpuHelpedSolverOptions.toParams(), gpuClauseSharer, options.quickProf);
+        GpuHelpedSolver *solv = new GpuHelpedSolver(finisher, s, GpuHelpedSolverParams {true}, gpuClauseSharer, options.quickProf);
         solvers.push(solv);
         for (int i = 0; i < varCount; i++) {
             solv->newVar();

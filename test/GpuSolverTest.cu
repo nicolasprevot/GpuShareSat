@@ -278,7 +278,7 @@ template<typename T> __global__ void dClear(DReporter<T> rep) {
 
 // Tests that the gpu reporter can report wrong clauses and that the cpu can read them
 BOOST_AUTO_TEST_CASE(testReported) {
-    GpuOptions ops;
+    GpuClauseSharerOptions ops;
     setDefaultOptions(ops);
     GpuFixture fx(ops, 3, 10);
     cudaStream_t &stream = fx.gpuClauseSharer.sp.get();
@@ -329,13 +329,13 @@ int getReportedClausesCount(Reported &reported, int solverId) {
     return count;
 }
 
-GpuDims getGpuDims(GpuOptions opts) { 
-    return GpuDims {opts.blockCount, opts.threadsPerBlock};
+GpuDims getGpuDims(GpuClauseSharerOptions opts) { 
+    return GpuDims {opts.gpuBlockCountGuideline, opts.gpuThreadsPerBlockGuideline};
 }
 
 // There's not a full solver in this test, but everything else
 BOOST_AUTO_TEST_CASE(testClausesAssigsReported) {
-    GpuOptions ops;
+    GpuClauseSharerOptions ops;
     setDefaultOptions(ops);
     GpuFixture fx(ops, 3, 3);
 
@@ -386,11 +386,11 @@ BOOST_AUTO_TEST_CASE(testClausesAssigsReported) {
 
 // Test that the gpu can read assigs and report the appropriate wrong clause
 BOOST_AUTO_TEST_CASE(testFindClausesMultiThread) {
-    GpuOptions ops;
+    GpuClauseSharerOptions ops;
     setDefaultOptions(ops);
-    ops.blockCount = 1;
-    ops.threadsPerBlock = 32;
-    GpuDims gpuDims {ops.blockCount, ops.threadsPerBlock};
+    ops.gpuBlockCountGuideline = 1;
+    ops.gpuThreadsPerBlockGuideline = 32;
+    GpuDims gpuDims {ops.gpuBlockCountGuideline, ops.gpuThreadsPerBlockGuideline};
     GpuFixture fx(ops, 3, 1);
     cudaStream_t &stream = fx.gpuClauseSharer.sp.get();
 
@@ -447,7 +447,7 @@ BOOST_AUTO_TEST_CASE(testFindClausesMultiThread) {
 }
 
 BOOST_AUTO_TEST_CASE(SolverImportBinary) {
-    GpuOptions ops;
+    GpuClauseSharerOptions ops;
     setDefaultOptions(ops);
     GpuFixture fx(ops, 3, 1);
     GpuHelpedSolver& solver = *(fx.solvers[0]);
@@ -477,7 +477,7 @@ BOOST_AUTO_TEST_CASE(SolverImportBinary) {
 // The only assig aggregate bits set to the last value were those which were
 // used. It needs to be all of them. This test is for this case
 BOOST_AUTO_TEST_CASE(testOneAssignmentThenTwo) {
-    GpuOptions ops;
+    GpuClauseSharerOptions ops;
     setDefaultOptions(ops);
     GpuFixture fx(ops, 4, 1);
     cudaStream_t &stream = fx.gpuClauseSharer.sp.get();
@@ -502,7 +502,7 @@ BOOST_AUTO_TEST_CASE(testOneAssignmentThenTwo) {
 
 
 BOOST_AUTO_TEST_CASE(SolverDoesntImportSameClauseTwice) {
-    GpuOptions ops;
+    GpuClauseSharerOptions ops;
     setDefaultOptions(ops);
     GpuFixture fx(ops, 3, 1);
     GpuHelpedSolver& solver = *(fx.solvers[0]);
@@ -531,7 +531,7 @@ BOOST_AUTO_TEST_CASE(SolverDoesntImportSameClauseTwice) {
 // This test is about the same as the previous one, except that we start a gpu run before the second assignment is sent
 // So clauses for both assignment will be reported in distinct clause batches
 BOOST_AUTO_TEST_CASE(SolverDoesntImportSameClauseTwiceOnSuccessiveGpuExecutions) {
-    GpuOptions ops;
+    GpuClauseSharerOptions ops;
     setDefaultOptions(ops);
     GpuFixture fx(ops, 3, 1);
     GpuHelpedSolver& solver = *(fx.solvers[0]);
@@ -559,7 +559,7 @@ BOOST_AUTO_TEST_CASE(SolverDoesntImportSameClauseTwiceOnSuccessiveGpuExecutions)
 BOOST_AUTO_TEST_CASE(SolverCanReimportClause) {
     // In this test: we add two clauses on the gpu, both get imported, then we reduceDb
     // on the cpu, so one gets deleted, and we test that we can import it again
-    GpuOptions ops;
+    GpuClauseSharerOptions ops;
     setDefaultOptions(ops);
     GpuFixture fx(ops, 5, 1);
     GpuHelpedSolver& solver = *(fx.solvers[0]);
@@ -596,7 +596,7 @@ BOOST_AUTO_TEST_CASE(SolverCanReimportClause) {
 }
 
 BOOST_AUTO_TEST_CASE(TwoSolverImportBinary) {
-    GpuOptions ops;
+    GpuClauseSharerOptions ops;
     setDefaultOptions(ops);
     GpuFixture fx(ops, 3, 2);
 
@@ -625,7 +625,7 @@ BOOST_AUTO_TEST_CASE(TwoSolverImportBinary) {
 
 // Test that assigs on the gpu do get unset
 BOOST_AUTO_TEST_CASE(SolverUnsets) {
-    GpuOptions ops;
+    GpuClauseSharerOptions ops;
     setDefaultOptions(ops);
     GpuFixture fx(ops, 2, 1);
     // addClause(*fx.gpuClauseSharer.clauses, {mkLit(0), mkLit(1)});
@@ -647,7 +647,7 @@ BOOST_AUTO_TEST_CASE(SolverUnsets) {
 }
 
 BOOST_AUTO_TEST_CASE(SolverImportUnary) {
-    GpuOptions ops;
+    GpuClauseSharerOptions ops;
     setDefaultOptions(ops);
     GpuFixture fx(ops, 2, 1);
     GpuHelpedSolver& solver = *(fx.solvers[0]);
@@ -669,7 +669,7 @@ BOOST_AUTO_TEST_CASE(SolverImportUnary) {
 }
 
 BOOST_AUTO_TEST_CASE(SolverHasManyClausesReported) {
-    GpuOptions ops;
+    GpuClauseSharerOptions ops;
     setDefaultOptions(ops);
     int varCount = 20;
     GpuFixture fx(ops, varCount, 1);
@@ -687,10 +687,10 @@ BOOST_AUTO_TEST_CASE(SolverHasManyClausesReported) {
 }
 
 BOOST_AUTO_TEST_CASE(SolverHasManyClausesReportedAllAtOnce) {
-    GpuOptions ops;
+    GpuClauseSharerOptions ops;
     setDefaultOptions(ops);
-    ops.blockCount = 2;
-    ops.threadsPerBlock = 32;
+    ops.gpuBlockCountGuideline = 2;
+    ops.gpuThreadsPerBlockGuideline = 32;
     // The point of having that many is to have more than one clause per thread
     int varCount = 4000;
     GpuFixture fx(ops, varCount, 1, 5000);
@@ -719,7 +719,7 @@ BOOST_AUTO_TEST_CASE(SolverHasManyClausesReportedAllAtOnce) {
 BOOST_AUTO_TEST_CASE(OneInstanceTwoAssignments) {
     // in this test: we test that if some clauses become useful at some point,
     // then they will be imported.
-    GpuOptions ops;
+    GpuClauseSharerOptions ops;
     setDefaultOptions(ops);
     GpuFixture fx(ops, 4, 1);
 
@@ -757,7 +757,7 @@ BOOST_AUTO_TEST_CASE(OneInstanceTwoAssignments) {
 }
 
 BOOST_AUTO_TEST_CASE(SolverClauseKeptAfterImport) {
-    GpuOptions ops;
+    GpuClauseSharerOptions ops;
     setDefaultOptions(ops);
     GpuFixture fx(ops, 3, 1);
     GpuHelpedSolver& solver = *(fx.solvers[0]);
@@ -791,7 +791,7 @@ BOOST_AUTO_TEST_CASE(SolverClauseKeptAfterImport) {
 }
 
 BOOST_AUTO_TEST_CASE(SolverImportFalseClauseDifferentLevel) {
-    GpuOptions ops;
+    GpuClauseSharerOptions ops;
     setDefaultOptions(ops);
     GpuFixture fx(ops, 3, 1);
     GpuHelpedSolver& solver = *(fx.solvers[0]);
@@ -829,7 +829,7 @@ BOOST_AUTO_TEST_CASE(SolverImportFalseClauseDifferentLevel) {
 }
 
 BOOST_AUTO_TEST_CASE(testDeduceEmptyClause) {
-    GpuOptions ops;
+    GpuClauseSharerOptions ops;
     setDefaultOptions(ops);
     GpuFixture fx(ops, 1, 1);
     GpuHelpedSolver& solver = *(fx.solvers[0]);
@@ -848,7 +848,7 @@ BOOST_AUTO_TEST_CASE(testDeduceEmptyClause) {
 }
 
 BOOST_AUTO_TEST_CASE(findConflict) {
-    GpuOptions ops;
+    GpuClauseSharerOptions ops;
     setDefaultOptions(ops);
     GpuFixture fx(ops, 2, 1);
     GpuHelpedSolver& solver = *(fx.solvers[0]);
@@ -879,7 +879,7 @@ BOOST_AUTO_TEST_CASE(findConflict) {
 }
 
 BOOST_AUTO_TEST_CASE(testReduceDb) {
-    GpuOptions ops;
+    GpuClauseSharerOptions ops;
     setDefaultOptions(ops);
     GpuFixture fx(ops, 5, 1);
     cudaStream_t &stream = fx.gpuClauseSharer.sp.get();
@@ -939,7 +939,7 @@ BOOST_AUTO_TEST_CASE(testMods) {
 }
 
 BOOST_AUTO_TEST_CASE(testSolverPassesManyAssignments) {
-    GpuOptions ops;
+    GpuClauseSharerOptions ops;
     setDefaultOptions(ops);
     GpuFixture fx(ops, 64, 3, 100);
 
@@ -972,11 +972,13 @@ BOOST_AUTO_TEST_CASE(testSolverPassesManyAssignments) {
 }
 
 BOOST_AUTO_TEST_CASE(testGpuMultiSolver) {
-    GpuOptions ops;
-    setDefaultOptions(ops);
+    GpuOptions opts;
+    opts.blockCount = 1;
+    opts.threadsPerBlock = 32;
+    opts.minGpuLatencyMicros = 50;
     CommonOptions commonOpts;
     Finisher finisher;
-    CompositionRoot co(ops, commonOpts, finisher, 2);
+    CompositionRoot co(opts, commonOpts, finisher, 2);
 
     GpuMultiSolver &msolver = *co.gpuMultiSolver;
 
@@ -986,7 +988,7 @@ BOOST_AUTO_TEST_CASE(testGpuMultiSolver) {
 }
 
 BOOST_AUTO_TEST_CASE(testSendClauseToGpu) {
-    GpuOptions ops;
+    GpuClauseSharerOptions ops;
     setDefaultOptions(ops);
     GpuFixture fx(ops, 3, 1);
     GpuHelpedSolver& solver = *(fx.solvers[0]);

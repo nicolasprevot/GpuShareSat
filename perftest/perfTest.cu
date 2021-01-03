@@ -18,11 +18,11 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
  **************************************************************************************************/
 #define BOOST_TEST_MODULE perftest_module
 #include <boost/test/unit_test.hpp>
-#include "gpu/Helper.cuh"
-#include "gpu/Assigs.cuh"
-#include "gpu/Clauses.cuh"
+#include "gpuShareLib/Helper.cuh"
+#include "gpuShareLib/Assigs.cuh"
+#include "gpuShareLib/Clauses.cuh"
 #include "gpu/GpuHelpedSolver.h"
-#include "gpu/GpuRunner.cuh"
+#include "gpuShareLib/GpuRunner.cuh"
 #include "satUtils/SolverTypes.h"
 #include "core/Solver.h"
 #include "gpuShareLib/Utils.h"
@@ -32,28 +32,27 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include <cstdlib>
 #include <ctime>
 #include <memory>
-#include "gpu/GpuRunner.cuh"
+#include "gpuShareLib/GpuRunner.cuh"
 #include "testUtils/TestHelper.cuh"
 #include "gpuShareLib/Utils.h"
-#include "gpu/my_make_unique.h"
+#include "gpuShareLib/my_make_unique.h"
+#include "gpuShareLib/Reported.cuh"
 #include "utils/Utils.h"
 
-namespace Glucose {
+using namespace GpuShare;
 
 int getDiffMicros(timespec begin, timespec end) {
     return (end.tv_sec - begin.tv_sec) * 1000000 + (end.tv_nsec - begin.tv_nsec) / 1000;
 }
 
-std::unique_ptr<GpuOptions> getOptions(int clCount, int clMinSize, int clMaxSize) {
-    auto ptr = my_make_unique<GpuOptions>();
-    ptr -> blockCount = 10;
+std::unique_ptr<GpuClauseSharerOptions> getOptions(int clCount, int clMinSize, int clMaxSize) {
+    auto ptr = my_make_unique<GpuClauseSharerOptions>();
+    ptr -> gpuBlockCountGuideline = 10;
 #ifndef NDEBUG
-    ptr -> threadsPerBlock = 150;
+    ptr -> gpuThreadsPerBlockGuideline = 150;
 #else
-    ptr -> threadsPerBlock = 1024;
+    ptr -> gpuThreadsPerBlockGuideline = 1024;
 #endif
-    // make sure that we don't reduce the db
-    ptr -> gpuFirstReduceDb = 1e9;
     return ptr;
 }
 
@@ -66,15 +65,15 @@ public:
     PerfFixture(int clCount = 1000000, int clMinSize = 12, int clMaxSize = 20, int varCount = 500, int solverCount = 1);
 };
 
-void maybeSetVariable(double &seed, GpuHelpedSolver &solver, int var) {
-    int p = irand(seed, 3);
+void maybeSetVariable(double &seed, Glucose::GpuHelpedSolver &solver, int var) {
+    int p = Glucose::irand(seed, 3);
     if (p == 0 || p == 1) {
         solver.newDecisionLevel();
-        solver.uncheckedEnqueue(mkLit(var, p == 1));
+        solver.uncheckedEnqueue(Glucose::mkLit(var, p == 1));
     }
 }
 
-void resetAllVariables(double &seed, GpuHelpedSolver &solver) {
+void resetAllVariables(double &seed, Glucose::GpuHelpedSolver &solver) {
     solver.cancelUntil(0);
     for (int i = 0; i < solver.nVars(); i++) {
         maybeSetVariable(seed, solver, i);
@@ -90,6 +89,10 @@ void setDeviceFlags() {
     }
 }
 
+Lit randomLit(double& seed, int varCount) {
+    return mkLit(Glucose::irand(seed, varCount), Glucose::irand(seed, 2));
+}
+
 PerfFixture::PerfFixture(int _clauseCount, int _clMinSize, int _clMaxSize, int nVars, int solverCount) :
     clauseCount(_clauseCount),
     clMinSize(_clMinSize),
@@ -103,7 +106,7 @@ PerfFixture::PerfFixture(int _clauseCount, int _clMinSize, int _clMaxSize, int n
     double seed = 0.4;
     for (int cl = 0; cl < clauseCount; cl++) {
         lits.clear();
-        int size = irand(seed, clMinSize, clMaxSize);
+        int size = Glucose::irand(seed, clMinSize, clMaxSize);
         for (int l = 0; l < size; l++) {
             lits.push(randomLit(seed, nVars));
         }
@@ -127,7 +130,7 @@ BOOST_AUTO_TEST_CASE(testPrintClauses) {
     fx.solvers[0]->tryCopyTrailForGpu(fx.solvers[0]->decisionLevel());
     execute(fx.gpuClauseSharer);
     Lit array[MAX_CL_SIZE];
-    GpuClauseId gpuClauseId;
+    long gpuClauseId;
     MinHArr<Lit> lits;
 
     while (fx.gpuClauseSharer.reported->popReportedClause(0, lits, gpuClauseId)) {
@@ -203,7 +206,7 @@ BOOST_AUTO_TEST_CASE(testPerf) {
 BOOST_AUTO_TEST_CASE(testReportedAreValid) {
     setDeviceFlags();
     PerfFixture fx(1000000, 10, 11, 500);
-    GpuHelpedSolver &solver = *(fx.solvers[0]);
+    Glucose::GpuHelpedSolver &solver = *(fx.solvers[0]);
     exitIfLastError(POSITION);
     bool foundEmptyClause = false;
     int importedValidLastTime = 0;
@@ -217,23 +220,23 @@ BOOST_AUTO_TEST_CASE(testReportedAreValid) {
         fx.solvers[0]->tryCopyTrailForGpu(fx.solvers[0]->decisionLevel());
         // the first maybExecute will only start the run but not get the results, so execute twice
         execute(fx.gpuClauseSharer);
-        CRef conflict = solver.gpuImportClauses(foundEmptyClause);
-        int reported = solver.stats[nbImported], importedValid = solver.stats[nbImportedValid];
+        Glucose::CRef conflict = solver.gpuImportClauses(foundEmptyClause);
+        int reported = solver.stats[Glucose::nbImported], importedValid = solver.stats[Glucose::nbImportedValid];
         printf("%d clauses imported out of which %d valid\n", reported, importedValid);
 
         vec<Lit> clauseLits;
 
         // continue as long as we get some clauses
-        if (solver.stats[nbImported] == importedLastTime) {
+        if (solver.stats[Glucose::nbImported] == importedLastTime) {
             break;
         }
-        importedLastTime = solver.stats[nbImported];
-        ASSERT_OP(solver.stats[nbImportedValid], >, importedValidLastTime);
-        importedValidLastTime = solver.stats[nbImportedValid];
+        importedLastTime = solver.stats[Glucose::nbImported];
+        ASSERT_OP(solver.stats[Glucose::nbImportedValid], >, importedValidLastTime);
+        importedValidLastTime = solver.stats[Glucose::nbImportedValid];
 
         // If the solver got a conflict at level n, it's still at level n.
         // We need to cancel it until the previous level because otherwise, it will get the same conflict over and over
-        if (conflict != CRef_Undef) {
+        if (conflict != Glucose::CRef_Undef) {
             if (solver.decisionLevel() == 0) break;
             solver.cancelUntil(solver.decisionLevel() - 1);
         }
@@ -242,4 +245,3 @@ BOOST_AUTO_TEST_CASE(testReportedAreValid) {
     exitIfLastError(POSITION);
 }
 
-}

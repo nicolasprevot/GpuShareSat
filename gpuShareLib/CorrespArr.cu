@@ -100,6 +100,7 @@ void printV(cudaMemcpyKind kind) {
 // Contract: capacity in input is always a power of 2
 // capacity returned is also a power of 2, greater or equal to newSize
 size_t getNewCapacity(size_t capacity, size_t newSize, bool reduceCapacity) {
+    ASSERT_OP(capacity, >, 0);
     while (newSize > capacity) {
         capacity *= 2;
     }

@@ -53,6 +53,7 @@ struct GpuClauseSharerOptions {
         clauseActivityDecay = -1;
         quickProf = true;
         initReportCountPerCategory = -1;
+        maxPageLockedMemory = -1;
     }
 };
 

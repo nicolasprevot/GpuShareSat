@@ -35,7 +35,7 @@ namespace GpuShare {
 class GpuRunner;
 class ContigCopier;
 
-void setDefaultOptions(Glucose::GpuOptions &options);
+void setDefaultOptions(GpuClauseSharerOptions &options);
 
 class GpuClauseSharerForTests : public GpuClauseSharerImpl {
     public:
@@ -54,7 +54,7 @@ public:
     vec<Glucose::GpuHelpedSolver*> solvers;
     GpuClauseSharerForTests gpuClauseSharer;
 
-    GpuFixture(Glucose::GpuOptions &options, int varCount, int solverCount, int initRepSize = 100);
+    GpuFixture(GpuClauseSharerOptions &options, int varCount, int solverCount, int initRepSize = 100);
     ~GpuFixture();
 
     void execute();
