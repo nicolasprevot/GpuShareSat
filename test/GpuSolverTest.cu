@@ -58,7 +58,7 @@ void updateAssigsAsync(AssigsAndUpdates &assigsAndUpdates, GpuDims gpuDims, cuda
         assigsAndUpdates.assigSet.aggCorresps.get(), assigsAndUpdates.assigSet.dAssigAggregates);
 }
 
-AssigsAndUpdates fillAndUpdateAssigs(HostAssigs &hostAssigs, GpuDims gpuDims, ContigCopier &cc, vec<AssigIdsPerSolver> &assigIdsPerSolver, cudaStream_t &stream) {
+AssigsAndUpdates fillAndUpdateAssigs(HostAssigs &hostAssigs, GpuDims gpuDims, ContigCopier &cc, std::vector<AssigIdsPerSolver> &assigIdsPerSolver, cudaStream_t &stream) {
     cc.clear(false);
     AssigsAndUpdates assigsAndUpdates = hostAssigs.fillAssigsAsync(cc, assigIdsPerSolver, stream);
     exitIfFalse(cc.tryCopyAsync(cudaMemcpyHostToDevice, stream), POSITION);
@@ -98,7 +98,7 @@ BOOST_AUTO_TEST_CASE(testAssigsTwoSolvers) {
     assig1.setVarLocked(1, gl_True);
     assig1.assignmentDoneLocked();
     assig1.exitLock();
-    vec<AssigIdsPerSolver> assigIdsPerSolver;
+    std::vector<AssigIdsPerSolver> assigIdsPerSolver;
     AssigsAndUpdates assigsAndUpdates = fillAndUpdateAssigs(hostAssigs, gpuDims, cc, assigIdsPerSolver, sp.get());
     CorrespArr<MultiLBool> res(2, true);
 
@@ -139,7 +139,7 @@ BOOST_AUTO_TEST_CASE(testAssigsTwoAssignments) {
     assig.assignmentDoneLocked();
     assig.exitLock();
     ContigCopier cc;
-    vec<AssigIdsPerSolver> assigIdsPerSolver;
+    std::vector<AssigIdsPerSolver> assigIdsPerSolver;
     DArr<DOneSolverAssigs> dAssigs = fillAndUpdateAssigs(hostAssigs, gpuDims, cc, assigIdsPerSolver, sp.get()).assigSet.dSolverAssigs.getDArr();
     CorrespArr<MultiLBool> res(2, true);
 
@@ -177,7 +177,7 @@ BOOST_AUTO_TEST_CASE(testManyAssignments) {
     BOOST_CHECK(!assig.isAssignmentAvailableLocked());
     assig.exitLock();
     ContigCopier cc;
-    vec<AssigIdsPerSolver> assigIdsPerSolver;
+    std::vector<AssigIdsPerSolver> assigIdsPerSolver;
     auto assigsAndUpdates = fillAndUpdateAssigs(hostAssigs, gpuDims, cc, assigIdsPerSolver, sp.get());
     setAllAssigsToLastAsync(1, 1, assigsAndUpdates, sp.get());
     exitIfError(cudaStreamSynchronize(sp.get()), POSITION);
@@ -226,7 +226,7 @@ BOOST_AUTO_TEST_CASE(testAssigAggregates) {
         }
     }
     ContigCopier cc;
-    vec<AssigIdsPerSolver> assigIdsPerSolver;
+    std::vector<AssigIdsPerSolver> assigIdsPerSolver;
     AssigsAndUpdates assigsAndUpdates = fillAndUpdateAssigs(hostAssigs, gpuDims, cc, assigIdsPerSolver, sp.get());
     ASSERT_OP(~((Vals) 0), ==, assigsAndUpdates.assigSet.dAssigAggregates.startVals);
     HArr<MultiAgg> res(1, false);
@@ -250,7 +250,7 @@ BOOST_AUTO_TEST_CASE(testAddClauseHost) {
     StreamPointer sp;
     CorrespArr<int> clausesCountPerThread(2, true);
     GpuDims gpuDims(2, WARP_SIZE);
-    vec<unsigned long> globalStats(100, 0);
+    std::vector<unsigned long> globalStats(100, 0);
     HostClauses hClauses(gpuDims, 0.99, false, globalStats);
     addClause(hClauses, {mkLit(4), mkLit(2)});
     CorrespArr<Lit> cra(2, false);
@@ -292,7 +292,7 @@ BOOST_AUTO_TEST_CASE(testReported) {
     AssigIdsPerSolver aips;
     aips.startAssigId = 0;
     aips.assigCount = 1;
-    vec<AssigIdsPerSolver> assigIds(1, aips);
+    std::vector<AssigIdsPerSolver> assigIds(1, aips);
 
     ContigCopier gpuToCpuCc;
     Reporter<ReportedClause> reporter(gpuToCpuCc, stream, 4, 4);
@@ -304,7 +304,7 @@ BOOST_AUTO_TEST_CASE(testReported) {
     exitIfFalse(gpuToCpuCc.tryCopyAsync(cudaMemcpyDeviceToHost, stream), POSITION);
     exitIfError(cudaStreamSynchronize(stream), POSITION);
    
-    vec<ReportedClause> wcl; 
+    std::vector<ReportedClause> wcl; 
     reporter.getCopiedToHost(wcl);
 
     fx.gpuClauseSharer.reported->fill(assigIds, wcl);
@@ -612,7 +612,7 @@ BOOST_AUTO_TEST_CASE(TwoSolverImportBinary) {
     addClause(*fx.gpuClauseSharer.clauses, {~mkLit(0), mkLit(1)});
     addClause(*fx.gpuClauseSharer.clauses, {mkLit(0), ~mkLit(1)});
 
-    vec<CRef> v;
+    std::vector<CRef> v;
     fx.executeAndImportClauses(v);
 
     fx.solvers[0]->propagate();
@@ -632,7 +632,7 @@ BOOST_AUTO_TEST_CASE(SolverUnsets) {
     GpuHelpedSolver& solver = *fx.solvers[0];
     solver.newDecisionLevel();
     solver.uncheckedEnqueue(Glucose::mkLit(1));
-    vec<CRef> v;
+    std::vector<CRef> v;
     fx.executeAndImportClauses(v);
     fx.checkReportedImported(0, 0, false);
 
@@ -899,7 +899,7 @@ BOOST_AUTO_TEST_CASE(testReduceDb) {
     solver.newDecisionLevel();
     solver.uncheckedEnqueue(~Glucose::mkLit(4));
 
-    vec<CRef> ignored;
+    std::vector<CRef> ignored;
     fx.executeAndImportClauses(ignored);
     BOOST_CHECK(l_True == solver.value(2));
     BOOST_CHECK(l_Undef == solver.value(3));

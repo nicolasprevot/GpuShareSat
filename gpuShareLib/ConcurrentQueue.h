@@ -22,7 +22,6 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 
 #include <atomic>
 #include <memory>
-#include "Vec.h"
 #include "Utils.h"
 namespace GpuShare {
 
@@ -59,7 +58,7 @@ class RingQueue {
     }
 
     protected:
-    vec<T> arr;
+    std::vector<T> arr;
 
     public:
     RingQueue(const RingQueue &other) = delete;

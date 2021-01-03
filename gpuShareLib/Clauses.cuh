@@ -34,7 +34,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "ClauseUpdates.cuh"
 #include "Profiler.h"
 #include "GpuClauseSharer.h"
-#include "Vec.h"
+#include <vector>
 
 #define RESCALE_CONST 1e19
 
@@ -152,7 +152,7 @@ void __device__ getClsForThread(int threadId, int &clSize, int &minClId, int &ma
 // This class is not thread safe
 class PerSizeKeeper{
 private:
-    vec<std::unique_ptr<HOneSizeClauses>> perSize;
+    std::vector<std::unique_ptr<HOneSizeClauses>> perSize;
 
     void changeCount(int clSize, int newCount);
 
@@ -163,10 +163,10 @@ private:
 
     bool tryCopyHeadersToDeviceIfNecessaryAsync(cudaStream_t &stream);
     void rescaleActivity();
-    vec<unsigned long> &globalStats;
+    std::vector<unsigned long> &globalStats;
 
 public:
-    PerSizeKeeper(float clauseActDecay, vec<unsigned long> &globalStats);
+    PerSizeKeeper(float clauseActDecay, std::vector<unsigned long> &globalStats);
 
     ArrPair<DOneSizeClauses> tryGetDArr(ContigCopier &cc, cudaStream_t &stream);
     // modifiers
@@ -183,7 +183,7 @@ public:
     // modifies clCountPerSize, vals, activity, metadata
     // doesn't change vals on the device
     int getClauseCount(int clSize) { return perSize[clSize]->clMetadata.size(); }
-    void getClause(vec<Lit> &lits, int &gpuClId, GpuCref gpuCref);
+    void getClause(std::vector<Lit> &lits, int &gpuClId, GpuCref gpuCref);
     int getLbd(int clSize, int clId) { return perSize[clSize]->clMetadata[clId].lbd; }
     float getClauseActivity(int clSize, int clId) { return perSize[clSize]->clMetadata[clId].activity;}
     void bumpClauseActivity(int clSize, int clId);
@@ -212,19 +212,19 @@ private:
 
     long addedClauseCountAtLastReduceDb;
 
-    bool addClauseNowLocked(vec<Lit>& lits);
+    bool addClauseNowLocked(std::vector<Lit>& lits);
 
     double getAvgActivity(int minLimLbd, int maxLimLbd);
     ArrPair<DOneSizeClauses> tryGetDClauses(ContigCopier &cc, cudaStream_t &stream);
 
     // howManyUnder: number of clauses with an lbd < to medLbd
     // howManyThisLbd: number of clauses with medLbd
-    void getMedianLbd(int &medLbd, int &howManyUnder, int &howManyThisLbd, vec<int> &clauseCountsAtLbds);
+    void getMedianLbd(int &medLbd, int &howManyUnder, int &howManyThisLbd, std::vector<int> &clauseCountsAtLbds);
 
-    vec<unsigned long> &globalStats;
+    std::vector<unsigned long> &globalStats;
 
 public:
-    HostClauses(GpuDims gpuDimsGuideline, float clauseActDecay, bool actOnly, vec<unsigned long> &globalStats);
+    HostClauses(GpuDims gpuDimsGuideline, float clauseActDecay, bool actOnly, std::vector<unsigned long> &globalStats);
 
     RunInfo makeRunInfo(cudaStream_t &stream, ContigCopier &cc);
 
@@ -238,7 +238,7 @@ public:
     
     bool reallyNeedToCopyClausesToDevice();
 
-    void getClause(vec<Lit>& lits, int &gpuClId, GpuCref gpuCref);
+    void getClause(std::vector<Lit>& lits, int &gpuClId, GpuCref gpuCref);
 
     // copies all the clauses added previously with addClause to the device
     ClUpdateSet getUpdatesForDevice(cudaStream_t &stream, ContigCopier &cc);
@@ -246,7 +246,7 @@ public:
     int getClauseCount(int clSize) { return perSizeKeeper.getClauseCount(clSize); }
 
     // Rest is visible for testing
-    void fillClauseCountsAtLbds(vec<int> &vec);
+    void fillClauseCountsAtLbds(std::vector<int> &vec);
 
     // Returns an approximation of the nth (starting from 1) lowest activity for clauses with lbd such that minLimLbd <= lbd < maxLimLbd
     // assumes that activities have been copied to the host
@@ -254,7 +254,7 @@ public:
     float approxNthAct(int minLbd, int maxLbd, int target);
 
 
-    void getRemovingLbdAndAct(int &minLimLbd, int &maxLimLbd, float &act, vec<int> &clauseCountsAtLbds);
+    void getRemovingLbdAndAct(int &minLimLbd, int &maxLimLbd, float &act, std::vector<int> &clauseCountsAtLbds);
 
     long getAddedClauseCount() {return globalStats[gpuClausesAdded]; }
     long getAddedClauseCountAtLastReduceDb() {return addedClauseCountAtLastReduceDb; }
@@ -266,7 +266,7 @@ public:
 
 };
 
-void writeClause(FILE *file, const vec<Lit>& lits);
+void writeClause(FILE *file, const std::vector<Lit>& lits);
 
 }
 

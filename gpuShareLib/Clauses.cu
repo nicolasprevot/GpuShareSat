@@ -145,7 +145,7 @@ __device__ void DClauses::update(int clSize, int clIdInSize, DArr<Lit> lits) {
 }
 
 // Things that run on the host
-HostClauses::HostClauses(GpuDims gpuDimsGuideline, float _activityDecay, bool _actOnly, vec<unsigned long> &_globalStats) :
+HostClauses::HostClauses(GpuDims gpuDimsGuideline, float _activityDecay, bool _actOnly, std::vector<unsigned long> &_globalStats) :
     nextGpuClauseId(0),
     gpuThreadCountGuideline(gpuDimsGuideline.totalCount()),
     runInfo(),
@@ -158,7 +158,7 @@ HostClauses::HostClauses(GpuDims gpuDimsGuideline, float _activityDecay, bool _a
 {
 }
 
-PerSizeKeeper::PerSizeKeeper(float _clauseActDecay, vec<unsigned long> &_globalStats):
+PerSizeKeeper::PerSizeKeeper(float _clauseActDecay, std::vector<unsigned long> &_globalStats):
         perSize(MAX_CL_SIZE + 1),
         clauseActIncr(1.0),
         clauseActDecay(_clauseActDecay),
@@ -214,13 +214,13 @@ int PerSizeKeeper::addClause(int clSize, MinHArr<Lit> lits, ClMetadata metadata)
     return clIdInSize;
 }
 
-void PerSizeKeeper::getClause(vec<Lit> &lits, int &gpuAssigId, GpuCref gpuCref) {
-    lits.clear(false);
+void PerSizeKeeper::getClause(std::vector<Lit> &lits, int &gpuAssigId, GpuCref gpuCref) {
+    lits.clear();
     ASSERT_OP(gpuCref.clSize, <=, MAX_CL_SIZE);
     int pos = getStartPosForClause(gpuCref.clSize, gpuCref.clIdInSize);
     for (int i = 0; i < gpuCref.clSize; i++) {
         Lit l = (*perSize[gpuCref.clSize]).vals[pos];
-        lits.push(l);
+        lits.push_back(l);
         pos += WARP_SIZE;
     }
     gpuAssigId = perSize[gpuCref.clSize]->clMetadata[gpuCref.clIdInSize].gpuClauseId;
@@ -249,7 +249,7 @@ bool PerSizeKeeper::tryRemoveClausesAsync(int minLimLbd, int maxLimLbd, float ac
     // to remove some so that we can free memory. We may need more memory
     // space for another clause size, which can happen due to new clauses
     // from ClauseUpdates
-    vec<int> clauseSizesWhichFailed;
+    std::vector<int> clauseSizesWhichFailed;
     for (int clSize = MAX_CL_SIZE; clSize >= 3; clSize--) {
         int clIdToCopyTo = 0;
         HOneSizeClauses& hOneSizeClauses = *perSize[clSize];
@@ -265,7 +265,7 @@ bool PerSizeKeeper::tryRemoveClausesAsync(int minLimLbd, int maxLimLbd, float ac
         // This can fail because we may not have decreased the size and new
         // clauses may have come from the other threads
         if (!hOneSizeClauses.tryCopyAsync(cudaMemcpyHostToDevice, stream)) {
-            clauseSizesWhichFailed.push(clSize);
+            clauseSizesWhichFailed.push_back(clSize);
         }
     }
     // try again, may succeed now thanks to memory freed from other clause
@@ -360,11 +360,11 @@ bool HostClauses::reallyNeedToCopyClausesToDevice() {
     return clauseUpdates.getUpdatesCount() > 50000;
 }
 
-void HostClauses::getClause(vec<Lit> &lits, int &gpuAssigId, GpuCref gpuCref) {
+void HostClauses::getClause(std::vector<Lit> &lits, int &gpuAssigId, GpuCref gpuCref) {
     perSizeKeeper.getClause(lits, gpuAssigId, gpuCref);
 }
 
-void HostClauses::fillClauseCountsAtLbds(vec<int> &vec) {
+void HostClauses::fillClauseCountsAtLbds(std::vector<int> &vec) {
     for (int clSize = 0; clSize <= MAX_CL_SIZE; clSize++) {
         for (int clId = 0; clId < perSizeKeeper.getClauseCount(clSize); clId++) {
             vec[perSizeKeeper.getLbd(clSize, clId)] ++;
@@ -372,7 +372,7 @@ void HostClauses::fillClauseCountsAtLbds(vec<int> &vec) {
     }
 }
 
-void HostClauses::getMedianLbd(int &medLbd, int &howManyUnder, int &howManyThisLbd, vec<int> &clauseCountsAtLbds) {
+void HostClauses::getMedianLbd(int &medLbd, int &howManyUnder, int &howManyThisLbd, std::vector<int> &clauseCountsAtLbds) {
     int seen = 0;
     for (int lbd = 0; lbd <= MAX_CL_SIZE; lbd++ ) {
         seen += clauseCountsAtLbds[lbd];
@@ -386,7 +386,7 @@ void HostClauses::getMedianLbd(int &medLbd, int &howManyUnder, int &howManyThisL
     throw;
 }
 
-void HostClauses::getRemovingLbdAndAct(int &minLimLbd, int &maxLimLbd, float &act, vec<int> &clauseCountsAtLbds) {
+void HostClauses::getRemovingLbdAndAct(int &minLimLbd, int &maxLimLbd, float &act, std::vector<int> &clauseCountsAtLbds) {
     int howManyUnder, howManyThisLbd;
     if (actOnly) {
         minLimLbd = 0;
@@ -423,7 +423,7 @@ void printMem() {
 
 void HostClauses::reduceDb(cudaStream_t &stream) {
     TimeGauge tg(globalStats[timeSpentReduceGpuDb], true);
-    vec<int> clauseCountsAtLbds(MAX_CL_SIZE + 1, 0);
+    std::vector<int> clauseCountsAtLbds(MAX_CL_SIZE + 1, 0);
     addedClauseCountAtLastReduceDb = globalStats[gpuClausesAdded];
     fillClauseCountsAtLbds(clauseCountsAtLbds);
 
@@ -495,7 +495,7 @@ float HostClauses::approxNthAct(int minLimLbd, int maxLimLbd, int n) {
     // a certain factor regularly), it makes sense to use a log scale
     if (n == 0) return 0.0;
     int bucketsCount = 20000;
-    vec<int> clCounts(bucketsCount, 0);
+    std::vector<int> clCounts(bucketsCount, 0);
     float lowestLog = log(std::numeric_limits<float>::min());
     float largestLog = log(std::numeric_limits<float>::max());
     float stepLog = (largestLog - lowestLog) / bucketsCount;
@@ -524,7 +524,7 @@ float HostClauses::approxNthAct(int minLimLbd, int maxLimLbd, int n) {
 
 void HostClauses::writeClausesInCnf(FILE *file, int varCount) {
     printf("p cnf %d %ld\n", varCount, globalStats[gpuClauses]);
-    vec<Lit> lits;
+    std::vector<Lit> lits;
     int gpuAssigId;
     for (int clSize = 1; clSize <= MAX_CL_SIZE; clSize++) {
         int count = getClauseCount(clSize);
@@ -536,7 +536,7 @@ void HostClauses::writeClausesInCnf(FILE *file, int varCount) {
     }
 }
 
-void writeClause(FILE *file, const vec<Lit>& lits) {
+void writeClause(FILE *file, const std::vector<Lit>& lits) {
     for (int i = 0; i < lits.size(); i++) {
         int val = (var(lits[i]) + 1) * (sign(lits[i]) ? -1 : 1);
         fprintf(file, "%d ", val);

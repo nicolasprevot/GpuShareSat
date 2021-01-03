@@ -177,7 +177,7 @@ next: ;
 }
 
 GpuRunner::GpuRunner(HostClauses &_hostClauses, HostAssigs &_hostAssigs, Reported &_reported, GpuDims gpuDimsGuideline, bool _quickProf,
-        int _countPerCategory, cudaStream_t &_stream, vec<unsigned long> &_globalStats) :
+        int _countPerCategory, cudaStream_t &_stream, std::vector<unsigned long> &_globalStats) :
     warpsPerBlock(gpuDimsGuideline.threadsPerBlock / WARP_SIZE),
     blockCount(gpuDimsGuideline.blockCount),
     hasRunOutOfGpuMemoryOnce(false),
@@ -256,7 +256,7 @@ struct InitParams {
 }
 
 */
-void GpuRunner::startGpuRunAsync(cudaStream_t &stream, vec<AssigIdsPerSolver> &assigIdsPerSolver, std::unique_ptr<Reporter<ReportedClause>> &reporter, bool &started, bool &notEnoughGpuMemory) {
+void GpuRunner::startGpuRunAsync(cudaStream_t &stream, std::vector<AssigIdsPerSolver> &assigIdsPerSolver, std::unique_ptr<Reporter<ReportedClause>> &reporter, bool &started, bool &notEnoughGpuMemory) {
 #ifdef PRINT_ALOT
     printf("startGpuRunAsync\n");
 #endif
@@ -328,7 +328,7 @@ void GpuRunner::scheduleGpuToCpuCopyAsync(cudaStream_t &stream) {
     exitIfError(cudaEventRecord(gpuToCpuCopyDone.get(), stream), POSITION);
 }
 
-int getTotalAssigCount(vec<AssigIdsPerSolver> &assigIdsPerSolver) {
+int getTotalAssigCount(std::vector<AssigIdsPerSolver> &assigIdsPerSolver) {
     int res = 0;
     for (int i = 0; i < assigIdsPerSolver.size(); i++) {
         res += assigIdsPerSolver[i].assigCount;
@@ -336,7 +336,7 @@ int getTotalAssigCount(vec<AssigIdsPerSolver> &assigIdsPerSolver) {
     return res;
 }
 
-void GpuRunner::gatherGpuRunResults(vec<AssigIdsPerSolver> &assigIdsPerSolver, Reporter<ReportedClause> &reporter) {
+void GpuRunner::gatherGpuRunResults(std::vector<AssigIdsPerSolver> &assigIdsPerSolver, Reporter<ReportedClause> &reporter) {
     globalStats[gpuRuns]++;
     exitIfError(cudaEventSynchronize(gpuToCpuCopyDone.get()), POSITION);
     if (reporter.getCopiedToHost(reportedCls)) {

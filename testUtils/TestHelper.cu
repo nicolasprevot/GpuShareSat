@@ -41,7 +41,7 @@ GpuFixture::GpuFixture(GpuOptions &options, int varCount, int _solverCount, int 
     gpuClauseSharer.setCpuSolverCount(_solverCount);
     for (int s = 0; s < _solverCount; s++) {
         GpuHelpedSolver *solv = new GpuHelpedSolver(finisher, s, options.gpuHelpedSolverOptions.toParams(), gpuClauseSharer, options.quickProf);
-        solvers.push(solv);
+        solvers.push_back(solv);
         for (int i = 0; i < varCount; i++) {
             solv->newVar();
         }
@@ -66,17 +66,17 @@ void GpuFixture::execute() {
 
 CRef GpuFixture::executeAndImportClauses() {
     assert(solvers.size() == 1);
-    vec<CRef> res;
+    std::vector<CRef> res;
     executeAndImportClauses(res);
     return res[0];
 }
 
-void GpuFixture::executeAndImportClauses(vec<CRef> &res) {
+void GpuFixture::executeAndImportClauses(std::vector<CRef> &res) {
     execute();
     bool foundEmptyClause = false;
     res.clear();
     for (int i = 0; i < solvers.size(); i++) {
-        res.push(solvers[i]->gpuImportClauses(foundEmptyClause));
+        res.push_back(solvers[i]->gpuImportClauses(foundEmptyClause));
     }
 }
 
@@ -106,7 +106,7 @@ void copyToDeviceAsync(HostClauses &hCls, cudaStream_t &stream, GpuDims gpuDims)
     copyToDeviceAsync(hCls, stream, cc, gpuDims);
 }
 
-void GpuFixture::addClause(const vec<Lit> &cl) {
+void GpuFixture::addClause(const std::vector<Lit> &cl) {
     gpuClauseSharer.addClause((int*) &cl[0], cl.size());
 }
 
@@ -121,7 +121,7 @@ void copyToDeviceAsync(HostClauses &hCls, cudaStream_t &stream, ContigCopier &cc
     exitIfError(cudaStreamSynchronize(stream), POSITION);
 }
 
-void addClause(HostClauses &hostClauses, const vec<Lit> &cl) {
+void addClause(HostClauses &hostClauses, const std::vector<Lit> &cl) {
     hostClauses.addClause(MinHArr<Lit>((size_t) cl.size(), (Lit*) &cl[0]), cl.size());
 }
 
