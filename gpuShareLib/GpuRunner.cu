@@ -22,7 +22,6 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "Reported.cuh"
 #include "Assigs.cuh"
 #include "Reporter.cuh"
-#include "utils/System.h"
 #include "gpuShareLib/Utils.h"
 #include "CorrespArr.cuh"
 #include "my_make_unique.h"

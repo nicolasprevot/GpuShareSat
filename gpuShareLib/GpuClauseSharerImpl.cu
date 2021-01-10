@@ -6,7 +6,6 @@
 #include "Reported.cuh"
 #include "GpuRunner.cuh"
 #include "Assigs.cuh"
-#include "utils/System.h"
 #include <thread>
 
 namespace GpuShare {
