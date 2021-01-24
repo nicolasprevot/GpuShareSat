@@ -1462,6 +1462,7 @@ bool Solver::propagateAndMaybeLearnFromConflict(bool &foundEmptyClause, bool &bl
         return true;
     }
     if (confl == CRef_Undef) {
+        tryCopyTrailForGpu(decisionLevel());
         return false;
     }
     newDescent = false;
@@ -1494,7 +1495,7 @@ bool Solver::propagateAndMaybeLearnFromConflict(bool &foundEmptyClause, bool &bl
     unsigned int nblevels;
     unsigned int szWithoutSelectors;
     analyze(confl, learned_clause, selectors, backtrack_level, nblevels, szWithoutSelectors);
-    foundConflict(learned_clause, nblevels);
+    sendClauseToGpu(learned_clause, nblevels);
 #ifdef DEBUG
     if (learned_clause.size() > 1) {
         assert(level(var(learned_clause[0])) >= decisionLevel());
@@ -1534,6 +1535,13 @@ bool Solver::propagateAndMaybeLearnFromConflict(bool &foundEmptyClause, bool &bl
     varDecayActivity();
     claDecayActivity();
     return true;
+}
+
+bool Solver::tryCopyTrailForGpu(int level) {
+    return false;
+}
+
+void Solver::sendClauseToGpu(vec<Lit> &lits, int lbd) {
 }
 
 /*_________________________________________________________________________________________________
@@ -1684,10 +1692,6 @@ CRef Solver::propagateAlsoGpu(bool &foundEmptyClause) {
     }
     confl = propagate();
     return confl;
-}
-
-void Solver::foundConflict(vec<Lit> &learned, int lbd) {
-
 }
 
 double Solver::progressEstimate() const {

@@ -161,17 +161,6 @@ void GpuHelpedSolver::cancelUntil(int level) {
     Solver::cancelUntil(level);
 }
 
-void GpuHelpedSolver::foundConflict(vec<Lit> &learned, int lbd) {
-    foundConflictInner(decisionLevel() - 1, learned, lbd);
-}
-
-void GpuHelpedSolver::foundConflictInner(int level, vec<Lit> &learned, int lbd) {
-    tryCopyTrailForGpu(level);
-    if (lbd >= 0) {
-        sendClauseToGpu(learned, lbd);
-    }
-}
-
 // finds the lit with the largest level among lits from start to end and put it in start
 void GpuHelpedSolver::findLargestLevel(MinClause cl, int start) {
     for (int i = start + 1; i < cl.count; i++) {

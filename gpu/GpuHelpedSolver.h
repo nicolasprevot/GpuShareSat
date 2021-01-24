@@ -103,14 +103,12 @@ private:
     void handleReportedClause(MinClause cl, CRef &conflict, int &decisionLevelAtConflict, bool &foundEmptyClause);
     CRef insertAndLearnClause(MinClause cl, bool &foundEmptyClause);
     CRef addLearnedClause(MinClause cl);
-    void foundConflictInner(int decisionLevel, vec<Lit> &learned, int lbd);
     int copyAssigsForGpuInner(int level); // returns assig id with these, or -1 if coudn't copy
     void insertStatNames();
 
 public:
     GpuHelpedSolver(Finisher &_finisher, int cpuThreadId, GpuHelpedSolverParams params, GpuShare::GpuClauseSharer &_gpuClauseSharer, bool quickProf);
     GpuHelpedSolver(const GpuHelpedSolver &other, int cpuThreadId);
-    void foundConflict(vec<Lit> &learned, int lbd);
     // send the state at level to the gpu
     // returns if succeedeed
     // If succeeds, exactly variables until this level will be copied for the gpu

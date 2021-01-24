@@ -263,8 +263,10 @@ public:
     uint32_t panicModeLastRemoved, panicModeLastRemovedShared;
     
     virtual CRef gpuImportClauses(bool &foundEmptyClause);
-    // This is about the same as parallelExportClauseDuringSearch, maybe could be refactored
-    virtual void foundConflict(vec<Lit> &learned, int lbd);
+
+    virtual bool tryCopyTrailForGpu(int level);
+    virtual void sendClauseToGpu(vec<Lit> &lits, int lbd);
+
     virtual bool panicModeIsEnabled();
 
     // Statistics 
