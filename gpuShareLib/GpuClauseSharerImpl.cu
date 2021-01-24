@@ -22,6 +22,10 @@ void writeMessageAndThrow(const char *message) {
 }
 
 GpuClauseSharerImpl::GpuClauseSharerImpl(GpuClauseSharerOptions _opts) {
+    // It can be necessary for debugging if we print a lot
+    // 100 Megs
+    // cudaDeviceSetLimit(cudaLimitPrintfFifoSize, 1048576 * 100);
+
 // assumes the enum values start at 0
 #define X(v) globalStatNames.push_back(#v);
 #include "GlobalStats.h"
@@ -77,6 +81,7 @@ void GpuClauseSharerImpl::setVarCount(int newVarCount) {
 
 void GpuClauseSharerImpl::gpuRun() {
     long timeMicrosBegining = realTimeMicros();
+    
     gpuRunner->wholeRun(true);
     long timePassedMicros = realTimeMicros() - timeMicrosBegining;
     if (timePassedMicros < opts.minGpuLatencyMicros) {
@@ -115,6 +120,7 @@ long GpuClauseSharerImpl::getAddedClauseCountAtLastReduceDb() {
     return clauses->getAddedClauseCountAtLastReduceDb();
 }
 
+// TODO: we should make sure that a solver doesn't get the clause it just sent
 long GpuClauseSharerImpl::addClause(int *lits, int count) {
     return clauses->addClause(MinHArr<Lit>(count, (Lit*) lits), count);
 }

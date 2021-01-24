@@ -108,6 +108,12 @@ bool Reported::popReportedClause(int solverId, MinHArr<Lit> &lits, GpuClauseId &
                 if (clausesToNotImportAgain[solverId].find(gpuClauseId) == clausesToNotImportAgain[solverId].end()) {
                     clausesToNotImportAgain[solverId].insert(gpuClauseId);
                     oneSolverStats[solverId][reportedClauses]++;
+                    if (lits.size() == 1) {
+                        oneSolverStats[solverId][reportedClausesUnit]++;
+                    }
+                    if (lits.size() == 2) {
+                        oneSolverStats[solverId][reportedClausesBinary]++;
+                    }
                     return true;
                 }
             }
