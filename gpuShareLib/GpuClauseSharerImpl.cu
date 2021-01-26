@@ -120,9 +120,10 @@ long GpuClauseSharerImpl::getAddedClauseCountAtLastReduceDb() {
     return clauses->getAddedClauseCountAtLastReduceDb();
 }
 
-// TODO: we should make sure that a solver doesn't get the clause it just sent
-long GpuClauseSharerImpl::addClause(int *lits, int count) {
-    return clauses->addClause(MinHArr<Lit>(count, (Lit*) lits), count);
+long GpuClauseSharerImpl::addClause(int solverId, int *lits, int count) {
+    GpuClauseId clId = clauses->addClause(MinHArr<Lit>(count, (Lit*) lits), count);
+    if (solverId != -1) reported->clauseWasAdded(solverId, clId);
+    return clId;
 }
 
 bool GpuClauseSharerImpl::trySetSolverValues(int solverId, int *lits, int count) {

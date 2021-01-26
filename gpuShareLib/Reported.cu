@@ -83,6 +83,7 @@ void Reported::setSolverCount(int solverCount) {
         // There can be at most 3 sets of 32 assignments in flight for a given solver
         repClauses[s] = my_make_unique<ConcurrentQueue<ClauseBatch>>(3);
     }
+    dontImport.resize(solverCount);
 }
 
 ClauseBatch& Reported::getClauseBatch(std::vector<ClauseBatch*> &perSolverBatches, int solverId) {
@@ -91,6 +92,14 @@ ClauseBatch& Reported::getClauseBatch(std::vector<ClauseBatch*> &perSolverBatche
         perSolverBatches[solverId]->clear();
     }
     return *perSolverBatches[solverId];
+}
+
+void Reported::clauseWasAdded(int solverId, GpuClauseId gpuClauseId) {
+    DontImport di;
+    di.gpuClauseId = gpuClauseId;
+    di.assigId = lastSentAssigId[solverId] + 1;
+    clausesToNotImportAgain[solverId].insert(gpuClauseId);
+    dontImport[solverId].push(di);
 }
 
 bool Reported::popReportedClause(int solverId, MinHArr<Lit> &lits, GpuClauseId &gpuClauseId) {
@@ -134,6 +143,11 @@ bool Reported::popReportedClause(int solverId, MinHArr<Lit> &lits, GpuClauseId &
                 }
                 removeOldestClauses(solverId);
             }
+            while (dontImport[solverId].front().assigId < seenAllReportsUntil) {
+                clausesToNotImportAgain[solverId].erase(dontImport[solverId].front().gpuClauseId);
+                dontImport[solverId].pop();
+            }
+
             lastAssigAllReported[solverId] = seenAllReportsUntil;
             currentClauseBatches[solverId] = NULL;
         } else {

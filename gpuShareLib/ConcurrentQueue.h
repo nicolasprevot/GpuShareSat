@@ -72,6 +72,9 @@ class RingQueue {
             ASSERT_OP(_size, >, 0);
     }
 
+    RingQueue() : RingQueue(1) {
+    }
+
     void setMaxIndex(long newMax) {
         ASSERT_OP(newMax, >=, minIndex);
         ASSERT_OP(newMax, >, maxIndex);

@@ -92,7 +92,7 @@ CRef GpuHelpedSolver::gpuImportClauses(bool& foundEmptyClause) {
 }
 
 void GpuHelpedSolver::sendClauseToGpu(vec<Lit> &lits, int lbd) {
-    gpuClauseSharer.addClause((int*) &lits[0], lits.size());
+    gpuClauseSharer.addClause(cpuThreadId, (int*) &lits[0], lits.size());
     if (lits.size() == 1) {
         stats[nbExportedUnit]++;
     } else {

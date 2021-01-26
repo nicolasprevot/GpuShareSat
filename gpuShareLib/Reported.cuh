@@ -30,6 +30,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "GpuUtils.cuh"
 #include <vector>
 #include <set>
+#include <queue>
 
 namespace GpuShare {
 
@@ -72,6 +73,13 @@ public:
 
 template<typename T> class ConcurrentQueue;
 
+// means that a thread shouldn't import a clause until this assig id
+// used just so when a thread adds a clause, it doesn't get the clause immediately
+struct DontImport {
+    GpuClauseId gpuClauseId;
+    int assigId;
+};
+
 // This class gets the output from a gpu run and then rearranges it in a way which is efficient to query by a solver
 class Reported {
 private:
@@ -84,6 +92,7 @@ private:
     std::vector<ClauseBatch*> currentClauseBatches;
     std::vector<long> lastSentAssigId;
     std::vector<Lit> tempLits;
+    std::vector<std::queue<DontImport>> dontImport;
     HostClauses &hostClauses;
 
     std::vector<long> lastAssigAllReported;
@@ -101,6 +110,8 @@ public:
 
     // This isn't known yet when the object is created which is why we have to set it later
     void setSolverCount(int solverCount);
+
+    void clauseWasAdded(int solverId, GpuClauseId gpuClauseId);
 
     // solvAssigs tell us the solver id / and solverAssigId for a given position in the reported clauses
     void fill(std::vector<AssigIdsPerSolver> &solvAssigs, std::vector<ReportedClause> &wrongClauses);

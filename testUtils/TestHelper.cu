@@ -107,7 +107,7 @@ void copyToDeviceAsync(HostClauses &hCls, cudaStream_t &stream, GpuDims gpuDims)
 }
 
 void GpuFixture::addClause(const std::vector<Lit> &cl) {
-    gpuClauseSharer.addClause((int*) &cl[0], cl.size());
+    gpuClauseSharer.addClause(-1, (int*) &cl[0], cl.size());
 }
 
 void copyToDeviceAsync(HostClauses &hCls, cudaStream_t &stream, ContigCopier &cc, GpuDims gpuDims) {
