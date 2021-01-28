@@ -103,13 +103,16 @@ class GpuClauseSharer {
 
     virtual void setVarCount(int newCount) {};
 
+    // solverId is the solver that the clause comes from. Passing this avoid reporting the clause if it triggered on previous
+    // assignments sent by that solver. Pass -1 if the clause does not come from a solver
+    virtual long addClause(int solverId, int *lits, int count) {return -1; };
+
     /* not thread safe with any other method in this class */
     virtual void setCpuSolverCount(int count) {};
 
 
     /* Thread safe methods */
     // Add a clause to the GPU. Calling this method will NOT free the lits pointer.
-    virtual long addClause(int *lits, int count) {return -1; };
 
     virtual const char* getOneSolverStatName(OneSolverStats stat) {return NULL; };
 

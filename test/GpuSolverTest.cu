@@ -995,30 +995,37 @@ BOOST_AUTO_TEST_CASE(testSendClauseToGpu) {
     GpuFixture fx(ops, 3, 1);
     GpuHelpedSolver& solver = *(fx.solvers[0]);
 
-    solver.addClause(~Glucose::mkLit(0), Glucose::mkLit(1));
-    solver.addClause(~Glucose::mkLit(0), ~Glucose::mkLit(1));
+    solver.addClause(~Glucose::mkLit(0), ~Glucose::mkLit(1), Glucose::mkLit(2));
+    solver.addClause(~Glucose::mkLit(0), ~Glucose::mkLit(1), ~Glucose::mkLit(2));
     solver.newDecisionLevel();
     solver.uncheckedEnqueue(Glucose::mkLit(0));
+    solver.tryCopyTrailForGpu(solver.decisionLevel());
+    solver.propagate();
+    BOOST_CHECK_EQUAL(1, solver.stats[propagations]);
+    solver.newDecisionLevel();
+    solver.uncheckedEnqueue(Glucose::mkLit(1));
 
     BOOST_CHECK_EQUAL(0, solver.conflicts);
-    BOOST_CHECK_EQUAL(0, solver.stats[propagations]);
+    BOOST_CHECK_EQUAL(1, solver.stats[propagations]);
 
     bool b1;
     Glucose::vec<Glucose::Lit> learned_clause, selectors;
     bool blocked = false;
     solver.propagateAndMaybeLearnFromConflict(b1, blocked, learned_clause, selectors);
     BOOST_CHECK_EQUAL(1, solver.conflicts);
-    BOOST_CHECK_EQUAL(1, solver.stats[propagations]);
+    BOOST_CHECK_EQUAL(2, solver.stats[propagations]);
     execute(fx.gpuClauseSharer);
 
     solver.gpuImportClauses(b1);
-    // if already present:
-    // The gpu clauses don't need to learn the clause ~mkLit(0) that the solver has just found because the assignment mkLit(0) was
-    // already know to be not useful (because the gpu clauses already have the clause ~mkLit(0)
+
     copyToDeviceAsync(*fx.gpuClauseSharer.clauses, fx.gpuClauseSharer.sp.get(), getGpuDims(ops));
     BOOST_CHECK_EQUAL(1, fx.gpuClauseSharer.getGlobalStat(gpuClauses));
-    BOOST_CHECK_EQUAL(1, fx.gpuClauseSharer.getGlobalStat(gpuClauseLengthSum));
+    BOOST_CHECK_EQUAL(2, fx.gpuClauseSharer.getGlobalStat(gpuClauseLengthSum));
+    // the solver doesn't need this clause, it learned it itself
+    BOOST_CHECK_EQUAL(0, fx.gpuClauseSharer.getOneSolverStat(0, reportedClauses));
 }
+
+
 
 BOOST_AUTO_TEST_CASE(testClauseBatch) {
     ClauseBatch clBatch;

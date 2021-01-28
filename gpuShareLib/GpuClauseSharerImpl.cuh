@@ -53,7 +53,7 @@ class GpuClauseSharerImpl : public GpuClauseSharer {
 
     void setCpuSolverCount(int solverCount);
 
-    long addClause(int *lits, int count);
+    long addClause(int solverId, int *lits, int count);
 
     bool trySetSolverValues(int threadId, int *lits, int count);
 
