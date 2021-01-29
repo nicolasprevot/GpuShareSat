@@ -143,9 +143,10 @@ bool Reported::popReportedClause(int solverId, MinHArr<Lit> &lits, GpuClauseId &
                 }
                 removeOldestClauses(solverId);
             }
-            while (dontImport[solverId].front().assigId < seenAllReportsUntil) {
-                clausesToNotImportAgain[solverId].erase(dontImport[solverId].front().gpuClauseId);
-                dontImport[solverId].pop();
+            std::queue<DontImport>& qu = dontImport[solverId];
+            while (!qu.empty() && qu.front().assigId < seenAllReportsUntil) {
+                clausesToNotImportAgain[solverId].erase(qu.front().gpuClauseId);
+                qu.pop();
             }
 
             lastAssigAllReported[solverId] = seenAllReportsUntil;
