@@ -21,7 +21,7 @@ You will need to include GpuClauseSharer:
 And create an instance of GpuClauseSharer:
 ```
 GpuShare::GpuClauseSharerOptions csOpts;
-GpuClauseSharer* gpuClauseSharer = GpuShare::makeGpuClauseSharerPtr(csOpts, varCount);
+GpuShare::GpuClauseSharer* gpuClauseSharer = GpuShare::makeGpuClauseSharerPtr(csOpts, varCount);
 ```
 
 You might want to wrap it in a ```std::unique_ptr<GpuClauseSharer>```.
