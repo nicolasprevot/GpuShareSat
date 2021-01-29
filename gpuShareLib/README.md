@@ -68,7 +68,7 @@ The three GpuClauseSharer methods that will need to be called are:
 - `void unsetSolverValues(int cpuSolverId, int *lits, int count)`
 - `long trySendAssignment(int cpuSolverId)`
 
-Each thread should maintain a variable: int trailCopiedUntil, such that the representation of GpuClauseSharer of its assignment corresponds
+Each thread should maintain a variable: `int trailCopiedUntil`, such that the representation of GpuClauseSharer of its assignment corresponds
 to all the literals in the trail up to not including this one.
 
 Whenever your solver backtracks, you should notify GpuClauseSharer of the literals that are being unset. Assuming that the solver has the same meaning for
