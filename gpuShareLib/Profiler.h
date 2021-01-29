@@ -20,6 +20,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #ifndef DEF_PROFILER
 #define DEF_PROFILER
 #include <string>
+#include "Utils.h"
 
 namespace GpuShare {
 
@@ -30,9 +31,18 @@ class TimeGauge {
     long timeStartedMicros;
 
     public:
-    TimeGauge(unsigned long &toBump, bool enabled);
-    void complete();
-    ~TimeGauge();
+    TimeGauge(unsigned long &_toBump, bool enabled): 
+        toBump(_toBump), timeStartedMicros(enabled ? realTimeMicros() : -1) {
+    }
+
+    void complete() {
+        if (timeStartedMicros >= 0) toBump += realTimeMicros() - timeStartedMicros;
+        timeStartedMicros = -1;
+    }
+
+    ~TimeGauge() {
+        complete();
+    }
 };
 
 }

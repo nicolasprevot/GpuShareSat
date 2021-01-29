@@ -25,6 +25,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include <functional>
 #include <atomic>
 #include <memory>
+#include <sys/time.h>
 
 #define MAXIMUM_SLEEP_DURATION 5
 
@@ -143,7 +144,11 @@ inline void makeSameAsF(uint &val, uint toSet, uint from) {
 
 void printBinary(uint x);
 
-long realTimeMicros();
+inline long realTimeMicros() {
+    struct timeval time;
+    gettimeofday(&time, NULL);
+    return time.tv_usec + 1e6 * time.tv_sec;
+}
 
 }
 
