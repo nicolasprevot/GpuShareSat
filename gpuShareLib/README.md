@@ -64,9 +64,9 @@ Sending assignments is needed so that the GPU can tell which clauses would have 
 GpuClauseSharer maintains a representation of an assignment for every CPU thread.
 
 The three GpuClauseSharer methods that will need to be called are:
-- bool trySetSolverValues(int cpuSolverId, int *lits, int count) 
-- void unsetSolverValues(int cpuSolverId, int *lits, int count)
-- long trySendAssignment(int cpuSolverId)
+- `bool trySetSolverValues(int cpuSolverId, int *lits, int count)` 
+- `void unsetSolverValues(int cpuSolverId, int *lits, int count)`
+- `long trySendAssignment(int cpuSolverId)`
 
 Each thread should maintain a variable: int trailCopiedUntil, such that the representation of GpuClauseSharer of its assignment corresponds
 to all the literals in the trail up to not including this one.
