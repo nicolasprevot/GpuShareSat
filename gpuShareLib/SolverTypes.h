@@ -76,6 +76,20 @@ inline void printV(const Lit& lit) {
     else printf("+");
 }
 
+struct Trail {
+
+    Trail () {
+    }
+
+    Trail (Lit _lit, uint32_t _lev) :
+        lit(_lit)
+        , lev(_lev)
+    {}
+
+    Lit lit;
+    uint32_t lev;
+};
+
 //=================================================================================================
 // Lifted booleans:
 //

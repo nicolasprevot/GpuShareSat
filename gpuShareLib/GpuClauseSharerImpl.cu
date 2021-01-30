@@ -121,13 +121,13 @@ long GpuClauseSharerImpl::addClause(int *lits, int count) {
 
 bool GpuClauseSharerImpl::trySetSolverValues(int solverId, int *lits, int count) {
     OneSolverAssigs& sAssigs = assigs->getAssigs(solverId);
-    MinHArr<Lit> litsToSet(count, (Lit*) lits);
+    MinHArr<Trail> litsToSet(count, (Trail*) lits);
     bool success = false;
     sAssigs.enterLock();
     if (sAssigs.isAssignmentAvailableLocked()) {
         unsetPendingLocked(solverId);
         for (int i = 0; i < litsToSet.size(); i++) {
-            sAssigs.setVarLocked(var(litsToSet[i]), sign(litsToSet[i]) ? gl_False : gl_True);
+            sAssigs.setVarLocked(var(litsToSet[i].lit), sign(litsToSet[i].lit) ? gl_False : gl_True);
         }
         oneSolverStats[solverId][varUpdatesSentToGpu] += litsToSet.size();
         success = true;
@@ -150,12 +150,12 @@ void GpuClauseSharerImpl::unsetPendingLocked(int solverId) {
 
 void GpuClauseSharerImpl::unsetSolverValues(int solverId, int *lits, int count) {
     OneSolverAssigs& sAssigs = assigs->getAssigs(solverId);
-    MinHArr<Lit> litsToUnset(count, (Lit*) lits);
+    MinHArr<Trail> litsToUnset(count, (Trail*) lits);
     sAssigs.enterLock();
     if (sAssigs.isAssignmentAvailableLocked()) {
         unsetPendingLocked(solverId);
         for (int i = 0; i < litsToUnset.size(); i++) {
-            sAssigs.setVarLocked(var(litsToUnset[i]), gl_Undef);
+            sAssigs.setVarLocked(var(litsToUnset[i].lit), gl_Undef);
         }
         oneSolverStats[solverId][varUpdatesSentToGpu] += litsToUnset.size();
     } else {
