@@ -97,7 +97,7 @@ void trySendAssignmentToGpu(int level) {
         unsetFromGpu(level)
         sendUntil = trail_lim[level];
     } else {
-        sendUntil = trail.size()
+        sendUntil = trail.size();
     }
     if (trailCopiedUntil >= sendUntil) return;
     // gpuClauseSharer might already have too many assignments from our solver in which case we might not be able to pass a new assignment 
