@@ -87,7 +87,7 @@ int main(int argc, char **argv)
         CompositionRoot compRoot(gpuOptions, commonOptions, finisher, parser.nVars());
 
         // Note: cuda uses a gigantic amount (gigabytes) of virtual memory that is almost never used, to get the whole physical memory into virtual
-        // memory. We'd like to not count that in the memory limits. But not easy to get just this one
+        // memory. We want to substract it from memory limits.
 
         // Unfortunately, memUsed here includes some memory that is really used, but it's not easy to tell what is
         commonOptions.applyMemLim(memUsed());
