@@ -168,8 +168,6 @@ private:
 
     long currentId;
 
-    void copyCompletedLocked();
-
     int getPos(int id) { return id % assigCount(); }
 
     // position of the first bit which belongs to this solver in the aggregate
@@ -193,6 +191,7 @@ public:
     void getCurrentAssignment(uint8_t* assig);
     long getUpdatesSent() { return updatesSent; }
     DOneSolverAssigs copyUpdatesLocked(ArrPair<VarUpdate> &varUpdates, AssigIdsPerSolver &assigIds, HArr<AggCorresp> &aggCorresps);
+    void resizeDevVals(int varCount, int warpsPerBlock, int totalWarps, cudaStream_t &stream);
 
     void setAggBits(int startAggBitPos, int endAggBitPos);
     bool hasSomethingToCopy() { return currentId != firstIdUsed; }

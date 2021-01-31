@@ -233,9 +233,13 @@ void OneSolverAssigs::getCurrentAssignment(uint8_t *assig) {
 
 void OneSolverAssigs::setVarCount(int varCount, cudaStream_t &stream, int &warpsPerBlock, int totalWarps) {
     std::lock_guard<std::mutex> lockGuard(lock);
-    lastVarVal.resize(varCount, gl_Undef);
-    varToUpdatePos.resize(varCount, -1);
-    
+    lastVarVal.insert(lastVarVal.end(), varCount - lastVarVal.size(), gl_Undef);
+    varToUpdatePos.insert(varToUpdatePos.end(), varCount - varToUpdatePos.size(), -1);
+    // we don't resize multiLBool here because it involves running a GPU kernel. This method can be called may times
+    // we only want to run that GPU kernel once
+}
+
+void OneSolverAssigs::resizeDevVals(int varCount, int warpsPerBlock, int totalWarps, cudaStream_t &stream) {
     int oldSize = multiLBool.size();
     // There may be something using multiLBool so sync the stream using it before changing capacity
     exitIfFalse(multiLBool.tryResize(varCount, true, true, &stream), POSITION);
@@ -286,6 +290,7 @@ DOneSolverAssigs OneSolverAssigs::copyUpdatesLocked(ArrPair<VarUpdate> &varUpdat
         }
         ASSERT_OP(id, ==, currentId);
     }
+
     // Note: the reason for not having this method set the agg dArr here is that:
     // It's not valid if someone else later adds something else to
     // the contig copier which changes its size
@@ -326,6 +331,16 @@ template<typename T> ArrPair<T> makeArrPair(ContigCopier &cc, MinHArr<T> &vals) 
 }
 
 AssigsAndUpdates HostAssigs::fillAssigsAsync(ContigCopier &cc, std::vector<AssigIdsPerSolver> &assigIdsPerSolver, cudaStream_t &stream) {
+    if (multiAggAlloc.size() != varCount) {
+        int oldSize = multiAggAlloc.size();
+        exitIfFalse(multiAggAlloc.tryResize(varCount, &stream), POSITION);
+        dAssigAggregates.multiAggs = multiAggAlloc.getDArr();
+        initDArr(multiAggAlloc.getDArr(), MultiAgg{0, ~((Vals) 0), 0}, warpsPerBlockForInit, warpCountForInit, oldSize);
+        for (int i = 0; i < solverAssigs.size(); i++) {
+            solverAssigs[i]->resizeDevVals(varCount, warpsPerBlockForInit, warpCountForInit, stream);
+        }
+    }
+
     int solverCount = solverAssigs.size();
     assigIdsPerSolver.resize(solverCount);
 
@@ -388,10 +403,7 @@ void HostAssigs::setVarCount(int newVarCount, cudaStream_t &stream) {
     for (int i = 0; i < solverAssigs.size(); i++) {
         solverAssigs[i]->setVarCount(newVarCount, stream, warpsPerBlockForInit, warpCountForInit);
     }
-    exitIfFalse(multiAggAlloc.tryResize(newVarCount, &stream), POSITION);
-    dAssigAggregates.multiAggs = multiAggAlloc.getDArr();
     varCount = newVarCount;
-    initDArr(multiAggAlloc.getDArr(), MultiAgg{0, ~((Vals) 0), 0}, warpsPerBlockForInit, warpCountForInit, oldSize);
 }
 
 void HostAssigs::growSolverAssigs(int solverCount) {
