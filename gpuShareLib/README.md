@@ -51,9 +51,9 @@ Each solver thread will need to know its id, we will use a variable cpuThreadId 
 ## Change to the CPU solver threads
 
 ### Sending clauses to the GPU
-Each thread should send all the clauses it learns to the GPU, with the GpuClauseSharer method: ```long addClause(int *lits, int count);```
+Each thread should send all the clauses it learns to the GPU, with the GpuClauseSharer method: ```long addClause(int solverId, int *lits, int count);```
 The representation for the literals is: 2 * var for positive literals, 2 * var + 1 for negative ones, like minisat.
-Assuming that your solver uses the same representation, you can call: ``` gpuClauseSharer.addClause(&cl[0], cl.size())```
+Assuming that your solver uses the same representation, you can call: ``` gpuClauseSharer.addClause(cpuThreadId, (int*) &cl[0], cl.size())```
 
 This method returns a unique long identifying the clause. You do not need to use it, but it might be useful for debugging.
 
@@ -127,4 +127,4 @@ if l1 < l2, we backtrack to l1 and imply the last literal there. Otherwise, we d
 Importing clauses should be done regularly, for example after each decision.
 
 You can inspire yourselves from the gpuImportClauses method of [GpuHelpedSolver](../gpu/GpuHelpedSolver.cc) for this.
-
+It relies on the following: ```int litLevel(Lit p) {return value(p) != l_False ? INT_MAX : level(var(p));}```
