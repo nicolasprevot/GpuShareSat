@@ -157,7 +157,7 @@ class GpuClauseSharer {
        from the thread which called the method for this cpu solver id */
     virtual long getOneSolverStat(int cpuSolverId, OneSolverStats stat) { return 0; };
 
-
+    virtual ~GpuClauseSharer() { }
 
 };
 
