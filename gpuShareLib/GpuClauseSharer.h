@@ -79,63 +79,63 @@ class GpuClauseSharer {
     // Do one GPU run. This method is meant to be called repeatedly by a thread, this thread spending
     // most of this time just calling this method.
     // Once this method completes, it is not guaranteed that all clauses for all assignments ready have been reported.
-    virtual void gpuRun() {};
+    virtual void gpuRun() {}
 
 
     // Delete half of the GPU clauses (those with the lowest activity).
-    virtual void reduceDb() {};
+    virtual void reduceDb() {}
 
     // Number of clauses that have been added, whether or not they have been deleted
-    virtual long getAddedClauseCount() {return 0;};
+    virtual long getAddedClauseCount() {return 0;}
 
-    virtual long getAddedClauseCountAtLastReduceDb() {return 0;};
+    virtual long getAddedClauseCountAtLastReduceDb() {return 0;}
 
 
-    virtual bool hasRunOutOfGpuMemoryOnce() {return false;};
+    virtual bool hasRunOutOfGpuMemoryOnce() {return false;}
 
-    virtual void getGpuMemInfo(size_t &free, size_t &total) {};
+    virtual void getGpuMemInfo(size_t &free, size_t &total) {}
 
-    virtual int getGlobalStatCount() {return 0;}; 
+    virtual int getGlobalStatCount() {return 0;}
 
-    virtual long getGlobalStat(GlobalStats stat) {return 0;};
+    virtual long getGlobalStat(GlobalStats stat) {return 0;}
 
-    virtual void writeClausesInCnf(FILE *file) {};
+    virtual void writeClausesInCnf(FILE *file) {}
 
-    virtual void setVarCount(int newCount) {};
+    virtual void setVarCount(int newCount) {}
 
     // solverId is the solver that the clause comes from. Passing this avoid reporting the clause if it triggered on previous
     // assignments sent by that solver. Pass -1 if the clause does not come from a solver
-    virtual long addClause(int solverId, int *lits, int count) {return -1; };
+    virtual long addClause(int solverId, int *lits, int count) {return -1; }
 
     /* not thread safe with any other method in this class */
-    virtual void setCpuSolverCount(int count) {};
+    virtual void setCpuSolverCount(int count) {}
 
 
     /* Thread safe methods */
     // Add a clause to the GPU. Calling this method will NOT free the lits pointer.
 
-    virtual const char* getOneSolverStatName(OneSolverStats stat) {return NULL; };
+    virtual const char* getOneSolverStatName(OneSolverStats stat) {return NULL; }
 
-    virtual const char* getGlobalStatName(GlobalStats stat) {return NULL; };
+    virtual const char* getGlobalStatName(GlobalStats stat) {return NULL; }
 
-    virtual int getOneSolverStatCount() { return 0;}; 
+    virtual int getOneSolverStatCount() { return 0;}
 
     /* Invocations of these methods for a given solverId have to always be done from the same thread, or with proper locking */
 
     // Attempts to add the passed literals to the assignment of the given thread.
     // Calling this method will NOT free the lits pointer. This method is thread safe.
     // returns if succeeded. It is atomic in that either all will have been set, or none.
-    virtual bool trySetSolverValues(int cpuSolverId, int *lits, int count) {return false; };
+    virtual bool trySetSolverValues(int cpuSolverId, int *lits, int count) {return false; }
 
     // Unset the passed literals from the assignment of the given thread.
     // Calling this method will NOT free the lits pointer. This method is thread safe.
     // Threads are meant to call this method whenever they unset from their trail
-    virtual void unsetSolverValues(int cpuSolverId, int *lits, int count) { };
+    virtual void unsetSolverValues(int cpuSolverId, int *lits, int count) { }
 
     // Attempts to send the assignment for this thread to the GPU. All the clauses will be tested against it,
     // and those that trigger will be reported.
     // Returns -1 if we failed the send the current assignment, an identifier of this assignment otherwise, which always increases
-    virtual long trySendAssignment(int cpuSolverId) {return -1; };
+    virtual long trySendAssignment(int cpuSolverId) {return -1; }
 
     // Returns if there was a clause reported to the given solver id. You should not free lits.
     // Calling this method will invalidate the previously returned lits pointers for this solver id.
@@ -144,18 +144,18 @@ class GpuClauseSharer {
     // the same clause will not be reported twice to the same thread. If a thread removes a reported clause as part of its
     // clause deletion policy, and this clause triggers again on an assignment from this thread, then it will
     // be reported again.
-    virtual bool popReportedClause(int cpuSolverId, int* &lits, int &count, long &gpuClauseId) {return false; };
+    virtual bool popReportedClause(int cpuSolverId, int* &lits, int &count, long &gpuClauseId) {return false; }
 
     // Returns the latest assignment for which all clauses have been reported
-    virtual long getLastAssigAllReported(int cpuSolverId) { return 0;};
+    virtual long getLastAssigAllReported(int cpuSolverId) { return 0;}
 
     // Gets the current assignment of the given cpu solver. This method is mostly intended for debugging and making sure that the GPU
     // representation of a solver assignment is the right one. The values for assig are: 0 -> true, 1 -> false, 2 -> undef
-    virtual void getCurrentAssignment(int cpuSolverId, uint8_t* assig) { };
+    virtual void getCurrentAssignment(int cpuSolverId, uint8_t* assig) { }
 
     /* Invocation of these methods can be done from any thread, but the result may not be completely up to date if is is not done
        from the thread which called the method for this cpu solver id */
-    virtual long getOneSolverStat(int cpuSolverId, OneSolverStats stat) { return 0; };
+    virtual long getOneSolverStat(int cpuSolverId, OneSolverStats stat) { return 0; }
 
     virtual ~GpuClauseSharer() { }
 
