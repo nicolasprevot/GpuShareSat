@@ -28,6 +28,30 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "ConcurrentQueue.h"
 #include "GpuClauseSharer.h"
 
+#if defined(_MSC_VER)
+#define release_assert(a) \
+    do { \
+    __pragma(warning(push)) \
+    __pragma(warning(disable:4127)) \
+        if (!(a)) {\
+    __pragma(warning(pop)) \
+            fprintf(stderr, "*** ASSERTION FAILURE in %s() [%s:%d]: %s\n", \
+            __FUNCTION__, __FILE__, __LINE__, #a); \
+            abort(); \
+        } \
+    } while (0)
+#else
+#define release_assert(a) \
+    do { \
+        if (!(a)) {\
+            fprintf(stderr, "*** ASSERTION FAILURE in %s() [%s:%d]: %s\n", \
+            __FUNCTION__, __FILE__, __LINE__, #a); \
+            abort(); \
+        } \
+    } while (0)
+#endif
+
+
 // #define PRINT_DETAILS_CLAUSES
 
 namespace GpuShare {
@@ -103,6 +127,8 @@ void Reported::clauseWasAdded(int solverId, GpuClauseId gpuClauseId) {
 }
 
 bool Reported::popReportedClause(int solverId, MinHArr<Lit> &lits, GpuClauseId &gpuClauseId) {
+    release_assert(solverId < currentClauseBatches.size());
+
     // When iterating over the current clause batch, this method doesn't lock anything
     while (true) {
         if (currentClauseBatches[solverId] == NULL) {
