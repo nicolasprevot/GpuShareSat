@@ -392,12 +392,12 @@ void HostClauses::getRemovingLbdAndAct(int &minLimLbd, int &maxLimLbd, float &ac
         minLimLbd = 0;
         maxLimLbd = MAX_CL_SIZE;
         act = approxNthAct(minLimLbd, maxLimLbd, globalStats[gpuClauses] / 2);
-        printf("c Keeping clauses with act >= %g\n", act);
+        //printf("c Keeping clauses with act >= %g\n", act);
         return;
     } else {
         getMedianLbd(minLimLbd, howManyUnder, howManyThisLbd, clauseCountsAtLbds); // Never remove clauses with lbd <= 2
         if (minLimLbd <= 2) {
-            printf("Keeping all clauses with lbd <= 2, there are %d of them\n", howManyUnder + howManyThisLbd);
+            //printf("Keeping all clauses with lbd <= 2, there are %d of them\n", howManyUnder + howManyThisLbd);
             minLimLbd = 2;
             maxLimLbd = 3;
             act = 0.0;
@@ -405,20 +405,20 @@ void HostClauses::getRemovingLbdAndAct(int &minLimLbd, int &maxLimLbd, float &ac
         }
         maxLimLbd = minLimLbd + 1;
     }
-    printf("Keeping clauses with lbd < %d, there are %d of them\n", minLimLbd, howManyUnder);
+    //printf("Keeping clauses with lbd < %d, there are %d of them\n", minLimLbd, howManyUnder);
     int target = globalStats[gpuClauses] / 2;
     assert(howManyUnder <= target);
     assert(howManyUnder + howManyThisLbd >= target);
     int howManyKeepThisLbd = target - howManyUnder;
     act = approxNthAct(minLimLbd, maxLimLbd, howManyThisLbd - howManyKeepThisLbd);
-    printf("Also keeping clauses with lbd = %d and activity >= %g\n", minLimLbd, act);
+    //printf("Also keeping clauses with lbd = %d and activity >= %g\n", minLimLbd, act);
 }
 
 void printMem() {
     size_t freeMem;
     size_t totalMem;
     exitIfError(cudaMemGetInfo(&freeMem, &totalMem), POSITION);
-    printf("c There is %ld free memory out of %ld\n", freeMem, totalMem);
+    //printf("c There is %ld free memory out of %ld\n", freeMem, totalMem);
 }
 
 void HostClauses::reduceDb(cudaStream_t &stream) {
@@ -428,7 +428,7 @@ void HostClauses::reduceDb(cudaStream_t &stream) {
     fillClauseCountsAtLbds(clauseCountsAtLbds);
 
     globalStats[gpuReduceDbs]++;
-    printf("c Reducing gpu clause db, clause count is %ld\n", globalStats[gpuClauses]);
+    //printf("c Reducing gpu clause db, clause count is %ld\n", globalStats[gpuClauses]);
     printMem();
 
     int minLimLbd, maxLimLbd;
@@ -449,16 +449,16 @@ void HostClauses::reduceDb(cudaStream_t &stream) {
         for (int lbd = 0; lbd < minLimLbd; lbd++) {
             int atThisLbd = clauseCountsAtLbds[lbd];
             if (atThisLbd != 0) {
-                printf("c Clause count at lbd %d : %d\n", lbd, atThisLbd);
+                //printf("c Clause count at lbd %d : %d\n", lbd, atThisLbd);
             }
             cls += atThisLbd;
         }
         if (totalClauseCount > cls) {
-            printf("c Clause count at lbd %d : %d\n", minLimLbd, totalClauseCount - cls);
+            //printf("c Clause count at lbd %d : %d\n", minLimLbd, totalClauseCount - cls);
         }
     }
     exitIfError(cudaStreamSynchronize(stream), POSITION);
-    printf("c Done reducing gpu clause db, clause count is %ld\n", globalStats[gpuClauses]);
+    //printf("c Done reducing gpu clause db, clause count is %ld\n", globalStats[gpuClauses]);
     printMem();
 }
 
