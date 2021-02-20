@@ -195,6 +195,8 @@ public:
 
     void setAggBits(int startAggBitPos, int endAggBitPos);
     bool hasSomethingToCopy() { return currentId != firstIdUsed; }
+
+    int maxAssigs;
 };
 
 class HostAssigs {
@@ -213,9 +215,10 @@ private:
     DAssigAggregates getDAssigAggregates(Vals aggStartVals);
     int warpsPerBlockForInit;
     int warpCountForInit;
+    int maxTotalBits;
 
 public:
-    HostAssigs(GpuDims gpuDims);
+    HostAssigs(GpuDims gpuDims, int maxTotalBits = 32);
 
     void setVarCount(int varCount, cudaStream_t &stream);
 

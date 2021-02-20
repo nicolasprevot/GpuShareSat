@@ -67,7 +67,7 @@ GpuClauseSharerImpl::GpuClauseSharerImpl(GpuClauseSharerOptions _opts) {
     GpuDims gpuDims {opts.gpuBlockCountGuideline, opts.gpuThreadsPerBlockGuideline};
 
     maxPageLockedMem = opts.maxPageLockedMemory;
-    assigs = my_make_unique<HostAssigs>(gpuDims);  
+    assigs = my_make_unique<HostAssigs>(gpuDims);
     clauses = my_make_unique<HostClauses>(gpuDims, opts.clauseActivityDecay, true, globalStats);
     reported = my_make_unique<Reported>(*clauses, oneSolverStats);
     gpuRunner = my_make_unique<GpuRunner>(*clauses, *assigs, *reported, gpuDims, opts.quickProf, opts.initReportCountPerCategory, sp.get(), globalStats);

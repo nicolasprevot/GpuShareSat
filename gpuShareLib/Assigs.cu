@@ -156,7 +156,8 @@ OneSolverAssigs::OneSolverAssigs(int varCount, int &warpsPerBlock, int warpCount
     firstIdUsed(0),
     varToUpdatePos(varCount, -1),
     lastVarVal(varCount, gl_Undef),
-    updatesSent(0) {
+    updatesSent(0),
+    maxAssigs(assigCount()) {
         initDArr(multiLBool.getDArr(), MultiLBool {0, 0}, warpsPerBlock, warpCount);
 }
 
@@ -193,7 +194,7 @@ void OneSolverAssigs::setVarLocked(Var var, lbool val) {
 }
 
 bool OneSolverAssigs::isAssignmentAvailableLocked() {
-    if (currentId != firstIdUsed + assigCount()) {
+    if (currentId < firstIdUsed + assigCount()) {
         return true;
     }
     return false;
@@ -307,9 +308,10 @@ DOneSolverAssigs OneSolverAssigs::copyUpdatesLocked(ArrPair<VarUpdate> &varUpdat
     return res;
 }
 
-HostAssigs::HostAssigs(GpuDims gpuDims) :
+HostAssigs::HostAssigs(GpuDims gpuDims, int _maxTotalBits) :
         varCount(0),
-        multiAggAlloc(0)
+        multiAggAlloc(0),
+        maxTotalBits(_maxTotalBits)
 {
     warpsPerBlockForInit = gpuDims.threadsPerBlock / WARP_SIZE; 
     ASSERT_OP(warpsPerBlockForInit, >, 0);
@@ -413,23 +415,33 @@ void HostAssigs::growSolverAssigs(int solverCount) {
         solverAssigs[i] = my_make_unique<OneSolverAssigs>(varCount, warpsPerBlockForInit, warpCountForInit);
     }
 
-    int bitsCount = sizeof(Vals) * 8;
+    int aggBitsCount = sizeof(Vals) * 8;
    
     // We need to assign some bits to the solver 
     // Some solvers may get more bits than other
-    int lowBitsPerSolver = bitsCount / solverCount;
-    int missing = bitsCount - lowBitsPerSolver * solverCount;
-    int currentBit = 0;
-    dAssigAggregates.lowBitsPerSolver = lowBitsPerSolver;
-    dAssigAggregates.lowBitsStart = missing * (lowBitsPerSolver + 1);
+    int lowAggBitsPerSolver = aggBitsCount / solverCount;
+    int missing = aggBitsCount - lowAggBitsPerSolver * solverCount;
+    int currentAggBit = 0;
+    dAssigAggregates.lowBitsPerSolver = lowAggBitsPerSolver;
+    dAssigAggregates.lowBitsStart = missing * (lowAggBitsPerSolver + 1);
     dAssigAggregates.lowSolvStart = missing;
     for (int i = 0; i < missing; i++) {
-        assignAggBitsToSolver(currentBit, *solverAssigs[i], lowBitsPerSolver + 1);
+        assignAggBitsToSolver(currentAggBit, *solverAssigs[i], lowAggBitsPerSolver + 1);
     }
     for (int i = missing; i < solverCount; i++) {
-        assignAggBitsToSolver(currentBit, *solverAssigs[i], lowBitsPerSolver);
+        assignAggBitsToSolver(currentAggBit, *solverAssigs[i], lowAggBitsPerSolver);
     }
-    ASSERT_OP(bitsCount, ==, currentBit);
+    ASSERT_OP(aggBitsCount, ==, currentAggBit);
+    if (maxTotalBits >= 0) {
+        int lowBitsPerSolver = maxTotalBits / solverCount;
+        int missing = maxTotalBits - lowBitsPerSolver * solverCount;
+        for (int i = 0; i < missing; i++) {
+            solverAssigs[i]->maxAssigs = lowBitsPerSolver + 1;
+        }
+        for (int i = missing; i < solverCount; i++) {
+            solverAssigs[i]->maxAssigs = lowBitsPerSolver;
+        }
+    }
 }
 
 void HostAssigs::printAll() {
