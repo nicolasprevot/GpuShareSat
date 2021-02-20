@@ -194,7 +194,7 @@ void OneSolverAssigs::setVarLocked(Var var, lbool val) {
 }
 
 bool OneSolverAssigs::isAssignmentAvailableLocked() {
-    if (currentId < firstIdUsed + assigCount()) {
+    if (currentId < firstIdUsed + maxAssigs) {
         return true;
     }
     return false;
