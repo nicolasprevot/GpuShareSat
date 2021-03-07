@@ -125,15 +125,15 @@ bool allocMemoryDevice(void **pt, size_t amount) {
     // I've seen it happening for clause updates in a case where cpu solvers generated lots of clauses
     // and gpu was really slow, so it rarely copied clauses to the gpu so they built up on the cpu
     if (amount > 400000000) {
-        printf("Allocating large amount of memory: %zu\n", amount);
+//         printf("Allocating large amount of memory: %zu\n", amount);
     }
     size_t freeMem;
     size_t totalMem;
     exitIfError(cudaMemGetInfo(&freeMem, &totalMem), POSITION);
     if (freeMem < 0.01 * totalMem + amount ) {
-        printf("c Little memory left on gpu, refusing to allocate\n");
-        printf("c There was %zu left out of %zu, wanted to allocate %zu\n",
-            freeMem, totalMem, amount);
+//         printf("c Little memory left on gpu, refusing to allocate\n");
+//         printf("c There was %zu left out of %zu, wanted to allocate %zu\n",
+//             freeMem, totalMem, amount);
         *pt = NULL;
         return false;
     }
@@ -141,7 +141,7 @@ bool allocMemoryDevice(void **pt, size_t amount) {
     // fragmentation
     cudaError_t err = cudaMalloc(pt, amount);
     if (err == cudaErrorMemoryAllocation) {
-        printf("Failed to allocate memory on device\n");
+//         printf("Failed to allocate memory on device\n");
         *pt = NULL;
         return false;
     }
@@ -214,14 +214,14 @@ void* allocateMemoryHost(size_t amount, bool &pageLocked) {
     ASSERT_OP(amount, >, 0);
     if (amount >= maxPageLockedMem) {
         pageLocked = false;
-        printf("c switching memory from page locked to paged because amount is too high: %zu, maximum is %zu\n", amount, maxPageLockedMem);
+//         printf("c switching memory from page locked to paged because amount is too high: %zu, maximum is %zu\n", amount, maxPageLockedMem);
     }
     if (pageLocked) {
         // If we allocate 0, then we can't use free on the result
         cudaError_t err = cudaMallocHost(&hPtr, amount);
         if (err != cudaSuccess) {
             pageLocked = false;
-            printf("c switching memory from page locked to paged because cudaMallocHost failed, amount was %zu\n", amount);
+//             printf("c switching memory from page locked to paged because cudaMallocHost failed, amount was %zu\n", amount);
         }
     } 
     if (!pageLocked) {
