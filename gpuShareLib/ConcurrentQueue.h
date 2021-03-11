@@ -38,10 +38,6 @@ class RingQueue {
     long minPos;
     long size;
 
-    virtual void copyData(long to, long from, long number) {
-        memmove(&arr[to], &arr[from], number * sizeof(T));
-    }
-
     void resize(long newSize) {
         arr.resize(newSize);
         long maxPos = (minPos + maxIndex - minIndex) % size;
@@ -59,6 +55,10 @@ class RingQueue {
 
     protected:
     std::vector<T> arr;
+
+    virtual void copyData(long to, long from, long number) {
+        memmove(&arr[to], &arr[from], number * sizeof(T));
+    }
 
     public:
     RingQueue(const RingQueue &other) = delete;
@@ -111,6 +111,7 @@ class RingQueue {
 
     long getMaxIndex() const { return maxIndex; }
     long getMinIndex() const { return minIndex; }
+
 };
 
 // This class is thread safe
@@ -122,28 +123,30 @@ class RingQueue {
 // we can resize. Without a pointer, it would change their addresses
 // Not using a unique_ptr because RingQueue does a memmove which gives us a warning on a unique_ptr
 template<typename T>
-class ConcurrentQueue : private RingQueue<T*> {
+class ConcurrentQueue : public RingQueue<T*> {
 private:
     // Elements available to be returned are from RingQueue.minPos (inclusive) to maxIndex (exclusive)
     long interIndex;
     long maxInd;// this is RingQueue.maxIndex or RingQueue.maxIndex - 1
     std::mutex lock;
 
-public:
-    ConcurrentQueue(long _size):
-        RingQueue<T*>(_size),
-        interIndex(0),
-        maxInd(0) {
-        assert(_size >= 2);
-    }
-
-    virtual void copyData(long to, long from, long number) {
+protected:
+    void copyData(long to, long from, long number) {
         long maxTo = to + number;
         while (to < maxTo) {
 	    std::swap(RingQueue<T*>::arr[to], RingQueue<T*>::arr[from]);
             to++;
             from++;
         }
+    }
+
+public:
+
+    ConcurrentQueue(long _size):
+        RingQueue<T*>(_size),
+        interIndex(0),
+        maxInd(0) {
+        assert(_size >= 2);
     }
 
     ConcurrentQueue(const ConcurrentQueue &other) = delete;
@@ -197,10 +200,12 @@ public:
     }
 
     ~ConcurrentQueue() {
-        for (int i = RingQueue<T*>::getMinIndex(); i < RingQueue<T*>::getMaxIndex(); i++) {
-            delete (*this)[i];
+        std::vector<T*>& arr = RingQueue<T*>::arr;
+        for (unsigned int i = 0; i < arr.size(); i++) {
+            if (arr[i] != NULL) delete arr[i];
         }
     }
+
 };
 }
 
