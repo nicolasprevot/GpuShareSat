@@ -70,6 +70,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "core/Constants.h"
 #include "mtl/Clone.h"
 #include <map>
+#include <string>
 
 // like printf, but two threads won't call it at the same time
 #define SyncedOutPrintf(...) {\
