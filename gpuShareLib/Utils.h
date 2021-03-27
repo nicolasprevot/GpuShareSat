@@ -36,25 +36,19 @@ Requirements:
 - We can do things like ASSERT_EQUAL(a, b) which will print a relevant error message with the values of a and b, whatever the type of a and b
 - It can work on the host code on .cc files, on the gpu in .cu files, on the host in .cu files 
 Decision:
-- For all the types we care about, there is a printV(type) method defined only on the host, and a printVD(type) method defined only on the device
-- we can use PRINTV() on host or on device, and it will do the right thing
+- For all the types we care about, there is a printC(type) method defined only on the host, and a printVD(type) method defined only on the device
+- we can use PRINTCNV() on host or on device, and it will do the right thing
 */
 
 #define NL printf("\n");
 
-#ifdef __CUDA_ARCH__
-#define PRINTV GpuShare::printVD
-#else
-#define PRINTV GpuShare::printV
-#endif
-
-#define PRINT(x) {\
+#define PRINTCN(x) {\
 printf(#x ": ");\
-PRINTV(x);\
+printC(x);\
 printf(" ");\
 }
 
-#define PRINTLN(x) { PRINT(x); NL }
+#define PRINTCNLN(x) { PRINTCN(x); NL }
 
 bool operator ==(const timespec& lhs, const timespec& rhs);
 bool operator !=(const timespec& lhs, const timespec& rhs);
@@ -72,15 +66,6 @@ inline void setOnMaskUint(uint &val, uint mask, uint cond) {
 
 int randBetween(int min, int max);
 
-void printV(long v);
-void printV(unsigned long v);
-void printV(int v);
-void printV(uint v);
-void printV(void* pt);
-void printV(const char* chs);
-void printV(float f);
-void printV(double d);
-
 inline bool hasNoMoreThanOneBit(uint x) {
     return (x & (x - 1)) == 0;
 }
@@ -95,8 +80,8 @@ inline int countBitsSet(uint x) {
 }
 
 inline void assertHasExactlyOneBit(uint x) { 
-    ASSERT_MSG(x != 0, PRINT(x));
-    ASSERT_MSG(hasNoMoreThanOneBit(x), PRINT(x));
+    assert(x != 0);
+    assert(hasNoMoreThanOneBit(x));
 }
 
 inline uint getFirstBit(uint x) {

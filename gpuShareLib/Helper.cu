@@ -60,23 +60,23 @@ void exitIfLastError(const char pos[]) {
 
 namespace GpuShare {
 
-__device__  void printVD(long v) {
+__device__  void printC(long v) {
     printf("%ld ", v);
 }
 
-__device__  void printVD(unsigned long v) {
+__device__  void printC(unsigned long v) {
     printf("%lu ", v);
 }
 
-__device__  void printVD(void* pt) {
+__device__  void printC(void* pt) {
     printf("%p ", pt);
 }
 
-__device__  void printVD(int v) {
+__device__  void printC(int v) {
     printf("%d ", v);
 }
 
-__device__  void printVD(unsigned int v) {
+__device__  void printC(unsigned int v) {
     printf("%u ", v);
 }
 

@@ -59,7 +59,7 @@ __device__ __host__ long getClIdFromEndPos(int clSize, int endPos) {
     int startPos = endPos - 1 - (clSize - 1) * WARP_SIZE;
     int groupId = startPos / (WARP_SIZE * clSize);
     int clIdInSize = groupId * WARP_SIZE + startPos % WARP_SIZE;
-    ASSERT_OP_MSG(getEndPosForClause(clSize, clIdInSize), ==, endPos, PRINT(clSize); PRINT(clIdInSize));
+    ASSERT_OP_MSG(getEndPosForClause(clSize, clIdInSize), ==, endPos, PRINTCN(clSize); PRINTCN(clIdInSize));
     return clIdInSize;
 }
 

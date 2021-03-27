@@ -109,7 +109,7 @@ public:
         MinHArr<T> hostReport = reportPair.getHArr();
         for (int cat = 0; cat < hostPos.size(); cat++) {
             int c = min(hostPos[cat] - cat * countPerCategory, countPerCategory);
-            ASSERT_OP_MSG(c, >=, 0, PRINT(cat); PRINT(hostPos[cat]); PRINT(countPerCategory));
+            ASSERT_OP_MSG(c, >=, 0, PRINTCN(cat); PRINTCN(hostPos[cat]); PRINTCN(countPerCategory));
             if (c >= 0.9 * countPerCategory) {
                 doubleSize = true;
             }

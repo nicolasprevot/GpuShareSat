@@ -28,7 +28,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include <thread>         // std::this_thread::sleep_for
 #include "GpuClauseSharer.h"
 
-// #define PRINT_ALOT 1
+// #define PRINTCN_ALOT 1
 
 namespace GpuShare {
 struct ReportComputer {
@@ -152,7 +152,7 @@ __global__ void dFindClauses(DArr<DOneSolverAssigs> dOneSolverAssigs, DAssigAggr
             Lit lit = *litPt;
 
             Vals va = dVar(lit);
-            ASSERT_OP_MSG(va, <, dAssigAggregates.multiAggs.size(), PRINT(lit); PRINT(clId); PRINT(clSize); PRINT(dClauses.getClCount(clSize)));
+            ASSERT_OP_MSG(va, <, dAssigAggregates.multiAggs.size(), PRINTCN(lit); PRINTCN(clId); PRINTCN(clSize); PRINTCN(dClauses.getClCount(clSize)));
             MultiAgg &multiAgg = dAssigAggregates.multiAggs[va];
             assert((~ (multiAgg.canBeTrue | multiAgg.canBeFalse | multiAgg.canBeUndef)) == 0);
             Vals val;
@@ -256,7 +256,7 @@ struct InitParams {
 
 */
 void GpuRunner::startGpuRunAsync(cudaStream_t &stream, std::vector<AssigIdsPerSolver> &assigIdsPerSolver, std::unique_ptr<Reporter<ReportedClause>> &reporter, bool &started, bool &notEnoughGpuMemory) {
-#ifdef PRINT_ALOT
+#ifdef PRINTCN_ALOT
     printf("startGpuRunAsync\n");
 #endif
 
@@ -347,7 +347,7 @@ void GpuRunner::gatherGpuRunResults(std::vector<AssigIdsPerSolver> &assigIdsPerS
     globalStats[totalAssigClauseTested] += clCount * assigsCount;
     globalStats[clauseTestsOnGroups] += clCount;
     globalStats[gpuReports] += reportedCls.size();
-#if PRINT_ALOT == 1
+#if PRINTCN_ALOT == 1
     printf("filling reported with %d assigs and %d clauses\n", assigsCount, reportedCls.size());
 #endif
     for (int i = 0; i < reportedCls.size(); i++) {

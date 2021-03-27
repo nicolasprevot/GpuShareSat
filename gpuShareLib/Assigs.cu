@@ -25,23 +25,19 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 
 #include <atomic>
 
-#define PRINT_ALOT 0
+#define PRINTCN_ALOT 0
 
 namespace GpuShare {
 
-__device__ void printV(MultiLBool multiLBool) {
-    printf("tr: "); printBinary(multiLBool.isTrue); printf(" def: "); printBinary(multiLBool.isDef); printf(" "); 
-}
-
-__device__ void printV(MultiAgg multiAgg) {
+__device__ __host__ void printC(MultiAgg multiAgg) {
     printf("t: "); printBinary(multiAgg.canBeTrue); printf(" f: "); printBinary(multiAgg.canBeFalse); printf(" u: "); printBinary(multiAgg.canBeUndef); NL;
 }
 
-void printV(VarUpdate vu) {
+void printC(VarUpdate vu) {
     printf("{\n");
-    PRINT(vu.var);
+    PRINTCN(vu.var);
     printf("newMultiLBool: ");
-    printV(vu.newMultiLBool);
+    printC(vu.newMultiLBool);
     printf("}\n");
 }
 
@@ -198,7 +194,7 @@ bool OneSolverAssigs::isAssignmentAvailableLocked() {
 long OneSolverAssigs::assignmentDoneLocked() {
     int currentPos = getPos(currentId);
     assert(firstIdUsed + assigCount() != currentId);
-    ASSERT_MSG(notCompletedMask & ((Vals) 1 << currentPos), PRINT(notCompletedMask); PRINT(currentPos));
+    ASSERT_MSG(notCompletedMask & ((Vals) 1 << currentPos), PRINTCN(notCompletedMask); PRINTCN(currentPos));
     // set the bit for this pos to 0
     notCompletedMask &= ~((Vals) 1 << currentPos);
     return currentId++;

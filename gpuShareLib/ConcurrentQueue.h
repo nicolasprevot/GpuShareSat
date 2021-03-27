@@ -69,7 +69,7 @@ class RingQueue {
         minPos(0),
         size(_size),
         arr(_size) {
-            ASSERT_OP(_size, >, 0);
+            assert(_size > 0);
     }
 
     RingQueue() : RingQueue(1) {

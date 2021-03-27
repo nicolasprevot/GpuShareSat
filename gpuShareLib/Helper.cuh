@@ -45,11 +45,11 @@ void exitIfFalse(bool val, const char pos[]);
 
 namespace GpuShare {
 
-__device__ void printV(long v);
-__device__ void printV(unsigned long v);
-__device__ void printV(int v);
-__device__ void printV(unsigned int v);
-__device__ void printV(void* pt);
+__device__ __host__ void printC(long v);
+__device__ __host__ void printC(unsigned long v);
+__device__ __host__ void printC(int v);
+__device__ __host__ void printC(unsigned int v);
+__device__ __host__ void printC(void* pt);
 __device__ __host__ void printBinary(uint v);
 
 // We generally want to run with many gpu threads per block, but is it difficult to find exactly how many we can run with

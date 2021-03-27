@@ -29,35 +29,35 @@ int randBetween(int min, int max) {
     return rand() % (max - min) + min;
 }
 
-void printV(long v) {
+void printC(long v) {
     printf("%ld ", v);
 }
 
-void printV(unsigned long v) {
+void printC(unsigned long v) {
     printf("%ld ", v);
 }
 
-void printV(void* pt) {
+void printC(void* pt) {
     printf("%p ", pt);
 }
 
-void printV(int v) {
+void printC(int v) {
     printf("%d ", v);
 }
 
-void printV(uint v) {
+void printC(uint v) {
     printf("%x ", v);
 }
 
-void printV(const char* chs) {
+void printC(const char* chs) {
     printf("%s", chs);
 }
 
-void printV(float f) {
+void printC(float f) {
     printf("%f", f);
 }
 
-void printV(double d) {
+void printC(double d) {
     printf("%lf", d);
 }
 

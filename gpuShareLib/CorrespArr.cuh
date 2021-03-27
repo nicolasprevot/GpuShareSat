@@ -31,12 +31,12 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 
 namespace GpuShare {
 
-void printV(cudaMemcpyKind kind);
+void printC(cudaMemcpyKind kind);
 
 #ifdef LOG_MEM
 #define CUDA_MEMCPY_ASYNC(addr1, addr2, amount, mode, stream)\
 printf("Copying %zu mem to %p from %p with kind ", amount, (void*)(addr1), (void*)(addr2));\
-printV(mode);\
+printC(mode);\
 printf("\n");\
 exitIfError(cudaMemcpyAsync(addr1, addr2, amount, mode, stream), POSITION);
 #else
@@ -81,8 +81,7 @@ void assertIsDevicePtr(void *mem);
 
 typedef unsigned int uint;
 
-void printV(uint);
-__device__ void printVD(size_t);
+__device__ __host__ void printC(size_t);
 
 // ATTENTION: Nothing in this file invoke construtor / destructor on elements on the host (or the device)
 
@@ -176,7 +175,7 @@ public:
     }
 
     template<typename T2> DArr<T2> __host__ __device__ getSubArr(size_t start, size_t size) {
-        ASSERT_OP_MSG(start * sizeof(T) + size * sizeof(T2), <=, _size * sizeof(T), PRINT(start); PRINT(size); PRINT(_size));
+        ASSERT_OP_MSG(start * sizeof(T) + size * sizeof(T2), <=, _size * sizeof(T), PRINTCN(start); PRINTCN(size); PRINTCN(_size));
         return DArr<T2>(size, (T2*)&(_d_ptr[start])
 #ifndef NDEBUG
          , _destrCheckPointer
@@ -185,7 +184,7 @@ public:
     }
 };
 
-template<typename T> void printV(DArr<T> darr) {
+template<typename T> void printC(DArr<T> darr) {
     printf("DArr: { size: %ld, addr: %p}", darr.size(), darr.getPtr());
 }
 
@@ -348,7 +347,7 @@ public:
 
 };
 
-template<typename T> void printV(MinHArr<T> harr) {
+template<typename T> void printC(MinHArr<T> harr) {
     printf("MinHArr: { size: %ld, addr: %p}", harr.size(), harr.getPtr());
 }
 

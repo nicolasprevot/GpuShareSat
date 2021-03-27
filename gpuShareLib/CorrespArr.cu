@@ -30,7 +30,7 @@ void assertIsDevicePtr(void *mem) {
     cudaPointerAttributes attributes;
     exitIfError(cudaPointerGetAttributes(&attributes, mem), POSITION);
     // After I upgraded to cuda 11,  attributes.type started to be cudaMemoryTypeUnregistered
-    ASSERT_MSG(cudaMemoryTypeDevice == attributes.type || cudaMemoryTypeUnregistered == attributes.type, PRINT(attributes.type));
+    ASSERT_MSG(cudaMemoryTypeDevice == attributes.type || cudaMemoryTypeUnregistered == attributes.type, PRINTCN(attributes.type));
 #endif
 }
 
@@ -85,7 +85,7 @@ void DestrCheckPointer::check() {
 
 #endif
 
-void printV(cudaMemcpyKind kind) {
+void printC(cudaMemcpyKind kind) {
     if (kind == cudaMemcpyHostToDevice) {
         printf("cudaMemcpyHostToDevice");
     } else if (kind == cudaMemcpyDeviceToHost) {
