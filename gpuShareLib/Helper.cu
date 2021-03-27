@@ -18,7 +18,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
  **************************************************************************************************/
 #include <stdio.h>
 #include "Helper.cuh"
-#include "Assert.h"
+#include "AssertC.cuh"
 #include <assert.h>
 #include <algorithm>
 
@@ -60,23 +60,23 @@ void exitIfLastError(const char pos[]) {
 
 namespace GpuShare {
 
-__device__  void printC(long v) {
+__device__ __host__ void printC(long v) {
     printf("%ld ", v);
 }
 
-__device__  void printC(unsigned long v) {
+__device__ __host__ void printC(unsigned long v) {
     printf("%lu ", v);
 }
 
-__device__  void printC(void* pt) {
+__device__ __host__ void printC(void* pt) {
     printf("%p ", pt);
 }
 
-__device__  void printC(int v) {
+__device__ __host__ void printC(int v) {
     printf("%d ", v);
 }
 
-__device__  void printC(unsigned int v) {
+__device__ __host__ void printC(unsigned int v) {
     printf("%u ", v);
 }
 

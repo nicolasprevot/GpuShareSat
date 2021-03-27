@@ -17,22 +17,31 @@ DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  **************************************************************************************************/
 
+// This file is aiming at making assertions easier. It intended for non cu or cuh files
+
 #ifndef DEF_ASSERT
 #define DEF_ASSERT
 #include <assert.h>
 #include <iostream>
 
 #define THROW_ERROR(msgExpr) {\
-    std::cout << "Error in " << __FILE__ << ":" << __LINE__;\
+    printf("Error in %s:%d: ", __FILE__, __LINE__);\
     msgExpr;\
-    std::cout << std::endl;\
+    printf("\n");\
     THROW();\
 }
 
+#ifdef __CUDA_ARCH__
+// can't use exit (host function) from gpu. This will just do nothing in release
+#define THROW() assert(false)
+#else
+// If ndebug isn't set, we can use assert(false), it's better when debugging
+// because it will stop execution there. Otherwise, we need exit
 #ifdef NDEBUG 
 #define THROW() exit(1)
 #else 
 #define THROW() assert(false)
+#endif
 #endif
 
 #ifndef NDEBUG
@@ -40,10 +49,10 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #define ASSERT_OR_DO(expr) assert(expr);
 
 #define ASSERT(expr)\
-    if (!(expr)) THROW_ERROR(std::cout << "assertion failed: " #expr << std::endl);
+    if (!(expr)) THROW_ERROR(printf("assertion failed: " #expr "\n"));
 
 #define ASSERT_MSG(expr, msgExpr)\
-    if (!(expr)) THROW_ERROR(std::cout << "assertion failed: " #expr " message: "; msgExpr);
+    if (!(expr)) THROW_ERROR(printf("assertion failed: " #expr " message: "); msgExpr);
 
 #define PRINT_VALUES_MSG(var1, var2, msgExpr)\
     std::cout << " values are " << var1 << " and " << var2 << " ";\

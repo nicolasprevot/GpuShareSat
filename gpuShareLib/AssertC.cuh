@@ -16,45 +16,47 @@ NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FO
 DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT
 OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  **************************************************************************************************/
-#include "Helper.cuh"
-#include "ClauseUpdates.cuh"
-namespace GpuShare {
 
-DClauseUpdates ClUpdateSet::getDClauseUpdates() {
-    return DClauseUpdates { updates.getDArr(), vals.getDArr() };
-}
+// This file is aiming at making assertions easier. It intended for cu or cuh files. It differs from AssertC.cuh in that there's no cout on the GPU so instead
+// we use a printC function
 
-HClauseUpdate::HClauseUpdate(int _clSize, int _updatePosStart, ClMetadata _clMetadata) {
-    clSize = _clSize;
-    updatePosStart = _updatePosStart;
-    ASSERT_OP_C(clSize, <=, MAX_CL_SIZE);
-    clMetadata = _clMetadata;
-}
+#ifndef DEF_ASSERT_C
+#define DEF_ASSERT_C
 
-MinHArr<Lit> HClauseUpdates::getLits(int p) {
-    HClauseUpdate up = updates[p];
-    return vals.getSubArr<Lit>(up.updatePosStart, up.clSize);
-}
+#include <assert.h>
+#include "Assert.h"
 
-HClauseUpdates::HClauseUpdates():
-    updates(false, true),
-    vals(0, true) { 
-}
+#ifndef NDEBUG
 
-void HClauseUpdates::clear() {
-    updates.clear(false);
-    vals.resize(0, false);
-}
+#define PRINT_VALUES_MSG_C(var1, var2, msgExpr)\
+    printf(" values are ");\
+    PRINTCN(var1);\
+    printf(" and ");\
+    PRINTCN(var2);\
+    printf(" ");\
+    msgExpr;\
+    printf("\n")
 
-void HClauseUpdates::addNewClause(MinHArr<Lit> &cl, ClMetadata clMetadata) {
-    HClauseUpdate clUpdate(cl.size(), vals.size(), clMetadata);
-    // not using .add for because it needs constrDestr which isn't set
-    int initValsSize = vals.size();
-    vals.resize(initValsSize + cl.size(), false);
-    for (int i = 0; i < cl.size(); i++) {
-        vals[initValsSize + i] = cl[i];
-    }
-    updates.add(clUpdate);
-}
+#define ASSERT_OP_MSG_C(var1, op, var2, msgExpr)\
+    ASSERT_MSG((var1) op (var2), PRINT_VALUES_MSG_C(var1, var2, msgExpr));
 
-}
+#define ASSERT_OP_C(var1, op, var2)\
+    ASSERT_OP_MSG_C(var1, op, var2, );
+
+// inclusive for min, exclusive for max
+#define ASSERT_BETWEEN_C(val, min, max)\
+    ASSERT_OP_C(val, >=,  min);\
+    ASSERT_OP_C(val, <, max);
+
+#else
+
+#define ASSERT_MSG_C(expr, msg)
+
+#define ASSERT_OP_C(var1, op, var2)
+#define ASSERT_OP_MSG_C(var1, op, var2, msg)
+
+#define ASSERT_BETWEEN_C(val, min, max)
+
+#endif
+
+#endif

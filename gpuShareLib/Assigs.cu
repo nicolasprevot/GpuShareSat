@@ -280,7 +280,7 @@ DOneSolverAssigs OneSolverAssigs::copyUpdatesLocked(ArrPair<VarUpdate> &varUpdat
             setAggCorresp(aggCorresp, aggBitPos, id, lowBitsPerAggBit);
             aggCorresps.add(aggCorresp);
         }
-        ASSERT_OP(id, ==, currentId);
+        ASSERT_OP_C(id, ==, currentId);
     }
 
     // Note: the reason for not having this method set the agg dArr here is that:
@@ -304,7 +304,7 @@ HostAssigs::HostAssigs(GpuDims gpuDims) :
         multiAggAlloc(0)
 {
     warpsPerBlockForInit = gpuDims.threadsPerBlock / WARP_SIZE; 
-    ASSERT_OP(warpsPerBlockForInit, >, 0);
+    ASSERT_OP_C(warpsPerBlockForInit, >, 0);
     warpCountForInit = warpsPerBlockForInit * gpuDims.blockCount;
     dAssigAggregates.multiAggs = multiAggAlloc.getDArr();
     growSolverAssigs(1);
@@ -421,7 +421,7 @@ void HostAssigs::growSolverAssigs(int solverCount) {
     for (int i = missing; i < solverCount; i++) {
         assignAggBitsToSolver(currentBit, *solverAssigs[i], lowBitsPerSolver);
     }
-    ASSERT_OP(bitsCount, ==, currentBit);
+    ASSERT_OP_C(bitsCount, ==, currentBit);
 }
 
 void HostAssigs::printAll() {

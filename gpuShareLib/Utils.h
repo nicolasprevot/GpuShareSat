@@ -42,6 +42,7 @@ Decision:
 
 #define NL printf("\n");
 
+// C stands for cuda, N for name (of variable)
 #define PRINTCN(x) {\
 printf(#x ": ");\
 printC(x);\

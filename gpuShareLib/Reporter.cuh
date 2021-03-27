@@ -39,10 +39,10 @@ private:
 
 public:
     __device__ void report(T val, int threadId) {
-        ASSERT_OP(pos.size(), >, 0);
+        ASSERT_OP_C(pos.size(), >, 0);
         int category = threadId % pos.size();
         int p = atomicAdd(&(pos[category]), 1);
-        ASSERT_OP(p, >=, countPerCategory * category);
+        ASSERT_OP_C(p, >=, countPerCategory * category);
         if (p < countPerCategory * (category + 1)) {
             toReport[p] = val;
         }
@@ -90,8 +90,8 @@ public:
         posPair(contigCopier.buildArrPair<int>(categoryCount, &stream)),
         isDone(false),
         countPerCategory(_countPerCategory) {
-            ASSERT_OP(categoryCount, >=, 1);
-            ASSERT_OP(countPerCategory, >=, 1);
+            ASSERT_OP_C(categoryCount, >=, 1);
+            ASSERT_OP_C(countPerCategory, >=, 1);
     }
 
     DReporter<T> getDReporter() {
@@ -109,7 +109,7 @@ public:
         MinHArr<T> hostReport = reportPair.getHArr();
         for (int cat = 0; cat < hostPos.size(); cat++) {
             int c = min(hostPos[cat] - cat * countPerCategory, countPerCategory);
-            ASSERT_OP_MSG(c, >=, 0, PRINTCN(cat); PRINTCN(hostPos[cat]); PRINTCN(countPerCategory));
+            ASSERT_OP_MSG_C(c, >=, 0, PRINTCN(cat); PRINTCN(hostPos[cat]); PRINTCN(countPerCategory));
             if (c >= 0.9 * countPerCategory) {
                 doubleSize = true;
             }

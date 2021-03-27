@@ -45,8 +45,8 @@ void exitIfFalse(bool val, const char pos[]);
 
 namespace GpuShare {
 
-__device__ __host__ void printC(long v);
 __device__ __host__ void printC(unsigned long v);
+__device__ __host__ void printC(long v);
 __device__ __host__ void printC(int v);
 __device__ __host__ void printC(unsigned int v);
 __device__ __host__ void printC(void* pt);
