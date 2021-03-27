@@ -39,7 +39,7 @@ inline int assigCount() {
 }
 typedef uint32_t VarsVal;
 
-__device__ void printVD(MultiLBool multiLBool);
+__device__ __host__ void printV(MultiLBool multiLBool);
 
 struct MultiAgg {
     Vals canBeTrue;
@@ -48,7 +48,6 @@ struct MultiAgg {
 };
 
 __device__ __host__ void printV(MultiAgg multiAgg);
-__device__ void printVD(MultiAgg multiAgg);
 
 struct DAssigAggregates {
     DArr<MultiAgg> multiAggs;

@@ -176,9 +176,9 @@ inline __host__ __device__ lbool mklbool(uint8_t v) {
     return *(reinterpret_cast<lbool*>(&v));
 }
 
-__device__ void printVD(Lit l);
+__device__ void printV(Lit l);
 
-__device__ void printVD(lbool lb);
+__device__ void printV(lbool lb);
 
 }
 

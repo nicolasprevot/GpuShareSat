@@ -29,16 +29,12 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 
 namespace GpuShare {
 
-__device__ void printVD(MultiLBool multiLBool) {
-    printf("tr: "); printBinaryDH(multiLBool.isTrue); printf(" def: "); printBinaryDH(multiLBool.isDef); printf(" "); 
+__device__ void printV(MultiLBool multiLBool) {
+    printf("tr: "); printBinary(multiLBool.isTrue); printf(" def: "); printBinary(multiLBool.isDef); printf(" "); 
 }
 
 __device__ void printV(MultiAgg multiAgg) {
-    printf("t: "); printBinaryDH(multiAgg.canBeTrue); printf(" f: "); printBinaryDH(multiAgg.canBeFalse); printf(" u: "); printBinaryDH(multiAgg.canBeUndef); NL;
-}
-
-__device__ void printVD(MultiAgg multiAgg) {
-    printV(multiAgg);
+    printf("t: "); printBinary(multiAgg.canBeTrue); printf(" f: "); printBinary(multiAgg.canBeFalse); printf(" u: "); printBinary(multiAgg.canBeUndef); NL;
 }
 
 void printV(VarUpdate vu) {
