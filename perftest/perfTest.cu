@@ -142,7 +142,7 @@ BOOST_AUTO_TEST_CASE(testPrintClauses) {
         std::sort(array, array + lits.size());
         printf(">> ");
         for (int j = 0; j < lits.size(); j++) {
-            PRINTV(array[j]);
+            printC(array[j]);
         }
         printf("\n");
     }
