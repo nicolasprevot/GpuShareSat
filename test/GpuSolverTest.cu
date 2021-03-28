@@ -219,7 +219,7 @@ BOOST_AUTO_TEST_CASE(testAssigAggregates) {
         lbool l = solv == 0 ? gl_True : gl_False;
         for (int i = 0; i < assigsPerSolver; i++) {
             assig.enterLock();
-            ASSERT_MSG(assig.isAssignmentAvailableLocked(), PRINT(i); PRINT(solv));
+            ASSERT_MSG(assig.isAssignmentAvailableLocked(), PRINTCN(i); PRINTCN(solv));
             assig.setVarLocked(0, i % 2 == 0 ? l : gl_Undef);
             assig.assignmentDoneLocked();
             assig.exitLock();

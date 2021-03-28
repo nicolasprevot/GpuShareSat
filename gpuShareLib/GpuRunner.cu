@@ -28,7 +28,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include <thread>         // std::this_thread::sleep_for
 #include "GpuClauseSharer.h"
 
-// #define PRINT_ALOT 1
+// #define PRINTCN_ALOT 1
 
 namespace GpuShare {
 struct ReportComputer {
@@ -84,7 +84,7 @@ __device__ void dCheckOneClauseOneSolver(DOneSolverAssigs dOneSolverAssigs, DAss
         }
         litPt += WARP_SIZE;
     }
-    ASSERT_OP(gpuCref.clSize, >=, 1);
+    ASSERT_OP_C(gpuCref.clSize, >=, 1);
     dReporter.report(ReportedClause {reportComputer.getToReport(), solverId, gpuCref}, getThreadId());
 }
 
@@ -137,7 +137,7 @@ __global__ void dFindClauses(DArr<DOneSolverAssigs> dOneSolverAssigs, DAssigAggr
     int threadId = getThreadId();
     ReportComputer reportComputer;
     dClauses.getClsForThread(threadId, clSize, clIdStart, clIdEnd);
-    ASSERT_OP(clSize, >=, 1);
+    ASSERT_OP_C(clSize, >=, 1);
     for (int clId = clIdStart; clId < clIdEnd; clId += WARP_SIZE) {
         Lit *startLitPt = dClauses.getStartAddrForClause(clSize, clId);
         Lit *litPt = startLitPt;
@@ -152,7 +152,7 @@ __global__ void dFindClauses(DArr<DOneSolverAssigs> dOneSolverAssigs, DAssigAggr
             Lit lit = *litPt;
 
             Vals va = dVar(lit);
-            ASSERT_OP_MSG(va, <, dAssigAggregates.multiAggs.size(), PRINT(lit); PRINT(clId); PRINT(clSize); PRINT(dClauses.getClCount(clSize)));
+            ASSERT_OP_MSG_C(va, <, dAssigAggregates.multiAggs.size(), PRINTCN(lit); PRINTCN(clId); PRINTCN(clSize); PRINTCN(dClauses.getClCount(clSize)));
             MultiAgg &multiAgg = dAssigAggregates.multiAggs[va];
             assert((~ (multiAgg.canBeTrue | multiAgg.canBeFalse | multiAgg.canBeUndef)) == 0);
             Vals val;
@@ -256,7 +256,7 @@ struct InitParams {
 
 */
 void GpuRunner::startGpuRunAsync(cudaStream_t &stream, std::vector<AssigIdsPerSolver> &assigIdsPerSolver, std::unique_ptr<Reporter<ReportedClause>> &reporter, bool &started, bool &notEnoughGpuMemory) {
-#ifdef PRINT_ALOT
+#ifdef PRINTCN_ALOT
     printf("startGpuRunAsync\n");
 #endif
 
@@ -297,7 +297,7 @@ void GpuRunner::startGpuRunAsync(cudaStream_t &stream, std::vector<AssigIdsPerSo
     auto dReporter = reporter->getDReporter();
     DClauses dClauses = runInfo.getDClauses();
 
-    ASSERT_OP(warpsPerBlock, >, 0);
+    ASSERT_OP_C(warpsPerBlock, >, 0);
 
     runGpuAdjustingDims(warpsPerBlock, warpsPerBlock * blockCount, [&] (int blockCount, int threadsPerBlock) {
         init<<<blockCount, threadsPerBlock, 0, stream>>>(assigsAndUpdates.dAssigUpdates.get(), assigsAndUpdates.assigSet.dSolverAssigs.getDArr(), assigsAndUpdates.assigSet.dAssigAggregates, dReporter, assigsAndUpdates.assigSet.aggCorresps.get());
@@ -347,11 +347,11 @@ void GpuRunner::gatherGpuRunResults(std::vector<AssigIdsPerSolver> &assigIdsPerS
     globalStats[totalAssigClauseTested] += clCount * assigsCount;
     globalStats[clauseTestsOnGroups] += clCount;
     globalStats[gpuReports] += reportedCls.size();
-#if PRINT_ALOT == 1
+#if PRINTCN_ALOT == 1
     printf("filling reported with %d assigs and %d clauses\n", assigsCount, reportedCls.size());
 #endif
     for (int i = 0; i < reportedCls.size(); i++) {
-        ASSERT_OP(reportedCls[i].gpuCref.clSize, >=, 1);
+        ASSERT_OP_C(reportedCls[i].gpuCref.clSize, >=, 1);
         hostClauses.bumpClauseActivity(reportedCls[i].gpuCref);
     }
     {

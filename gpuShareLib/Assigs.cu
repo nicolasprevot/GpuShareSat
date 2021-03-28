@@ -25,27 +25,19 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 
 #include <atomic>
 
-#define PRINT_ALOT 0
+#define PRINTCN_ALOT 0
 
 namespace GpuShare {
 
-__device__ void printVD(MultiLBool multiLBool) {
-    printf("tr: "); printBinaryDH(multiLBool.isTrue); printf(" def: "); printBinaryDH(multiLBool.isDef); printf(" "); 
+__device__ __host__ void printC(MultiAgg multiAgg) {
+    printf("t: "); printBinary(multiAgg.canBeTrue); printf(" f: "); printBinary(multiAgg.canBeFalse); printf(" u: "); printBinary(multiAgg.canBeUndef); NL;
 }
 
-__device__ void printV(MultiAgg multiAgg) {
-    printf("t: "); printBinaryDH(multiAgg.canBeTrue); printf(" f: "); printBinaryDH(multiAgg.canBeFalse); printf(" u: "); printBinaryDH(multiAgg.canBeUndef); NL;
-}
-
-__device__ void printVD(MultiAgg multiAgg) {
-    printV(multiAgg);
-}
-
-void printV(VarUpdate vu) {
+void printC(VarUpdate vu) {
     printf("{\n");
-    PRINT(vu.var);
+    PRINTCN(vu.var);
     printf("newMultiLBool: ");
-    printV(vu.newMultiLBool);
+    printC(vu.newMultiLBool);
     printf("}\n");
 }
 
@@ -202,7 +194,7 @@ bool OneSolverAssigs::isAssignmentAvailableLocked() {
 long OneSolverAssigs::assignmentDoneLocked() {
     int currentPos = getPos(currentId);
     assert(firstIdUsed + assigCount() != currentId);
-    ASSERT_MSG(notCompletedMask & ((Vals) 1 << currentPos), PRINT(notCompletedMask); PRINT(currentPos));
+    ASSERT_MSG(notCompletedMask & ((Vals) 1 << currentPos), PRINTCN(notCompletedMask); PRINTCN(currentPos));
     // set the bit for this pos to 0
     notCompletedMask &= ~((Vals) 1 << currentPos);
     return currentId++;
@@ -288,7 +280,7 @@ DOneSolverAssigs OneSolverAssigs::copyUpdatesLocked(ArrPair<VarUpdate> &varUpdat
             setAggCorresp(aggCorresp, aggBitPos, id, lowBitsPerAggBit);
             aggCorresps.add(aggCorresp);
         }
-        ASSERT_OP(id, ==, currentId);
+        ASSERT_OP_C(id, ==, currentId);
     }
 
     // Note: the reason for not having this method set the agg dArr here is that:
@@ -312,7 +304,7 @@ HostAssigs::HostAssigs(GpuDims gpuDims) :
         multiAggAlloc(0)
 {
     warpsPerBlockForInit = gpuDims.threadsPerBlock / WARP_SIZE; 
-    ASSERT_OP(warpsPerBlockForInit, >, 0);
+    ASSERT_OP_C(warpsPerBlockForInit, >, 0);
     warpCountForInit = warpsPerBlockForInit * gpuDims.blockCount;
     dAssigAggregates.multiAggs = multiAggAlloc.getDArr();
     growSolverAssigs(1);
@@ -429,7 +421,7 @@ void HostAssigs::growSolverAssigs(int solverCount) {
     for (int i = missing; i < solverCount; i++) {
         assignAggBitsToSolver(currentBit, *solverAssigs[i], lowBitsPerSolver);
     }
-    ASSERT_OP(bitsCount, ==, currentBit);
+    ASSERT_OP_C(bitsCount, ==, currentBit);
 }
 
 void HostAssigs::printAll() {

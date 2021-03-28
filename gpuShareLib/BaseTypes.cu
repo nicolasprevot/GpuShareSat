@@ -19,7 +19,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "BaseTypes.cuh"
 
 namespace GpuShare {
-__device__ void printVD(lbool glb) {
+__device__ __host__ void printC(lbool glb) {
     switch (toUint8(glb)) {
         case 0:
             printf("true");
@@ -33,7 +33,7 @@ __device__ void printVD(lbool glb) {
     }
 }
 
-__device__ void printVD(Lit l) {
+__device__ __host__ void printC(Lit l) {
     printf("%d", dVar(l));
     if (dSign(l)) printf("-");
     else printf("+");

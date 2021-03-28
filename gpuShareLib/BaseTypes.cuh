@@ -53,8 +53,8 @@ struct AssigIdsPerSolver {
     }
 };
 
-inline void printV(AssigIdsPerSolver assigs) {
-    PRINT(assigs.startAssigId); PRINT(assigs.assigCount); NL;
+inline __device__ __host__ void printC(AssigIdsPerSolver assigs) {
+    PRINTCN(assigs.startAssigId); PRINTCN(assigs.assigCount); NL;
 }
 
 
@@ -71,11 +71,11 @@ struct MultiLBool {
         return isDef == other.isDef && ((isTrue & isDef) == (other.isTrue & other.isDef));
     }
 
-    Vals withFalse() const { return isDef & ~isTrue; }
+    __device__ __host__ Vals withFalse() const { return isDef & ~isTrue; }
 
-    Vals withTrue() const { return isDef & isTrue; }
+    __device__ __host__ Vals withTrue() const { return isDef & isTrue; }
 
-    Vals withUndef() const { return ~isDef; }
+    __device__ __host__ Vals withUndef() const { return ~isDef; }
 
     lbool getLBool(Vals mask) {
         assertHasExactlyOneBit(mask);
@@ -120,14 +120,14 @@ inline MultiLBool makeMultiLBool(lbool lb) {
     return MultiLBool { lb != gl_Undef ? ~ 0u : 0u, lb == gl_True ? ~0u : 0u};
 }
 
-inline void printV(const MultiLBool vad) {
+inline __device__ __host__ void printC(const MultiLBool vad) {
 	Vals tr = vad.withTrue();
 	if (tr != 0) {
-		printf("tr: "); GpuShare::printBinaryDH(tr); printf(" ");
+		printf("tr: "); GpuShare::printBinary(tr); printf(" ");
 	}
 	Vals fa = vad.withFalse();
 	if (fa != 0) {
-		printf("fa: "); GpuShare::printBinaryDH(fa); printf(" ");
+		printf("fa: "); GpuShare::printBinary(fa); printf(" ");
 	}
 }
 
@@ -176,9 +176,9 @@ inline __host__ __device__ lbool mklbool(uint8_t v) {
     return *(reinterpret_cast<lbool*>(&v));
 }
 
-__device__ void printVD(Lit l);
+__device__ __host__ void printC(Lit l);
 
-__device__ void printVD(lbool lb);
+__device__ __host__ void printC(lbool lb);
 
 }
 

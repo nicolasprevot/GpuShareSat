@@ -29,38 +29,6 @@ int randBetween(int min, int max) {
     return rand() % (max - min) + min;
 }
 
-void printV(long v) {
-    printf("%ld ", v);
-}
-
-void printV(unsigned long v) {
-    printf("%ld ", v);
-}
-
-void printV(void* pt) {
-    printf("%p ", pt);
-}
-
-void printV(int v) {
-    printf("%d ", v);
-}
-
-void printV(uint v) {
-    printf("%x ", v);
-}
-
-void printV(const char* chs) {
-    printf("%s", chs);
-}
-
-void printV(float f) {
-    printf("%f", f);
-}
-
-void printV(double d) {
-    printf("%lf", d);
-}
-
 void printBinary(uint x) {
     bool seen1 = false;
     for (int i = 31; i >= 0; i--) {

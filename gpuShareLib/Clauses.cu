@@ -27,7 +27,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "Clauses.cuh"
 #include <stdio.h>
 #include <math.h>
-#include "Assert.h"
+#include "AssertC.cuh"
 #include "Utils.h"
 #include "GpuUtils.cuh"
 #include "BaseTypes.cuh"
@@ -59,7 +59,7 @@ __device__ __host__ long getClIdFromEndPos(int clSize, int endPos) {
     int startPos = endPos - 1 - (clSize - 1) * WARP_SIZE;
     int groupId = startPos / (WARP_SIZE * clSize);
     int clIdInSize = groupId * WARP_SIZE + startPos % WARP_SIZE;
-    ASSERT_OP_MSG(getEndPosForClause(clSize, clIdInSize), ==, endPos, PRINT(clSize); PRINT(clIdInSize));
+    ASSERT_OP_MSG_C(getEndPosForClause(clSize, clIdInSize), ==, endPos, PRINTCN(clSize); PRINTCN(clIdInSize));
     return clIdInSize;
 }
 
@@ -122,7 +122,7 @@ void __device__ DClauses::getClsForThread(int threadId, int &clSize, int &minClI
         // there are clauses for other threads in the warp but not this one
         maxClId = maxClId - WARP_SIZE;
     }
-    ASSERT_OP(maxClId - WARP_SIZE, <=, getClCount(clSize));
+    ASSERT_OP_C(maxClId - WARP_SIZE, <=, getClCount(clSize));
 }
 
 __device__ void updateClauses(DClauseUpdates clUpdates, DClauses dClauses) {
@@ -178,7 +178,7 @@ ArrPair<DOneSizeClauses> PerSizeKeeper::tryGetDArr(ContigCopier &cc, cudaStream_
             return res;
         }
 
-        ASSERT_OP(getClIdFromEndPos(clSize, harr[clSize].vals.size()) + 1, ==, perSize[clSize]->size()); 
+        ASSERT_OP_C(getClIdFromEndPos(clSize, harr[clSize].vals.size()) + 1, ==, perSize[clSize]->size()); 
     }
     return res;
 }
@@ -196,7 +196,7 @@ void PerSizeKeeper::changeCount(int clSize, int newCount) {
 
 // things that run when clauses are actually added
 int PerSizeKeeper::addClause(int clSize, MinHArr<Lit> lits, ClMetadata metadata) {
-    ASSERT_OP(clSize, >=, 1);
+    ASSERT_OP_C(clSize, >=, 1);
     int clIdInSize = getClauseCount(clSize);
     changeCount(clSize, clIdInSize + 1);
     metadata.activity = clauseActIncr;
@@ -216,7 +216,7 @@ int PerSizeKeeper::addClause(int clSize, MinHArr<Lit> lits, ClMetadata metadata)
 
 void PerSizeKeeper::getClause(std::vector<Lit> &lits, int &gpuAssigId, GpuCref gpuCref) {
     lits.clear();
-    ASSERT_OP(gpuCref.clSize, <=, MAX_CL_SIZE);
+    ASSERT_OP_C(gpuCref.clSize, <=, MAX_CL_SIZE);
     int pos = getStartPosForClause(gpuCref.clSize, gpuCref.clIdInSize);
     for (int i = 0; i < gpuCref.clSize; i++) {
         Lit l = (*perSize[gpuCref.clSize]).vals[pos];
@@ -305,7 +305,7 @@ RunInfo HostClauses::makeRunInfo(cudaStream_t &stream, ContigCopier &cc) {
         limWarpPerSize.getHArr()[clSize] = warpsUsedSoFar;
     }
 
-    ASSERT_OP(globalStats[gpuClauses] == 0, ||, warpsUsedSoFar > 0);
+    ASSERT_OP_C(globalStats[gpuClauses] == 0, ||, warpsUsedSoFar > 0);
     return RunInfo {
         warpsUsedSoFar,
         limWarpPerSize,
@@ -476,7 +476,7 @@ double HostClauses::getAvgActivity(int minLimLbd, int maxLimLbd) {
         }
         totalClCount += count;
     }
-    ASSERT_OP(totalClCount, >, 0);
+    ASSERT_OP_C(totalClCount, >, 0);
     return res / totalClCount;
 }
 

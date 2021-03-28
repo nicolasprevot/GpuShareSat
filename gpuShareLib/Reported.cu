@@ -28,7 +28,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "ConcurrentQueue.h"
 #include "GpuClauseSharer.h"
 
-// #define PRINT_DETAILS_CLAUSES
+// #define PRINTCN_DETAILS_CLAUSES
 
 namespace GpuShare {
 

@@ -30,7 +30,7 @@ void assertIsDevicePtr(void *mem) {
     cudaPointerAttributes attributes;
     exitIfError(cudaPointerGetAttributes(&attributes, mem), POSITION);
     // After I upgraded to cuda 11,  attributes.type started to be cudaMemoryTypeUnregistered
-    ASSERT_MSG(cudaMemoryTypeDevice == attributes.type || cudaMemoryTypeUnregistered == attributes.type, PRINT(attributes.type));
+    ASSERT_MSG(cudaMemoryTypeDevice == attributes.type || cudaMemoryTypeUnregistered == attributes.type, PRINTCN(attributes.type));
 #endif
 }
 
@@ -85,7 +85,7 @@ void DestrCheckPointer::check() {
 
 #endif
 
-void printV(cudaMemcpyKind kind) {
+void printC(cudaMemcpyKind kind) {
     if (kind == cudaMemcpyHostToDevice) {
         printf("cudaMemcpyHostToDevice");
     } else if (kind == cudaMemcpyDeviceToHost) {
@@ -100,7 +100,7 @@ void printV(cudaMemcpyKind kind) {
 // Contract: capacity in input is always a power of 2
 // capacity returned is also a power of 2, greater or equal to newSize
 size_t getNewCapacity(size_t capacity, size_t newSize, bool reduceCapacity) {
-    ASSERT_OP(capacity, >, 0);
+    ASSERT_OP_C(capacity, >, 0);
     while (newSize > capacity) {
         capacity *= 2;
     }
@@ -121,7 +121,7 @@ size_t getInitialCapacity(size_t size) {
 
 // *pt will point to null if it fails
 bool allocMemoryDevice(void **pt, size_t amount) {
-    ASSERT_OP(amount, >, 0);
+    ASSERT_OP_C(amount, >, 0);
     // I've seen it happening for clause updates in a case where cpu solvers generated lots of clauses
     // and gpu was really slow, so it rarely copied clauses to the gpu so they built up on the cpu
     if (amount > 400000000) {
@@ -211,7 +211,7 @@ bool reallocMemoryDevice(void **ptr, size_t oldSize, size_t newSize) {
 
 void* allocateMemoryHost(size_t amount, bool &pageLocked) {
     void *hPtr;
-    ASSERT_OP(amount, >, 0);
+    ASSERT_OP_C(amount, >, 0);
     if (amount >= maxPageLockedMem) {
         pageLocked = false;
         printf("c switching memory from page locked to paged because amount is too high: %zu, maximum is %zu\n", amount, maxPageLockedMem);
@@ -225,7 +225,7 @@ void* allocateMemoryHost(size_t amount, bool &pageLocked) {
         }
     } 
     if (!pageLocked) {
-        ASSERT_OP(amount, <=, (size_t) 100e9);
+        ASSERT_OP_C(amount, <=, (size_t) 100e9);
         hPtr = malloc(amount);
     }
 #ifdef LOG_MEM

@@ -17,9 +17,12 @@ DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  **************************************************************************************************/
 
+// This file is aiming at making assertions easier. It intended for non cu or cuh files
+
 #ifndef DEF_ASSERT
 #define DEF_ASSERT
 #include <assert.h>
+#include <iostream>
 
 #define THROW_ERROR(msgExpr) {\
     printf("Error in %s:%d: ", __FILE__, __LINE__);\
@@ -52,13 +55,9 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
     if (!(expr)) THROW_ERROR(printf("assertion failed: " #expr " message: "); msgExpr);
 
 #define PRINT_VALUES_MSG(var1, var2, msgExpr)\
-    printf(" values are ");\
-    PRINTV(var1);\
-    printf(" and ");\
-    PRINTV(var2);\
-    printf(" ");\
+    std::cout << " values are " << var1 << " and " << var2 << " ";\
     msgExpr;\
-    printf("\n")
+    std::cout << std::endl;
 
 #define ASSERT_OP_MSG(var1, op, var2, msgExpr)\
     ASSERT_MSG((var1) op (var2), PRINT_VALUES_MSG(var1, var2, msgExpr));

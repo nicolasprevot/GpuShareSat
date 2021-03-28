@@ -23,7 +23,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #define DEF_CORRESP_ARR
 #include <exception>
 #include "Helper.cuh"
-#include "Assert.h"
+#include "AssertC.cuh"
 #include "BaseTypes.cuh"
 #include "GpuUtils.cuh"
 
@@ -31,12 +31,12 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 
 namespace GpuShare {
 
-void printV(cudaMemcpyKind kind);
+void printC(cudaMemcpyKind kind);
 
 #ifdef LOG_MEM
 #define CUDA_MEMCPY_ASYNC(addr1, addr2, amount, mode, stream)\
 printf("Copying %zu mem to %p from %p with kind ", amount, (void*)(addr1), (void*)(addr2));\
-printV(mode);\
+printC(mode);\
 printf("\n");\
 exitIfError(cudaMemcpyAsync(addr1, addr2, amount, mode, stream), POSITION);
 #else
@@ -81,8 +81,7 @@ void assertIsDevicePtr(void *mem);
 
 typedef unsigned int uint;
 
-void printV(uint);
-__device__ void printVD(size_t);
+__device__ __host__ void printC(size_t);
 
 // ATTENTION: Nothing in this file invoke construtor / destructor on elements on the host (or the device)
 
@@ -106,8 +105,8 @@ size_t getInitialCapacity(size_t size);
 
 // The point of this being a macro is to get an error message with the line number
 #define CHECK_POS(pos, arr) \
-    ASSERT_OP(pos, >=, 0);\
-    ASSERT_OP(pos, <, arr.size());
+    ASSERT_OP_C(pos, >=, 0);\
+    ASSERT_OP_C(pos, <, arr.size());
 
 
 // Note: constructors, destructors... are not invoked
@@ -139,20 +138,20 @@ public:
      {
         _d_ptr = d_ptr;
         _size = size;
-        ASSERT_OP(_size, <, 500000000000);
+        ASSERT_OP_C(_size, <, 500000000000);
         if (size > 0) assert(_destrCheckPointer.pointsToSomething());
     }
 
     __device__ __host__ T *getAddress(size_t p) {
-        ASSERT_OP(p, <, _size);
+        ASSERT_OP_C(p, <, _size);
         return _d_ptr + p;
     }
 
     // template<class T2> void copyArr(DArr<T2> darr, HArr<T2> &arr);
 
     __device__ T& operator[] (int i) {
-        ASSERT_OP(i, >=, 0);
-        ASSERT_OP(i, <, _size);
+        ASSERT_OP_C(i, >=, 0);
+        ASSERT_OP_C(i, <, _size);
 #ifndef NDEBUG
         _destrCheckPointer.check();
 #endif
@@ -176,7 +175,7 @@ public:
     }
 
     template<typename T2> DArr<T2> __host__ __device__ getSubArr(size_t start, size_t size) {
-        ASSERT_OP_MSG(start * sizeof(T) + size * sizeof(T2), <=, _size * sizeof(T), PRINT(start); PRINT(size); PRINT(_size));
+        ASSERT_OP_MSG_C(start * sizeof(T) + size * sizeof(T2), <=, _size * sizeof(T), PRINTCN(start); PRINTCN(size); PRINTCN(_size));
         return DArr<T2>(size, (T2*)&(_d_ptr[start])
 #ifndef NDEBUG
          , _destrCheckPointer
@@ -185,7 +184,7 @@ public:
     }
 };
 
-template<typename T> void printV(DArr<T> darr) {
+template<typename T> void printC(DArr<T> darr) {
     printf("DArr: { size: %ld, addr: %p}", darr.size(), darr.getPtr());
 }
 
@@ -257,7 +256,7 @@ public:
 #endif
 
     MinHArr<T> withSize(int newSize) {
-        ASSERT_OP(newSize, <=, _size);
+        ASSERT_OP_C(newSize, <=, _size);
         return MinHArr<T>(newSize, _h_ptr
 #ifndef NDEBUG
         , _destrCheckPointer
@@ -305,7 +304,7 @@ public:
         checkEvent();
         _destrCheckPointer.check();
 #endif
-        ASSERT_OP(i, <, _size);
+        ASSERT_OP_C(i, <, _size);
         return getPtr()[i];
     }
 
@@ -322,12 +321,12 @@ public:
     }
 
     T *getAddress(size_t p) {
-        ASSERT_OP(p, <, MinHArr<T>::_size);
+        ASSERT_OP_C(p, <, MinHArr<T>::_size);
         return getPtr() + p;
     }
 
     template<typename T2> MinHArr<T2> getSubArr(size_t start, size_t size) {
-        ASSERT_OP(start * sizeof(T) + size * sizeof(T2), <=, _size * sizeof(T));
+        ASSERT_OP_C(start * sizeof(T) + size * sizeof(T2), <=, _size * sizeof(T));
         return MinHArr<T2>(size, (T2*)&(getPtr()[start])
 #ifndef NDEBUG
         , _destrCheckPointer
@@ -348,7 +347,7 @@ public:
 
 };
 
-template<typename T> void printV(MinHArr<T> harr) {
+template<typename T> void printC(MinHArr<T> harr) {
     printf("MinHArr: { size: %ld, addr: %p}", harr.size(), harr.getPtr());
 }
 
@@ -414,7 +413,7 @@ class HArr : public MinHArr<T> {
         HArr& operator=(const HArr<T> &other) = delete;
 
         T& operator[] (size_t i) {
-            ASSERT_OP(MinHArr<T>::_size, <=,_capacity);
+            ASSERT_OP_C(MinHArr<T>::_size, <=,_capacity);
             return MinHArr<T>::operator[](i);
         }
 
@@ -490,7 +489,7 @@ private:
 
     bool tryInitialAllocate(size_t initialSize) {
         _capacity = getInitialCapacity(initialSize);
-        ASSERT_OP(initialSize, <=, _capacity);
+        ASSERT_OP_C(initialSize, <=, _capacity);
 #ifdef LOG_MEM
         printf("Allocated capacity %zu size %zu\n", _capacity, initialSize);
 #endif
@@ -548,18 +547,18 @@ public:
         // Note: _d_ptr will be null if a previous allocation failed
         assert(_d_ptr != NULL);
         assertIsDevicePtr(_d_ptr);
-        ASSERT_OP(_size, <=,_capacity);
+        ASSERT_OP_C(_size, <=,_capacity);
         return _d_ptr;
     }
 
     // If stream isn't null: will sync it first if some memory is deallocated
     bool tryResize(size_t newSize, bool reduceCapacity, bool careAboutValues = true, cudaStream_t *stream = NULL) {
-        ASSERT_OP(_size, <=, _capacity);
+        ASSERT_OP_C(_size, <=, _capacity);
         if (!tryUpdateCapacity(newSize, reduceCapacity, careAboutValues, stream)) {
             return false;
         }
         _size = newSize;
-        ASSERT_OP(_size, <=, _capacity); 
+        ASSERT_OP_C(_size, <=, _capacity); 
         return true;
     }
 
@@ -669,12 +668,12 @@ class CorrespArr : public HArr<T> {
     }
 
     void assertSizes(size_t min, size_t max) {
-        ASSERT_OP(max, <=, MinHArr<T>::_size);
-        ASSERT_OP(min, <=, max);
+        ASSERT_OP_C(max, <=, MinHArr<T>::_size);
+        ASSERT_OP_C(min, <=, max);
     }
 
     T& operator[] (size_t i) {
-        ASSERT_OP(i, <, MinHArr<T>::_size);
+        ASSERT_OP_C(i, <, MinHArr<T>::_size);
         return MinHArr<T>::getPtr()[i];
     }
 
@@ -695,7 +694,7 @@ class CorrespArr : public HArr<T> {
         bool success = tryResizeDeviceToHostSize(careAboutCurrentDeviceValues);
         if (success) {
             dArr = _darrAllocator.getDArr();
-            ASSERT_OP(dArr.size(), ==, MinHArr<T>::_size);
+            ASSERT_OP_C(dArr.size(), ==, MinHArr<T>::_size);
         }
         return success;
     }
@@ -751,13 +750,13 @@ class CorrespArr : public HArr<T> {
 
 template<class T> void copyArrAsync(MinHArr<T> harr, DArr<T> darr, cudaStream_t &stream)
 {
-    ASSERT_OP(harr.size(), ==, darr.size());
+    ASSERT_OP_C(harr.size(), ==, darr.size());
     cudaMemcpyAsync(harr.getAddress(0), darr.getAddress(0), harr.size() * sizeof(T),
         cudaMemcpyDeviceToHost, stream);
 }
 
 template<typename T> void copy(MinHArr<T> t1, MinHArr<T> t2) {
-    ASSERT_OP(t1.size(), >=, t2.size());
+    ASSERT_OP_C(t1.size(), >=, t2.size());
     memcpy(t1.getPtr(), t2.getPtr(), t2.size() * sizeof(T));
 }
 

@@ -124,7 +124,7 @@ public:
     }
 
     void increaseSize(int newSize) {
-        ASSERT_OP(newSize, >=, values.size());
+        ASSERT_OP_C(newSize, >=, values.size());
         values.resize(newSize, false);
     }
 
@@ -156,7 +156,7 @@ void ArrPair<T>::reset() {
 template<typename T>
 void ArrPair<T>::increaseSize(int newSize) {
     assert(contigCopier != NULL);
-    ASSERT_OP_MSG(sz * sizeof(T) + offset, ==, contigCopier->getSize(), printf("Can only resize the last arr pair"));
+    ASSERT_OP_MSG_C(sz * sizeof(T) + offset, ==, contigCopier->getSize(), printf("Can only resize the last arr pair"));
     contigCopier->increaseSize(offset + newSize * sizeof(T));
     sz = newSize;
 }
