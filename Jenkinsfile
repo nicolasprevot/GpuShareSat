@@ -18,10 +18,10 @@ pipeline {
             steps {
                 parallel (
                     simp: {
-                        sh 'echo "--dir gsyrup-gh/simp --no-release --revision ' + env.BRANCH_NAME + '" | sat-infra/src/schedule.py --short --force --max-wait-time=600 '
+                        sh 'echo "--dir gsyrup-gh/simp --no-release --timeout-sec 30 --revision ' + env.BRANCH_NAME + '" | sat-infra/src/schedule.py --short --force --max-wait-time=600 '
                     },
                     gpu: {
-                        sh 'echo "--dir gsyrup-gh/gpu --no-release --revision ' + env.BRANCH_NAME + '" | sat-infra/src/schedule.py --short --force --max-wait-time=600'
+                        sh 'echo "--dir gsyrup-gh/gpu --no-release --timeout-sec 30 --revision ' + env.BRANCH_NAME + '" | sat-infra/src/schedule.py --short --force --max-wait-time=600'
                     }
                 )
             }
