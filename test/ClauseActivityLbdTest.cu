@@ -106,7 +106,8 @@ struct LbdAndAct {
 
 void setLbdAndAct(int lbd, int act, HostClauses &hCls, int &currentLit, cudaStream_t &stream) {
     // A clause cannot have a size strictly smaller than lbd, so set the size to be the lbd
-    HArr<Lit> lits(false);
+    Logger logger {2, directPrint};
+    HArr<Lit> lits(false, logger);
     for (int j = 0; j < lbd; j++) {
         lits.add(mkLit(currentLit++));
     }

@@ -102,7 +102,8 @@ __global__ void globalUpdateClauses(DClauseUpdates clUpdates, DClauses dClauses)
 
 // often, this method is called just to make the clause counts on the host clauses right
 void copyToDeviceAsync(HostClauses &hCls, cudaStream_t &stream, GpuDims gpuDims) {
-    ContigCopier cc;
+    Logger logger {2, directPrint};
+    ContigCopier cc(logger);
     copyToDeviceAsync(hCls, stream, cc, gpuDims);
 }
 

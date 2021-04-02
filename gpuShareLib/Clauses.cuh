@@ -117,7 +117,7 @@ struct HOneSizeClauses {
         return true;
     }
 
-    HOneSizeClauses(): vals(0, false), clMetadata(0, false) {
+    HOneSizeClauses(const Logger &logger): vals(0, false, logger), clMetadata(0, false, logger) {
     }
 
     int size() {
@@ -164,9 +164,10 @@ private:
     bool tryCopyHeadersToDeviceIfNecessaryAsync(cudaStream_t &stream);
     void rescaleActivity();
     std::vector<unsigned long> &globalStats;
+    const Logger &logger;
 
 public:
-    PerSizeKeeper(float clauseActDecay, std::vector<unsigned long> &globalStats);
+    PerSizeKeeper(float clauseActDecay, std::vector<unsigned long> &globalStats, const Logger &logger);
 
     ArrPair<DOneSizeClauses> tryGetDArr(ContigCopier &cc, cudaStream_t &stream);
     // modifiers

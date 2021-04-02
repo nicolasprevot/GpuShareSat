@@ -36,9 +36,9 @@ MinHArr<Lit> HClauseUpdates::getLits(int p) {
     return vals.getSubArr<Lit>(up.updatePosStart, up.clSize);
 }
 
-HClauseUpdates::HClauseUpdates():
-    updates(false, true),
-    vals(0, true) { 
+HClauseUpdates::HClauseUpdates(const Logger &logger):
+    updates(false, true, logger),
+    vals(0, true, logger) { 
 }
 
 void HClauseUpdates::clear() {

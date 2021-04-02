@@ -149,9 +149,9 @@ HostClauses::HostClauses(GpuDims gpuDimsGuideline, float _activityDecay, bool _a
     nextGpuClauseId(0),
     gpuThreadCountGuideline(gpuDimsGuideline.totalCount()),
     runInfo(),
-    limWarpPerSize(MAX_CL_SIZE + 1, true),
-    clauseUpdates(),
-    perSizeKeeper(_activityDecay, _globalStats),
+    limWarpPerSize(MAX_CL_SIZE + 1, true, _logger),
+    clauseUpdates(_logger),
+    perSizeKeeper(_activityDecay, _globalStats, _logger),
     addedClauseCountAtLastReduceDb(0),
     actOnly(_actOnly),
     globalStats(_globalStats),
@@ -159,13 +159,14 @@ HostClauses::HostClauses(GpuDims gpuDimsGuideline, float _activityDecay, bool _a
 {
 }
 
-PerSizeKeeper::PerSizeKeeper(float _clauseActDecay, std::vector<unsigned long> &_globalStats):
+PerSizeKeeper::PerSizeKeeper(float _clauseActDecay, std::vector<unsigned long> &_globalStats, const Logger &_logger):
         perSize(MAX_CL_SIZE + 1),
         clauseActIncr(1.0),
         clauseActDecay(_clauseActDecay),
-        globalStats(_globalStats) {
+        globalStats(_globalStats),
+        logger(_logger) {
     for (int clSize = 0; clSize <= MAX_CL_SIZE; clSize++) {
-        perSize[clSize] = my_make_unique<HOneSizeClauses>();
+        perSize[clSize] = my_make_unique<HOneSizeClauses>(_logger);
     }
 }
 

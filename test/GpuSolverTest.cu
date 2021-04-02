@@ -78,8 +78,9 @@ __global__ void dTestAssigs(DArr<DOneSolverAssigs> assigs, int solverId, DArr<Mu
 BOOST_AUTO_TEST_CASE(testAssigsTwoSolvers) {
     StreamPointer sp;
     GpuDims gpuDims {2, WARP_SIZE};
-    ContigCopier cc; 
-    HostAssigs hostAssigs(gpuDims);
+    Logger logger {2, directPrint};
+    ContigCopier cc(logger); 
+    HostAssigs hostAssigs(gpuDims, logger);
     hostAssigs.setVarCount(2, sp.get());
     hostAssigs.growSolverAssigs(2);
 
@@ -100,7 +101,7 @@ BOOST_AUTO_TEST_CASE(testAssigsTwoSolvers) {
     assig1.exitLock();
     std::vector<AssigIdsPerSolver> assigIdsPerSolver;
     AssigsAndUpdates assigsAndUpdates = fillAndUpdateAssigs(hostAssigs, gpuDims, cc, assigIdsPerSolver, sp.get());
-    CorrespArr<MultiLBool> res(2, true);
+    CorrespArr<MultiLBool> res(2, true, logger);
 
     // solver 0
     dTestAssigs<<<1, 1, 0, sp.get()>>>(assigsAndUpdates.assigSet.dSolverAssigs.getDArr(), 0, res.getDArr());
@@ -122,7 +123,8 @@ BOOST_AUTO_TEST_CASE(testAssigsTwoSolvers) {
 BOOST_AUTO_TEST_CASE(testAssigsTwoAssignments) {
     StreamPointer sp;
     GpuDims gpuDims {2, WARP_SIZE};
-    HostAssigs hostAssigs(gpuDims);
+    Logger logger {2, directPrint};
+    HostAssigs hostAssigs(gpuDims, logger);
     hostAssigs.setVarCount(2,sp.get());
     hostAssigs.growSolverAssigs(1);
 
@@ -138,10 +140,10 @@ BOOST_AUTO_TEST_CASE(testAssigsTwoAssignments) {
     assig.setVarLocked(0, gl_Undef);
     assig.assignmentDoneLocked();
     assig.exitLock();
-    ContigCopier cc;
+    ContigCopier cc(logger);
     std::vector<AssigIdsPerSolver> assigIdsPerSolver;
     DArr<DOneSolverAssigs> dAssigs = fillAndUpdateAssigs(hostAssigs, gpuDims, cc, assigIdsPerSolver, sp.get()).assigSet.dSolverAssigs.getDArr();
-    CorrespArr<MultiLBool> res(2, true);
+    CorrespArr<MultiLBool> res(2, true, logger);
 
     dTestAssigs<<<1, 1, 0, sp.get()>>>(dAssigs, 0, res.getDArr());
     res.copyAsync(cudaMemcpyDeviceToHost, sp.get());
@@ -161,7 +163,8 @@ BOOST_AUTO_TEST_CASE(testAssigsTwoAssignments) {
 BOOST_AUTO_TEST_CASE(testManyAssignments) {
     StreamPointer sp;
     GpuDims gpuDims {2, WARP_SIZE};
-    HostAssigs hostAssigs(gpuDims);
+    Logger logger {2, directPrint};
+    HostAssigs hostAssigs(gpuDims, logger);
     hostAssigs.setVarCount(assigCount(), sp.get());
     hostAssigs.growSolverAssigs(1);
 
@@ -176,7 +179,7 @@ BOOST_AUTO_TEST_CASE(testManyAssignments) {
     assig.enterLock();
     BOOST_CHECK(!assig.isAssignmentAvailableLocked());
     assig.exitLock();
-    ContigCopier cc;
+    ContigCopier cc(logger);
     std::vector<AssigIdsPerSolver> assigIdsPerSolver;
     auto assigsAndUpdates = fillAndUpdateAssigs(hostAssigs, gpuDims, cc, assigIdsPerSolver, sp.get());
     setAllAssigsToLastAsync(1, 1, assigsAndUpdates, sp.get());
@@ -189,7 +192,7 @@ BOOST_AUTO_TEST_CASE(testManyAssignments) {
     assig.exitLock();
 
     DArr<DOneSolverAssigs> dAssigs = fillAndUpdateAssigs(hostAssigs, gpuDims, cc, assigIdsPerSolver, sp.get()).assigSet.dSolverAssigs.getDArr();
-    CorrespArr<MultiLBool> res(assigCount(), true);
+    CorrespArr<MultiLBool> res(assigCount(), true, logger);
 
     dTestAssigs<<<1, 1, 0, sp.get()>>>(dAssigs, 0, res.getDArr());
     res.copyAsync(cudaMemcpyDeviceToHost, sp.get());
@@ -210,7 +213,8 @@ BOOST_AUTO_TEST_CASE(testManyAssignments) {
 BOOST_AUTO_TEST_CASE(testAssigAggregates) {
     StreamPointer sp;
     GpuDims gpuDims {2, WARP_SIZE};
-    HostAssigs hostAssigs(gpuDims);
+    Logger logger {2, directPrint};
+    HostAssigs hostAssigs(gpuDims, logger);
     hostAssigs.setVarCount(1, sp.get());
     hostAssigs.growSolverAssigs(2);
     int assigsPerSolver = sizeof(Vals) * 8;
@@ -225,11 +229,11 @@ BOOST_AUTO_TEST_CASE(testAssigAggregates) {
             assig.exitLock();
         }
     }
-    ContigCopier cc;
+    ContigCopier cc(logger);
     std::vector<AssigIdsPerSolver> assigIdsPerSolver;
     AssigsAndUpdates assigsAndUpdates = fillAndUpdateAssigs(hostAssigs, gpuDims, cc, assigIdsPerSolver, sp.get());
     ASSERT_OP(~((Vals) 0), ==, assigsAndUpdates.assigSet.dAssigAggregates.startVals);
-    HArr<MultiAgg> res(1, false);
+    HArr<MultiAgg> res(1, false, logger);
     BOOST_CHECK_EQUAL(1, assigsAndUpdates.assigSet.dAssigAggregates.multiAggs.size());
     copyArrAsync(res, assigsAndUpdates.assigSet.dAssigAggregates.multiAggs, sp.get());
     exitIfError(cudaStreamSynchronize(sp.get()), POSITION);
@@ -248,16 +252,17 @@ __global__ void dTestCopyClause(DClauses clauses, DArr<Lit> res) {
 // Tests adding clauses, and that the device can read them
 BOOST_AUTO_TEST_CASE(testAddClauseHost) {
     StreamPointer sp;
-    CorrespArr<int> clausesCountPerThread(2, true);
+    Logger logger {2, directPrint};
+    CorrespArr<int> clausesCountPerThread(2, true, logger);
     GpuDims gpuDims(2, WARP_SIZE);
     std::vector<unsigned long> globalStats(100, 0);
     HostClauses hClauses(gpuDims, 0.99, false, globalStats, Logger {2, directPrint});
     addClause(hClauses, {mkLit(4), mkLit(2)});
-    CorrespArr<Lit> cra(2, false);
+    CorrespArr<Lit> cra(2, false, logger);
 
     copyToDeviceAsync(hClauses, sp.get(), gpuDims);
 
-    ContigCopier cc;
+    ContigCopier cc(logger);
     RunInfo runInfo = hClauses.makeRunInfo(sp.get(), cc);
     cc.tryCopyAsync(cudaMemcpyHostToDevice, sp.get());
     dTestCopyClause<<<1, 1, 0, sp.get()>>>(runInfo.getDClauses(), cra.getDArr());
@@ -294,7 +299,8 @@ BOOST_AUTO_TEST_CASE(testReported) {
     aips.assigCount = 1;
     std::vector<AssigIdsPerSolver> assigIds(1, aips);
 
-    ContigCopier gpuToCpuCc;
+    Logger logger {2, directPrint};
+    ContigCopier gpuToCpuCc(logger);
     Reporter<ReportedClause> reporter(gpuToCpuCc, stream, 4, 4);
 
     auto dReporter = reporter.getDReporter();
@@ -410,7 +416,8 @@ BOOST_AUTO_TEST_CASE(testFindClausesMultiThread) {
     addClause(*fx.gpuClauseSharer.clauses, {~mkLit(1), mkLit(2)});
     copyToDeviceAsync(*fx.gpuClauseSharer.clauses, stream, gpuDims);
 
-    ContigCopier cc;
+    Logger logger {2, directPrint};
+    ContigCopier cc(logger);
     std::unique_ptr<AssigsAndUpdates> assigsAndUpdates;
     std::unique_ptr<Reporter<ReportedClause>> reporter;
 

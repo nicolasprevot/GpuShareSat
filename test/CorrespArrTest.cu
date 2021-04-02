@@ -23,6 +23,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include <boost/test/unit_test.hpp>
 #include "gpuShareLib/CorrespArr.cuh"
 #include "gpuShareLib/GpuUtils.cuh"
+#include "testUtils/TestHelper.cuh"
 
 namespace GpuShare {
 
@@ -58,7 +59,8 @@ void runAndCopy(CorrespArr<int> &cra, int arr[N]) {
 
 void testResizeHelper(bool pagedLocked) {
     StreamPointer sp;
-    CorrespArr<int> cra(4, pagedLocked);
+    Logger logger {2, directPrint};
+    CorrespArr<int> cra(4, pagedLocked, logger);
     BOOST_CHECK_EQUAL(4, cra.size());
     cra.resize(7, true);
     BOOST_CHECK_EQUAL(7, cra.size());
@@ -80,7 +82,8 @@ BOOST_AUTO_TEST_CASE(testResize) {
 
 BOOST_AUTO_TEST_CASE(testValuesKeptWhenIncreaseSize) {
     StreamPointer sp;
-    CorrespArr<int> cra(1, true);
+    Logger logger {2, directPrint};
+    CorrespArr<int> cra(1, true, logger);
     cra[0] = 5;
     cra.copyAsync(cudaMemcpyHostToDevice, sp.get());
     exitIfError(cudaStreamSynchronize(sp.get()), POSITION);
@@ -94,7 +97,8 @@ BOOST_AUTO_TEST_CASE(testValuesKeptWhenIncreaseSize) {
 
 BOOST_AUTO_TEST_CASE(testValuesKeptWhenDecreaseSize) {
     StreamPointer sp;
-    CorrespArr<int> cra(19, true);
+    Logger logger {2, directPrint};
+    CorrespArr<int> cra(19, true, logger);
     cra[1] = 3;
     cra.copyAsync(cudaMemcpyHostToDevice, sp.get());
     exitIfError(cudaStreamSynchronize(sp.get()), POSITION);
@@ -108,7 +112,8 @@ BOOST_AUTO_TEST_CASE(testValuesKeptWhenDecreaseSize) {
 
 BOOST_AUTO_TEST_CASE(testDecreaseSizeThenCopy) {
     StreamPointer sp;
-    CorrespArr<int> cra(19, true);
+    Logger logger {2, directPrint};
+    CorrespArr<int> cra(19, true, logger);
     cra[1] = 3;
     cra.resize(2, true);
     cra.copyAsync(cudaMemcpyHostToDevice, sp.get());
@@ -121,7 +126,8 @@ BOOST_AUTO_TEST_CASE(testDecreaseSizeThenCopy) {
 // copy to the device
 BOOST_AUTO_TEST_CASE(testCopyAllToDevice) {
     StreamPointer sp;
-    CorrespArr<int> cra(N, true);
+    Logger logger {2, directPrint};
+    CorrespArr<int> cra(N, true, logger);
     cra[0] = 3;
     cra[1] = 2;
     cra[2] = 2;
@@ -136,7 +142,8 @@ BOOST_AUTO_TEST_CASE(testCopyAllToDevice) {
 // copy only some values to the device
 BOOST_AUTO_TEST_CASE(testCopySomeToDevice) {
     StreamPointer sp;
-    CorrespArr<int> cra(N, true);
+    Logger logger {2, directPrint};
+    CorrespArr<int> cra(N, true, logger);
     cra.setAllTo(2);
     cra.copyAsync(cudaMemcpyHostToDevice, sp.get());
     exitIfError(cudaStreamSynchronize(sp.get()), POSITION);
@@ -153,7 +160,8 @@ BOOST_AUTO_TEST_CASE(testCopySomeToDevice) {
 
 BOOST_AUTO_TEST_CASE(testCopyAllToHost) {
     StreamPointer sp;
-    CorrespArr<int> cra(N, true);
+    Logger logger {2, directPrint};
+    CorrespArr<int> cra(N, true, logger);
     cra[0] = 3;
     cra[1] = 7;
     cra[2] = 6;
@@ -168,7 +176,8 @@ BOOST_AUTO_TEST_CASE(testCopyAllToHost) {
 
 BOOST_AUTO_TEST_CASE(testResizeDontCareAboutCurrent) {
     StreamPointer sp;
-    CorrespArr<int> cra(2, true);
+    Logger logger {2, directPrint};
+    CorrespArr<int> cra(2, true, logger);
     cra[0] = 3;
     cra[1] = 7;
     cra.copyAsync(cudaMemcpyHostToDevice, sp.get());
@@ -187,7 +196,8 @@ BOOST_AUTO_TEST_CASE(testResizeDontCareAboutCurrent) {
 }
 
 BOOST_AUTO_TEST_CASE(testAllocTooMuchMem) {
-    ArrAllocator<int> aa(4);
+    Logger logger {2, directPrint};
+    ArrAllocator<int> aa(4, logger);
     BOOST_CHECK(!aa.tryResize(10000000000, false, false));
     BOOST_CHECK(aa.tryResize(10, true, false));
     int* pt = aa.getDevicePtr();
@@ -195,7 +205,8 @@ BOOST_AUTO_TEST_CASE(testAllocTooMuchMem) {
 
 BOOST_AUTO_TEST_CASE(testSetAllTo0) {
     StreamPointer sp;
-    CorrespArr<int> cro(2, true);
+    Logger logger {2, directPrint};
+    CorrespArr<int> cro(2, true, logger);
     cro.getDArr().setAllTo0();
     cro.copyAsync(cudaMemcpyDeviceToHost, sp.get());
     exitIfError(cudaStreamSynchronize(sp.get()), POSITION);
