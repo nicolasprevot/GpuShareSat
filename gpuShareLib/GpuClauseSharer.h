@@ -18,6 +18,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
  **************************************************************************************************/
 #ifndef GpuClauseSharer_h
 #define GpuClauseSharer_h
+#include <functional>
 
 namespace GpuShare {
 
@@ -161,7 +162,7 @@ class GpuClauseSharer {
 
 };
 
-GpuClauseSharer* makeGpuClauseSharerPtr(GpuClauseSharerOptions opts);
+GpuClauseSharer* makeGpuClauseSharerPtr(GpuClauseSharerOptions opts, std::function<void (const std::string &str)> logFunc);
 }
 
 #endif

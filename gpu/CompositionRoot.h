@@ -26,6 +26,8 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #ifndef COMPOSITIONROOT_H_
 #define COMPOSITIONROOT_H_
 
+#include <iostream>
+
 #include "utils/Options.h"
 #include "GpuHelpedSolver.h"
 #include "Periodic.h"
@@ -59,6 +61,16 @@ public:
     GpuShare::GpuClauseSharerOptions toGpuClauseSharerOptions(int verbosity, int initRepCountPerCategory = 10);
 };
 
+
+struct SyncedPrinter {
+    std::mutex lock;
+
+    void operator()(const std::string &str) {
+        std::lock_guard<std::mutex> guard(lock);
+        std::cout << str << std::endl;
+    }
+};
+
 class CompositionRoot {
 public:
     // The reason for having them public is that they're used by the tests as well,
@@ -66,6 +78,7 @@ public:
     int varCount;
     std::unique_ptr<GpuShare::GpuClauseSharer> gpuClauseSharer;
     std::unique_ptr<GpuMultiSolver> gpuMultiSolver;
+    SyncedPrinter syncedPrinter;
     Verbosity verb;
 
     CompositionRoot(GpuOptions ops, CommonOptions commonOpts, Finisher &finisher, int varCount);

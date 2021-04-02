@@ -12,8 +12,8 @@ namespace GpuShare {
 
 extern size_t maxPageLockedMem;
 
-GpuClauseSharer* makeGpuClauseSharerPtr(GpuClauseSharerOptions opts) {
-    return new GpuClauseSharerImpl(opts);
+GpuClauseSharer* makeGpuClauseSharerPtr(GpuClauseSharerOptions opts, std::function<void (const std::string &str)> logFunc) {
+    return new GpuClauseSharerImpl(opts, logFunc);
 }
 
 void writeMessageAndThrow(const char *message) {
@@ -21,7 +21,7 @@ void writeMessageAndThrow(const char *message) {
     THROW();
 }
 
-GpuClauseSharerImpl::GpuClauseSharerImpl(GpuClauseSharerOptions _opts) {
+GpuClauseSharerImpl::GpuClauseSharerImpl(GpuClauseSharerOptions _opts, std::function<void (const std::string &str)> logFunc): logger {_opts.verbosity, logFunc} {
     // It can be necessary for debugging if we print a lot
     // 100 Megs
     // cudaDeviceSetLimit(cudaLimitPrintfFifoSize, 1048576 * 100);
@@ -68,7 +68,7 @@ GpuClauseSharerImpl::GpuClauseSharerImpl(GpuClauseSharerOptions _opts) {
 
     maxPageLockedMem = opts.maxPageLockedMemory;
     assigs = my_make_unique<HostAssigs>(gpuDims);  
-    clauses = my_make_unique<HostClauses>(gpuDims, opts.clauseActivityDecay, true, globalStats);
+    clauses = my_make_unique<HostClauses>(gpuDims, opts.clauseActivityDecay, true, globalStats, logger);
     reported = my_make_unique<Reported>(*clauses, oneSolverStats);
     gpuRunner = my_make_unique<GpuRunner>(*clauses, *assigs, *reported, gpuDims, opts.quickProf, opts.initReportCountPerCategory, sp.get(), globalStats);
 

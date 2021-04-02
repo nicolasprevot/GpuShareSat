@@ -48,7 +48,7 @@ GpuFixture::GpuFixture(GpuClauseSharerOptions &options, int varCount, int _solve
     }
 }
 
-GpuClauseSharerForTests::GpuClauseSharerForTests(GpuClauseSharerOptions opts): GpuClauseSharerImpl(opts) {
+GpuClauseSharerForTests::GpuClauseSharerForTests(GpuClauseSharerOptions opts): GpuClauseSharerImpl(opts, directPrint) {
 }
 
 void execute(GpuClauseSharer &gpuClauseSharer) {

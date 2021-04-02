@@ -38,7 +38,7 @@ struct TestFixture {
 
     TestFixture(bool actOnly, float actDecay):
         globalStats(100, 0),
-        hCls(GpuDims(1, 1), actDecay, actOnly, globalStats) {
+        hCls(GpuDims(1, 1), actDecay, actOnly, globalStats, Logger {2, directPrint }) {
     }
 
     cudaStream_t& getStream() {
@@ -257,7 +257,7 @@ BOOST_AUTO_TEST_CASE(testRescale) {
 
     // each decays multiplies activity inc by RESCALE_CONST * 10
     std::vector<unsigned long> globalStats(100, 0);
-    HostClauses hCls(GpuDims(1, 1), 1 / (RESCALE_CONST * 10), false, globalStats);
+    HostClauses hCls(GpuDims(1, 1), 1 / (RESCALE_CONST * 10), false, globalStats, Logger {2, directPrint});
     addClause(hCls, {mkLit(0)});
 
     GpuCref gpuCref { 1, 0};

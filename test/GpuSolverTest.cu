@@ -251,7 +251,7 @@ BOOST_AUTO_TEST_CASE(testAddClauseHost) {
     CorrespArr<int> clausesCountPerThread(2, true);
     GpuDims gpuDims(2, WARP_SIZE);
     std::vector<unsigned long> globalStats(100, 0);
-    HostClauses hClauses(gpuDims, 0.99, false, globalStats);
+    HostClauses hClauses(gpuDims, 0.99, false, globalStats, Logger {2, directPrint});
     addClause(hClauses, {mkLit(4), mkLit(2)});
     CorrespArr<Lit> cra(2, false);
 

@@ -222,9 +222,10 @@ private:
     void getMedianLbd(int &medLbd, int &howManyUnder, int &howManyThisLbd, std::vector<int> &clauseCountsAtLbds);
 
     std::vector<unsigned long> &globalStats;
+    const Logger &logger;
 
 public:
-    HostClauses(GpuDims gpuDimsGuideline, float clauseActDecay, bool actOnly, std::vector<unsigned long> &globalStats);
+    HostClauses(GpuDims gpuDimsGuideline, float clauseActDecay, bool actOnly, std::vector<unsigned long> &globalStats, const Logger &logger);
 
     RunInfo makeRunInfo(cudaStream_t &stream, ContigCopier &cc);
 

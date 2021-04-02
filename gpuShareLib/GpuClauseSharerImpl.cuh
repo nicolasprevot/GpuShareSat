@@ -34,10 +34,13 @@ class GpuClauseSharerImpl : public GpuClauseSharer {
     StreamPointer sp;
     int varCount;
 
+    Logger logger;
+
     void unsetPendingLocked(int threadId);
 
+
     public:
-    GpuClauseSharerImpl(GpuClauseSharerOptions opts);
+    GpuClauseSharerImpl(GpuClauseSharerOptions opts, std::function<void (const std::string &str)> logFunc);
 
     void setVarCount(int newCount);
 

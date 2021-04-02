@@ -24,6 +24,9 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "core/Finisher.h"
 #include "satUtils/SolverTypes.h"
 
+#include <iostream>
+#include <string>
+
 namespace Glucose {
     class GpuOptions;
     class GpuHelpedSolver;
@@ -70,6 +73,10 @@ void copyToDeviceAsync(HostClauses &hCls, cudaStream_t &stream, GpuDims gpuDims)
 void copyToDeviceAsync(HostClauses &hCls, cudaStream_t &stream, ContigCopier &cc, GpuDims gpuDims);
 
 void addClause(HostClauses &hostClauses, const std::vector<Lit> &cl);
+
+inline void directPrint(const std::string &str) {
+    std::cout << str;
+}
 
 }
 

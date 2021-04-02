@@ -26,6 +26,8 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include <atomic>
 #include <memory>
 #include <sys/time.h>
+#include <string>
+#include <sstream>
 
 #define MAXIMUM_SLEEP_DURATION 5
 
@@ -136,7 +138,18 @@ inline long realTimeMicros() {
     return time.tv_usec + 1e6 * time.tv_sec;
 }
 
+struct Logger {
+    int verb;
+    std::function<void (const std::string &str)> logFunc;
+};
+
+#define LOG(__logger, __verbosity, __expr) {\
+    if (__logger.verb >= (__verbosity)) {\
+        std::ostringstream __oss;\
+        __oss << __expr;\
+        __logger.logFunc(__oss.str());\
+    }\
 }
 
-
+}
 #endif

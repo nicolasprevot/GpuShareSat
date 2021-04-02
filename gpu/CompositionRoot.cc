@@ -102,7 +102,7 @@ CompositionRoot::CompositionRoot(GpuOptions opts, CommonOptions commonOpts, Fini
     verb.writeStatsPeriodSec = (verb.global > 0) ? opts.writeStatsPeriodSec : -1;
 
 
-    gpuClauseSharer = std::unique_ptr<GpuShare::GpuClauseSharer>(GpuShare::makeGpuClauseSharerPtr(csOpts));
+    gpuClauseSharer = std::unique_ptr<GpuShare::GpuClauseSharer>(GpuShare::makeGpuClauseSharerPtr(csOpts, [&](const std::string &str) {syncedPrinter(str); }));
     //  It matters that this is called after creating the gpu clause sharer, so initMemUsed has the gigantic amount allocated by cuda
     double initMemUsed = memUsed();
     gpuClauseSharer->setVarCount(varCount);
