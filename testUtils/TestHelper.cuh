@@ -56,6 +56,7 @@ public:
     Glucose::Finisher finisher;
     std::vector<Glucose::GpuHelpedSolver*> solvers;
     GpuClauseSharerForTests gpuClauseSharer;
+    Logger logger;
 
     GpuFixture(GpuClauseSharerOptions &options, int varCount, int solverCount);
     ~GpuFixture();

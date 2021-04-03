@@ -64,7 +64,7 @@ class SimpSolver : public Solver {
  public:
     // Constructor/Destructor:
     //
-    SimpSolver(int cpuThreadId, Finisher &finisher);
+    SimpSolver(int cpuThreadId, Finisher &finisher, const GpuShare::Logger &logger);
     ~SimpSolver();
     
     SimpSolver(const  SimpSolver &s, int cpuThreadId);

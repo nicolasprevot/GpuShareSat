@@ -80,6 +80,7 @@ public:
     std::unique_ptr<GpuMultiSolver> gpuMultiSolver;
     SyncedPrinter syncedPrinter;
     Verbosity verb;
+    GpuShare::Logger logger;
 
     CompositionRoot(GpuOptions ops, CommonOptions commonOpts, Finisher &finisher, int varCount);
 };

@@ -61,6 +61,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "simp/SimpSolver.h"
 #include "utils/JsonWriter.h"
 #include "Finisher.h"
+#include "gpuShareLib/Utils.h"
 
 using namespace Glucose;
 
@@ -130,7 +131,7 @@ static BoolOption opt_forceunsat(_cat,"force-unsat","Force the phase for UNSAT",
 //=================================================================================================
 // Constructor/Destructor:
 
-Solver::Solver(int _cpuThreadId, Finisher &_finisher) :
+Solver::Solver(int _cpuThreadId, Finisher &_finisher, const GpuShare::Logger &_logger) :
 
 // Parameters (user settable):
 //
@@ -199,6 +200,7 @@ Solver::Solver(int _cpuThreadId, Finisher &_finisher) :
 , nbUnsatCalls(0)
 , cpuThreadId(_cpuThreadId)
 , learnedPermLearnedImplying(0)
+, logger(_logger)
 {
     MYFLAG = 0;
     // Initialize only first time. Useful for incremental solving (not in // version), useless otherwise
@@ -286,6 +288,7 @@ Solver::Solver(const Solver &s, int _cpuThreadId) :
 , nbUnsatCalls(s.nbUnsatCalls)
 , cpuThreadId(_cpuThreadId)
 , learnedPermLearnedImplying(s.learnedPermLearnedImplying)
+, logger(s.logger)
 {
     // Copy clauses.
     s.ca.copyTo(ca);
@@ -1359,9 +1362,7 @@ bool Solver::simplify() {
 void Solver::adaptSolver() {
     bool adjusted = false;
     bool reinit = false;
-    SyncedOutPrintf("c\nc Solver %d: try to adapt solver strategies at %f. There are %d learned clauses and %d permanently learned\nc."
-            " %lu clauses were removed \n", cpuThreadId,
-            realTimeSecSinceStart(), learned.size(), permanentlyLearned.size(), stats[removedClauses]);
+    LOG(logger, 2, "c\nc Solver " << cpuThreadId << ": try to adapt solver strategies at " << realTimeSecSinceStart() << ". There are " << learned.size() << " learned clauses and " << permanentlyLearned.size() << " permanently learned\n, " << stats[removedClauses] << " clauses were removed\n");
     /*  printf("c Adjusting solver for the SAT Race 2015 (alpha feature)\n");
     printf("c key successive Conflicts       : %" PRIu64"\n",stats[noDecisionConflict]);
     printf("c nb unary clauses learned        : %" PRIu64"\n",stats[nbUn]);
@@ -1373,7 +1374,7 @@ void Solver::adaptSolver() {
         compareLbd = false;
         glureduce = true;
         adjusted = true;
-        SyncedOutPrintf("c Adjusting for low decision levels.\n");
+        LOG(logger, 2, "c Adjusting for low decision levels.\n");
         reinit = true;
         firstReduceDB = 2000;
         nbclausesbeforereduce = firstReduceDB;
@@ -1387,10 +1388,10 @@ void Solver::adaptSolver() {
         var_decay = 0.999;
         max_var_decay = 0.999;
         adjusted = true;
-        SyncedOutPrintf("c Adjusting for low successive conflicts.\n");
+        LOG(logger, 2, "c Adjusting for low successive conflicts.\n");
     }
     if(stats[noDecisionConflict] > 54400 && mayPermLearnLowLbd) {
-        SyncedOutPrintf("c Adjusting for high successive conflicts.\n");
+        LOG(logger, 2, "c Adjusting for high successive conflicts.\n");
         coLBDBound = 3;
         compareLbd = false;
         glureduce = true;
@@ -1404,12 +1405,12 @@ void Solver::adaptSolver() {
         var_decay = 0.91;
         max_var_decay = 0.91;
         adjusted = true;
-        SyncedOutPrintf("c Adjusting for a very large number of true glue clauses found.\n");
+        LOG(logger, 2, "c Adjusting for a very large number of true glue clauses found.\n");
     }
     if(!adjusted) {
-        SyncedOutPrintf("c Nothing extreme in this problem, continue with glucose default strategies.\n");
+        LOG(logger, 2, "c Nothing extreme in this problem, continue with glucose default strategies.\n");
     }
-    SyncedOutPrintf("c\n");
+    LOG(logger, 2, "c\n");
     if(adjusted) { // Let's reinitialize the glucose restart strategy counters
         lbdQueue.fastclear();
         sumLBD = 0;
@@ -1433,7 +1434,7 @@ void Solver::adaptSolver() {
             }
         }
         learned.shrink(i - j);
-        SyncedOutPrintf("c Activating Chanseok Strategy: moved %d clauses to the permanent set.\n", moved);
+        LOG(logger, 2, "c Activating Chanseok Strategy: moved " << moved << " clauses to the permanent set.\n");
     }
 
     if(reinit) {
@@ -1452,7 +1453,7 @@ void Solver::adaptSolver() {
     }
     printf("c reinitialization of all variables activity/phase/learned clauses.\n");
 */
-        SyncedOutPrintf("c Removing of non permanent clauses.\n");
+        LOG(logger, 2, "c Removing of non permanent clauses.\n");
     }
 }
 
@@ -1577,7 +1578,8 @@ lbool Solver::search(int nof_conflicts) {
 
             if (conflicts % 5000 == 0 && var_decay < max_var_decay) var_decay += 0.01;
             if (verbosity() >= 1 && starts>0 && verb.everyConflicts > 0 && conflicts % verb.everyConflicts == 0) {
-                printEncapsulatedStats();
+                JsonWriter wr(std::cout);
+                printEncapsulatedStats(wr, std::cout);
             }
             if(adaptStrategies && conflicts == 100000) {
                 cancelUntil(0);
@@ -1637,8 +1639,7 @@ lbool Solver::search(int nof_conflicts) {
                 stats[decisions]++;
                 next = pickBranchLit();
                 if(next == lit_Undef) {
-                    SyncOut so;
-                    if (verb.global > 0) printf("c last restart ## conflicts  :  %d %d \n", conflictC, decisionLevel());
+                    LOG(logger, 2, "c last restart ## conflicts  :   " << conflictC << " " << decisionLevel());
                     // Model found:
                     return l_True;
                 }
@@ -1720,6 +1721,7 @@ lbool Solver::solve_(bool do_simp, bool turn_off_simp) // Parameters are useless
 
 
     lbool status = l_Undef;
+    // this code isn't used in multithreaded, so it doesn't really need to use logger
     if(!incremental && verbosity() >= 1) {
         printf("c ========================================[ MAGIC CONSTANTS ]==============================================\n");
         printf("c | Constants are supposed to work well together :-)                                                      |\n");
@@ -1929,9 +1931,7 @@ void Solver::garbageCollect() {
     // is not precise but should avoid some unnecessary reallocations for the new region:
     ClauseAllocator to(ca.size() - ca.wasted());
     relocAll(to);
-    if(verbosity() >= 2)
-        printf("|  Garbage collection:   %12d bytes => %12d bytes             |\n",
-               ca.size() * ClauseAllocator::Unit_Size, to.size() * ClauseAllocator::Unit_Size);
+    LOG(logger, 2, "c  Garbage collection:   " << ca.size() * ClauseAllocator::Unit_Size << " bytes => " << to.size() * ClauseAllocator::Unit_Size << "\n");
     to.moveTo(ca);
 }
 
@@ -1950,18 +1950,18 @@ CRef Solver::gpuImportClauses(bool &foundEmptyClause) {
     return CRef_Undef;
 }
 
-void Solver::printStats() {
+void Solver::printStats(JsonWriter &jw) {
     for (auto const& e : statNames) {
-        writeAsJson(e.second.c_str(), stats[e.first]);
+        jw.write(e.second.c_str(), stats[e.first]);
     }
-    writeAsJson("original", (unsigned long) clauses.size());
-    writeAsJson("conflicts", conflicts);
-    writeAsJson("nbClausesBeforeReduce", (unsigned long) nbclausesbeforereduce);
+    jw.write("original", (unsigned long) clauses.size());
+    jw.write("conflicts", conflicts);
+    jw.write("nbClausesBeforeReduce", (unsigned long) nbclausesbeforereduce);
 }
 
-void Solver::printEncapsulatedStats() {
-    JStats jstats;
-    printStats();
+void Solver::printEncapsulatedStats(JsonWriter &writer, std::ostream &ost) {
+    JStats jstats(writer, ost);
+    printStats(writer);
 }
 
 double Glucose::luby(double y, int x) {

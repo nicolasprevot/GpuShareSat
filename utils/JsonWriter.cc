@@ -1,5 +1,5 @@
 /***************************************************************************************
- GpuShareSat -- Copyright (c) 2020, Nicolas Prevot
+MapleGpuShare, based on MapleLCMDistChronoBT-DL -- Copyright (c) 2020, Nicolas Prevot. Uses the GPU for clause sharing.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
 associated documentation files (the "Software"), to deal in the Software without restriction,
@@ -19,80 +19,96 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 
 #include "JsonWriter.h"
 #include <stdio.h>
+#include <iostream>
+#include <fstream>
+
+using namespace std;
 
 namespace Glucose {
 
-// global variables
-bool needCommaJson = false;
-bool needNewlineJson = false;
-
-void setNeedNewlineAndComma() {
-    needCommaJson = true;
-    needNewlineJson = true;
+JsonWriter::JsonWriter(std::ostream &_os): needComma(false), needNewline(false), os(_os) {
 }
 
-void writeJsonString(const char *name, const char *val) {
+void JsonWriter::setNeedNewlineAndComma(bool v) {
+    needComma = v;
+    needNewline = v;
+}
+
+void JsonWriter::writeJsonString(const char *name, const char *val) {
     writeJsonField(name);
-    printf("\"%s\"", val);
+    os << "\"" << val << "\"";
     setNeedNewlineAndComma();
 }
 
-void writePrecJson() {
-    if (needCommaJson) {
-        printf(",");
-    }
-    if (needNewlineJson) {
-        printf("\nc ");
-    }
-    needCommaJson = false;
-    needNewlineJson = false;
+void JsonWriter::write(const char *val) {
+    os << val;
 }
 
-void writeJsonField(const char* name) {
+void JsonWriter::writePrecJson() {
+    if (needComma) {
+        os << ",";
+    }
+    if (needNewline) {
+        os << "\n";
+    }
+    needComma = false;
+    needNewline = false;
+}
+
+void JsonWriter::writeJsonField(const char* name) {
     writePrecJson();
-    printf("\"%s\": ", name);
+    os << "\"" << name << "\"" << ":";
 }
 
-JStats::JStats() {
-    printf("c stats_start\nc");
-    needCommaJson = false;
-    needNewlineJson = false;
-    jo = new JObj();
+JStats::JStats(JsonWriter &writer, std::ostream &_ost): ost(_ost) {
+    ost << "c stats_start\nc";
+    jo = new JObj(writer);
+    writer.setNeedNewlineAndComma(false);
 }
 
 JStats::~JStats() {
     delete jo;
-    printf("\nc stats_end\n");
+    ost << "\nc stats_end\n";
 }
 
-JObj::JObj() {
-    writePrecJson();
-    printf("{");
-    needNewlineJson = true;
+JsonWriter::~JsonWriter() {
+    if (needNewline) {
+        write("\n");
+    }
+}
+
+JObj::JObj(JsonWriter &_writer): writer(_writer) {
+    writer.writePrecJson();
+    writer.write("{");
+    writer.needNewline = true;
 }
 
 JObj::~JObj() {
-    if (needNewlineJson) {
-        printf("\nc ");
+    if (writer.needNewline) {
+        writer.write("\n");
     }
-    printf("}");
-    needNewlineJson = true;
-    needCommaJson = true;
+    writer.write("}");
+    writer.setNeedNewlineAndComma();
 }
 
-JArr::JArr() {
-    writePrecJson();
-    printf("[");
-    needNewlineJson = true;
+JArr::JArr(JsonWriter &_writer): writer(_writer) {
+    writer.writePrecJson();
+    writer.write("[");
+    writer.needNewline = true;
 }
 
 JArr::~JArr() {
-    if (needNewlineJson) {
-        printf("\nc ");
+    if (writer.needNewline) {
+        writer.write("\n");
     }
-    printf("]");
-    needNewlineJson = true;
-    needCommaJson = true;
+    writer.write("]");
+    writer.setNeedNewlineAndComma();
+}
+
+JsonStatsWriter::JsonStatsWriter(const char *fileName): 
+    ostream(fileName, std::ofstream::out), 
+    writer(ostream), 
+    jarr(writer) {
 }
 
 }

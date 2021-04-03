@@ -63,6 +63,7 @@ public:
     int clauseCount;
     int clMinSize;
     int clMaxSize;
+    Logger logger;
     PerfFixture(int clCount = 1000000, int clMinSize = 12, int clMaxSize = 20, int varCount = 500, int solverCount = 1);
 };
 
@@ -98,10 +99,11 @@ PerfFixture::PerfFixture(int _clauseCount, int _clMinSize, int _clMaxSize, int n
     clauseCount(_clauseCount),
     clMinSize(_clMinSize),
     clMaxSize(_clMaxSize),
-    GpuFixture(*(getOptions(_clauseCount, _clMinSize, _clMaxSize, 2000)), nVars, solverCount) {
+    GpuFixture(*(getOptions(_clauseCount, _clMinSize, _clMaxSize, 2000)), nVars, solverCount),
+    logger { 2, directPrint} {
     srand(25);
     std::vector<Lit> lits;
-    ContigCopier cc(true);
+    ContigCopier cc(logger, true);
     cudaStream_t &stream = gpuClauseSharer.sp.get();
     GpuDims gpuDims {10, 256};
     double seed = 0.4;

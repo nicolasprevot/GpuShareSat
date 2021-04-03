@@ -26,6 +26,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 
 namespace GpuShare {
     class GpuClauseSharer;
+    class Logger;
 }
 
 namespace Glucose {
@@ -62,11 +63,12 @@ private:
     void configure();
     bool hasTriedToLowerCpuMemoryUsage;
     Finisher &finisher;
+    const GpuShare::Logger &logger;
 
 public:
     GpuMultiSolver(Finisher &finisher, GpuShare::GpuClauseSharer &gpuClauseSharer,
             std::function<GpuHelpedSolver* (int threadId) > solverFactory, int varCount, int writeClausesPeriodSec,
-            Verbosity verb, double initMemUsed, double maxMemory, int gpuReduceDbPeriod, int gpuReduceDbPeriodInc);
+            Verbosity verb, double initMemUsed, double maxMemory, int gpuReduceDbPeriod, int gpuReduceDbPeriodInc, const GpuShare::Logger &logger);
     void addClause_(vec<Lit>& lits);
     void addClause(const vec<Lit>& lits);
     lbool solve(int _cpuThreadCount);

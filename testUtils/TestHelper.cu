@@ -35,12 +35,13 @@ void setDefaultOptions(GpuClauseSharerOptions &options) {
 }
 
 GpuFixture::GpuFixture(GpuClauseSharerOptions &options, int varCount, int _solverCount) :
-        gpuClauseSharer(options)
+        gpuClauseSharer(options),
+        logger { 2, directPrint}
 {
     gpuClauseSharer.setVarCount(varCount);
     gpuClauseSharer.setCpuSolverCount(_solverCount);
     for (int s = 0; s < _solverCount; s++) {
-        GpuHelpedSolver *solv = new GpuHelpedSolver(finisher, s, GpuHelpedSolverParams {true}, gpuClauseSharer, options.quickProf);
+        GpuHelpedSolver *solv = new GpuHelpedSolver(finisher, s, GpuHelpedSolverParams {true}, gpuClauseSharer, options.quickProf, logger);
         solvers.push_back(solv);
         for (int i = 0; i < varCount; i++) {
             solv->newVar();

@@ -56,8 +56,6 @@ printf(" ");\
 bool operator ==(const timespec& lhs, const timespec& rhs);
 bool operator !=(const timespec& lhs, const timespec& rhs);
 
-#define SYNCED_OUT(toRun) { SyncOut so; toRun;}
-
 inline void setOnMaskUint(uint &val, uint mask, uint cond) {
     if (cond) {
         val = val | mask;
@@ -142,7 +140,7 @@ struct Logger {
     int verb;
     std::function<void (const std::string &str)> logFunc;
 };
-
+// TODO // A: change
 #define LOG(__logger, __verbosity, __expr) {\
     if (__logger.verb >= (__verbosity)) {\
         std::ostringstream __oss;\
