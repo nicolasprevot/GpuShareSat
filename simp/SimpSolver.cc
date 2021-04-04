@@ -75,8 +75,8 @@ static DoubleOption opt_simp_garbage_frac(_cat, "simp-gc-frac", "The fraction of
 // Constructor/Destructor:
 
 
-SimpSolver::SimpSolver(int cpuThreadId, Finisher &finisher) :
-   Solver(cpuThreadId, finisher)
+SimpSolver::SimpSolver(int cpuThreadId, Finisher &finisher, const GpuShare::Logger &logger) :
+   Solver(cpuThreadId, finisher, logger)
   , parsing            (0)
   , grow               (opt_grow)
   , clause_lim         (opt_clause_lim)

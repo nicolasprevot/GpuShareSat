@@ -176,20 +176,20 @@ next: ;
 }
 
 GpuRunner::GpuRunner(HostClauses &_hostClauses, HostAssigs &_hostAssigs, Reported &_reported, GpuDims gpuDimsGuideline, bool _quickProf,
-        int _countPerCategory, cudaStream_t &_stream, std::vector<unsigned long> &_globalStats) :
+        int _countPerCategory, cudaStream_t &_stream, std::vector<unsigned long> &_globalStats, const Logger &logger) :
     warpsPerBlock(gpuDimsGuideline.threadsPerBlock / WARP_SIZE),
     blockCount(gpuDimsGuideline.blockCount),
     hasRunOutOfGpuMemoryOnce(false),
     lastInAssigIdsPerSolver(1),
-    clauseTestsOnAssigs(false, false),
+    clauseTestsOnAssigs(false, false, logger),
     quickProf(_quickProf),
     hostAssigs(_hostAssigs),
     hostClauses(_hostClauses),
     reported(_reported),
     categoryCount(gpuDimsGuideline.blockCount),
     countPerCategory(_countPerCategory), 
-    cpuToGpuContigCopier(true),
-    gpuToCpuContigCopier(true),
+    cpuToGpuContigCopier(logger, true),
+    gpuToCpuContigCopier(logger, true),
     stream(_stream),
     globalStats(_globalStats) {
 

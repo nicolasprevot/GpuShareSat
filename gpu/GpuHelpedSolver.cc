@@ -43,8 +43,8 @@ GpuHelpedSolver::GpuHelpedSolver(const GpuHelpedSolver &other, int _cpuThreadId)
 
 }
 
-GpuHelpedSolver::GpuHelpedSolver(Finisher &_finisher, int _cpuThreadId, GpuHelpedSolverParams _params, GpuShare::GpuClauseSharer &_gpuClauseSharer, bool _quickProf) :
-        SimpSolver(_cpuThreadId, _finisher), params(_params),
+GpuHelpedSolver::GpuHelpedSolver(Finisher &_finisher, int _cpuThreadId, GpuHelpedSolverParams _params, GpuShare::GpuClauseSharer &_gpuClauseSharer, bool _quickProf, const GpuShare::Logger &_logger) :
+        SimpSolver(_cpuThreadId, _finisher, _logger), params(_params),
         needToReduceCpuMemoryUsage(false), status(l_Undef), changedCount(0), quickProf(_quickProf),
         gpuClauseSharer(_gpuClauseSharer), trailCopiedUntil(0) {
         // for the first gpu stat
@@ -271,8 +271,7 @@ lbool GpuHelpedSolver::solve() {
         for (int i = 0; i < nVars(); i++)
             model[i] = value(i);
         extendModel();
-        SyncOut so;
-        if (verb.global > 0)  printf("c decision level when solution found: %d\n", decisionLevel());
+        LOG(logger, 1, "c decision level when solution found: " << decisionLevel());
     }
     if (status == l_True || status == l_False) { 
         finisher.oneThreadIdWhoFoundAnAnswer = cpuThreadId;
@@ -302,12 +301,12 @@ GpuHelpedSolverParams GpuHelpedSolverOptions::toParams() {
     return GpuHelpedSolverParams {import};
 }
 
-void GpuHelpedSolver::printStats() {
-    Glucose::JObj jo;
-    Solver::printStats();
+void GpuHelpedSolver::printStats(JsonWriter &jsonWriter, std::ostream &ost) {
+    JObj jo(jsonWriter);
+    Solver::printStats(jsonWriter);
     for (int i = 0; i < gpuClauseSharer.getOneSolverStatCount(); i++) {
         GpuShare::OneSolverStats oss = static_cast<GpuShare::OneSolverStats>(i);
-        writeAsJson(gpuClauseSharer.getOneSolverStatName(oss), gpuClauseSharer.getOneSolverStat(cpuThreadId, oss));
+        jsonWriter.write(gpuClauseSharer.getOneSolverStatName(oss), gpuClauseSharer.getOneSolverStat(cpuThreadId, oss));
     }
 }
 

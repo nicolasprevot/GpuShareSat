@@ -32,6 +32,9 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include <set>
 
 // #define CHECK_ASSIG_ON_GPU_IS_RIGHT
+namespace GpuShare {
+    class Logger;
+}
 
 namespace Glucose {
 
@@ -72,6 +75,7 @@ struct MinClause {
     int count;
 };
 
+
 class GpuHelpedSolver : public SimpSolver {
 private:
 
@@ -90,6 +94,7 @@ private:
     int changedCount;
     bool quickProf;
 
+
     GpuShare::GpuClauseSharer &gpuClauseSharer;
 
     // The values of variables for GpuClauseSharer are those that we have on the trail until this
@@ -107,7 +112,7 @@ private:
     void insertStatNames();
 
 public:
-    GpuHelpedSolver(Finisher &_finisher, int cpuThreadId, GpuHelpedSolverParams params, GpuShare::GpuClauseSharer &_gpuClauseSharer, bool quickProf);
+    GpuHelpedSolver(Finisher &_finisher, int cpuThreadId, GpuHelpedSolverParams params, GpuShare::GpuClauseSharer &_gpuClauseSharer, bool quickProf, const GpuShare::Logger &_logger);
     GpuHelpedSolver(const GpuHelpedSolver &other, int cpuThreadId);
     // send the state at level to the gpu
     // returns if succeedeed
@@ -130,7 +135,7 @@ public:
     void sendClauseToGpu(vec<Lit> &lits, int lbd);
 
     int getCpuThreadId() { return cpuThreadId; }
-    void printStats();
+    void printStats(JsonWriter &jsonWriter, std::ostream &ost);
 };
 
 } /* namespace Glucose */

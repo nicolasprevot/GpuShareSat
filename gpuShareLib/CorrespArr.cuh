@@ -85,17 +85,17 @@ __device__ __host__ void printC(size_t);
 
 // ATTENTION: Nothing in this file invoke construtor / destructor on elements on the host (or the device)
 
-bool allocMemoryDevice(void **pt, size_t amount);
+bool allocMemoryDevice(void **pt, size_t amount, const Logger &logger);
 
 void freeMemoryDevice(void *ptr);
 
-void* reallocMemoryHost(void *ptr, size_t oldSize, size_t newSize, bool &pageLocked);
+void* reallocMemoryHost(void *ptr, size_t oldSize, size_t newSize, bool &pageLocked, const Logger &logger);
 
-bool reallocMemoryDevice(void **ptr, size_t oldSize, size_t newSize);
+bool reallocMemoryDevice(void **ptr, size_t oldSize, size_t newSize, const Logger &logger);
 
-bool reallocMemoryDeviceDontCareAboutValues(void **ptr, size_t oldSize, size_t newSize); 
+bool reallocMemoryDeviceDontCareAboutValues(void **ptr, size_t oldSize, size_t newSize, const Logger &logger); 
 
-void* allocateMemoryHost(size_t amount, bool &pageLocked);
+void* allocateMemoryHost(size_t amount, bool &pageLocked, const Logger &logger);
 
 void freeMemoryHost(void *hPtr, bool pageLocked);
 
@@ -370,6 +370,7 @@ class HArr : public MinHArr<T> {
 #ifndef NDEBUG
         DestrCheck _destrCheck;
 #endif
+        const Logger &_logger;
 
         void reallocAndChangeCapacity(int newSize, bool reduceCapacity) {
             size_t newCapacity = getNewCapacity(_capacity, newSize, reduceCapacity);
@@ -379,34 +380,36 @@ class HArr : public MinHArr<T> {
                 _destrCheck.change();
 #endif
                 MinHArr<T>::_h_ptr = (T*) reallocMemoryHost((void*)MinHArr<T>::getPtr(), _capacity * sizeof(T),
-                        newCapacity * sizeof(T), _pageLocked);
+                        newCapacity * sizeof(T), _pageLocked, _logger);
                 _capacity = newCapacity;
             }
         }
 
     public:
 
-        HArr(bool pageLocked):
-            MinHArr<T>(0, (T*) allocateMemoryHost(1 * sizeof(T), pageLocked)
+        HArr(bool pageLocked, const Logger &logger):
+            MinHArr<T>(0, (T*) allocateMemoryHost(1 * sizeof(T), pageLocked, logger)
 #ifndef NDEBUG
             , DestrCheckPointer()
             , NULL
 #endif
             ),
             _pageLocked(pageLocked),
-            _capacity(1) {
+            _capacity(1),
+            _logger(logger) {
         }
 
         template<class ...Args>
-        HArr(size_t size, bool pageLocked):
-            MinHArr<T>(size, (T*) allocateMemoryHost(getInitialCapacity(size) * sizeof(T), pageLocked)
+        HArr(size_t size, bool pageLocked, const Logger &logger):
+            MinHArr<T>(size, (T*) allocateMemoryHost(getInitialCapacity(size) * sizeof(T), pageLocked, logger)
 #ifndef NDEBUG
             , DestrCheckPointer()
             , NULL
 #endif
             ),
             _pageLocked(pageLocked),
-            _capacity(getInitialCapacity(size)) {
+            _capacity(getInitialCapacity(size)),
+            _logger(logger) {
         }
 
         HArr(const HArr<T> &other) = delete;
@@ -467,6 +470,7 @@ private:
 #ifndef NDEBUG
     DestrCheck _destrCheck;
 #endif
+    Logger _logger;
 
     // tries to update capacity to have enough for newSize, returns if 
     // succeeded
@@ -493,7 +497,7 @@ private:
 #ifdef LOG_MEM
         printf("Allocated capacity %zu size %zu\n", _capacity, initialSize);
 #endif
-        if (!allocMemoryDevice((void**) &_d_ptr, _capacity * sizeof(T))) {
+        if (!allocMemoryDevice((void**) &_d_ptr, _capacity * sizeof(T), _logger)) {
             _capacity = 0;
             _size = 0;
             return false;
@@ -509,12 +513,12 @@ private:
         _destrCheck.change();
 #endif
         if (careAboutValues) {
-            if (!reallocMemoryDevice((void**)&_d_ptr, _capacity * sizeof(T), newCapacity * sizeof(T))) {
+            if (!reallocMemoryDevice((void**)&_d_ptr, _capacity * sizeof(T), newCapacity * sizeof(T), _logger)) {
                 return false;
             }
         }
         else {
-            if (!reallocMemoryDeviceDontCareAboutValues((void**)&_d_ptr, _capacity * sizeof(T), newCapacity * sizeof(T))) {
+            if (!reallocMemoryDeviceDontCareAboutValues((void**)&_d_ptr, _capacity * sizeof(T), newCapacity * sizeof(T), _logger)) {
                 // _d_ptr will be null in this case
                 _capacity = 0;
                 _size = 0;
@@ -529,7 +533,7 @@ private:
     }
 
 public:
-    ArrAllocator(size_t size): _size(size) {
+    ArrAllocator(size_t size, const Logger &logger): _size(size), _logger(logger) {
         if (!tryInitialAllocate(size)) {
             THROW_ERROR(printf("Failed to allocate memory on device"));
         }
@@ -587,16 +591,16 @@ class CorrespArr : public HArr<T> {
 
     public:
 
-    CorrespArr(bool pageLocked):
-        HArr<T>(pageLocked),
+    CorrespArr(bool pageLocked, const Logger& _logger):
+        HArr<T>(pageLocked, _logger),
         needToReduceDCapacity(false),
         _darrAllocator(0) {
     }
 
     template<class ...Args>
-    CorrespArr(size_t size, bool pageLocked)
-        : HArr<T>(size, pageLocked),
-          _darrAllocator(size),
+    CorrespArr(size_t size, bool pageLocked, const Logger& logger)
+        : HArr<T>(size, pageLocked, logger),
+          _darrAllocator(size, logger),
           needToReduceDCapacity(false) {
           // Maybe we don't need this memcpy given we already have code which
           // recomputes the device pointer when needed?

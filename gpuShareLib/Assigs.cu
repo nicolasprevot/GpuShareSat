@@ -140,8 +140,8 @@ __global__ void dSetAllAssigsToLast(DValsPerId<VarUpdate> varUpdates, DArr<DOneS
     }
 }
 
-OneSolverAssigs::OneSolverAssigs(int varCount, int &warpsPerBlock, int warpCount) :
-    multiLBool(varCount),
+OneSolverAssigs::OneSolverAssigs(int varCount, int &warpsPerBlock, int warpCount, const Logger &logger) :
+    multiLBool(varCount, logger),
     notCompletedMask(~0),
     // It's easier if ids don't have negative values
     currentId(0),
@@ -299,9 +299,10 @@ DOneSolverAssigs OneSolverAssigs::copyUpdatesLocked(ArrPair<VarUpdate> &varUpdat
     return res;
 }
 
-HostAssigs::HostAssigs(GpuDims gpuDims) :
+HostAssigs::HostAssigs(GpuDims gpuDims, const Logger &_logger) :
         varCount(0),
-        multiAggAlloc(0)
+        multiAggAlloc(0, _logger),
+        logger(_logger)
 {
     warpsPerBlockForInit = gpuDims.threadsPerBlock / WARP_SIZE; 
     ASSERT_OP_C(warpsPerBlockForInit, >, 0);
@@ -337,7 +338,7 @@ AssigsAndUpdates HostAssigs::fillAssigsAsync(ContigCopier &cc, std::vector<Assig
     assigIdsPerSolver.resize(solverCount);
 
     ArrPair<int> solverToAggCorrespStart = cc.buildArrPair<int>(solverCount, NULL);
-    HArr<AggCorresp> aggCorresps(false, false);
+    HArr<AggCorresp> aggCorresps(false, false, logger);
 
     ArrPair<DOneSolverAssigs> dSolverAssigs = cc.buildArrPair<DOneSolverAssigs>(solverCount, NULL);
 
@@ -402,7 +403,7 @@ void HostAssigs::growSolverAssigs(int solverCount) {
     int oldCount = solverAssigs.size();
     solverAssigs.resize(solverCount);
     for (int i = oldCount; i < solverCount; i++) {
-        solverAssigs[i] = my_make_unique<OneSolverAssigs>(varCount, warpsPerBlockForInit, warpCountForInit);
+        solverAssigs[i] = my_make_unique<OneSolverAssigs>(varCount, warpsPerBlockForInit, warpCountForInit, logger);
     }
 
     int bitsCount = sizeof(Vals) * 8;

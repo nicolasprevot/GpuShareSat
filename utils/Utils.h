@@ -42,17 +42,6 @@ static inline int irand(double& seed, int min, int max) {
     return irand(seed, max - min) + min;
 }
 
-// The point of this class is to allow synchronized writing to stdout
-class SyncOut {
-private:
-    static std::mutex lock;
-    std::lock_guard<std::mutex> lockGuard;
-public:
-    SyncOut(): lockGuard(lock) {
-    }
-};
-
-
 }
 
 #endif

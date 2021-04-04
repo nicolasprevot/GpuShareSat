@@ -61,6 +61,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "satUtils/Dimacs.h"
 #include "simp/SimpSolver.h"
 #include "satUtils/InitHelper.h"
+#include "gpuShareLib/Utils.h"
 
 using namespace Glucose;
 
@@ -115,7 +116,8 @@ int main(int argc, char** argv)
 
         commonOptions.applyTimeAndCpuLim();
         commonOptions.applyMemLim();
-        SimpSolver  S(0, finisher);
+        GpuShare::Logger logger {2, GpuShare::directPrint};
+        SimpSolver  S(0, finisher, logger);
         double      initial_time = cpuTimeSec();
 
         S.parsing = 1;

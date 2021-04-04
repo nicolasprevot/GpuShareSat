@@ -17,6 +17,7 @@ DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  **************************************************************************************************/
 #include "CorrespArr.cuh"
+#include "Utils.h"
 #include <cstdlib>
 
 
@@ -120,20 +121,19 @@ size_t getInitialCapacity(size_t size) {
 }
 
 // *pt will point to null if it fails
-bool allocMemoryDevice(void **pt, size_t amount) {
+bool allocMemoryDevice(void **pt, size_t amount, const Logger &logger) {
     ASSERT_OP_C(amount, >, 0);
     // I've seen it happening for clause updates in a case where cpu solvers generated lots of clauses
     // and gpu was really slow, so it rarely copied clauses to the gpu so they built up on the cpu
     if (amount > 400000000) {
-        printf("Allocating large amount of memory: %zu\n", amount);
+        LOG(logger, 1, "Allocating large amount of memory: " << amount << "\n");
     }
     size_t freeMem;
     size_t totalMem;
     exitIfError(cudaMemGetInfo(&freeMem, &totalMem), POSITION);
     if (freeMem < 0.01 * totalMem + amount ) {
-        printf("c Little memory left on gpu, refusing to allocate\n");
-        printf("c There was %zu left out of %zu, wanted to allocate %zu\n",
-            freeMem, totalMem, amount);
+        LOG(logger, 1, "c Little memory left on gpu, refusing to allocate\n");
+        LOG(logger, 1, "c There was " << freeMem << " left out of " << totalMem << ", wanted to allocate " << amount << "\n");
         *pt = NULL;
         return false;
     }
@@ -141,7 +141,7 @@ bool allocMemoryDevice(void **pt, size_t amount) {
     // fragmentation
     cudaError_t err = cudaMalloc(pt, amount);
     if (err == cudaErrorMemoryAllocation) {
-        printf("Failed to allocate memory on device\n");
+        LOG(logger, 1, "c Failed to allocate memory on device\n");
         *pt = NULL;
         return false;
     }
@@ -159,14 +159,14 @@ void freeMemoryDevice(void *ptr) {
     exitIfError(cudaFree(ptr), POSITION);
 }
 
-void* reallocMemoryHost(void *ptr, size_t oldSize, size_t newSize, bool &pageLocked) {
+void* reallocMemoryHost(void *ptr, size_t oldSize, size_t newSize, bool &pageLocked, const Logger &logger) {
     void* newPtr;
     if (!pageLocked) {
         newPtr = realloc(ptr, newSize);
     }
     else {
         bool oldPageLocked = pageLocked;
-        newPtr = allocateMemoryHost(newSize, pageLocked);
+        newPtr = allocateMemoryHost(newSize, pageLocked, logger);
         memcpy(newPtr, ptr, min(oldSize, newSize));
         freeMemoryHost(ptr, oldPageLocked);
     }
@@ -178,12 +178,12 @@ void* reallocMemoryHost(void *ptr, size_t oldSize, size_t newSize, bool &pageLoc
 }
 
 // *ptr will point to null if it fails
-bool reallocMemoryDeviceDontCareAboutValues(void **ptr, size_t oldSize, size_t newSize) {
+bool reallocMemoryDeviceDontCareAboutValues(void **ptr, size_t oldSize, size_t newSize, const Logger &logger) {
 #ifdef LOG_MEM
     void *oldPtr = *ptr;
 #endif
     freeMemoryDevice(*ptr);
-    if (!allocMemoryDevice(ptr, newSize)) {
+    if (!allocMemoryDevice(ptr, newSize, logger)) {
         return false;
     }
 #ifdef LOG_MEM
@@ -194,9 +194,9 @@ bool reallocMemoryDeviceDontCareAboutValues(void **ptr, size_t oldSize, size_t n
 
 
 // *ptr will NOT point to null if it fails, (nothing will have changed)
-bool reallocMemoryDevice(void **ptr, size_t oldSize, size_t newSize) {
+bool reallocMemoryDevice(void **ptr, size_t oldSize, size_t newSize, const Logger &logger) {
     void *newPtr;
-    if (!allocMemoryDevice(&newPtr, newSize)) {
+    if (!allocMemoryDevice(&newPtr, newSize, logger)) {
         return false;
     }
     // Note: because allocating is synchronous, having an asynchronous memcpy wouldn't make much sense
@@ -209,19 +209,19 @@ bool reallocMemoryDevice(void **ptr, size_t oldSize, size_t newSize) {
     return true;
 }
 
-void* allocateMemoryHost(size_t amount, bool &pageLocked) {
+void* allocateMemoryHost(size_t amount, bool &pageLocked, const Logger &logger) {
     void *hPtr;
     ASSERT_OP_C(amount, >, 0);
     if (amount >= maxPageLockedMem) {
         pageLocked = false;
-        printf("c switching memory from page locked to paged because amount is too high: %zu, maximum is %zu\n", amount, maxPageLockedMem);
+        LOG(logger, 1, "c switching memory from page locked to paged because amount is too high: " << amount << ", maximum is " << maxPageLockedMem);
     }
     if (pageLocked) {
         // If we allocate 0, then we can't use free on the result
         cudaError_t err = cudaMallocHost(&hPtr, amount);
         if (err != cudaSuccess) {
             pageLocked = false;
-            printf("c switching memory from page locked to paged because cudaMallocHost failed, amount was %zu\n", amount);
+            LOG(logger, 1, "c switching memory from page locked to paged because cudaMallocHost failed, amount was " <<  amount << "\n");
         }
     } 
     if (!pageLocked) {

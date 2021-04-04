@@ -81,11 +81,11 @@ private:
     }
 
 public:
-    ContigCopier(bool pageLocked = false): values(0, pageLocked) {
+    ContigCopier(const Logger &logger, bool pageLocked = false): values(0, pageLocked, logger) {
     }
 
     void* getHPtr() { return (void*) values.getAddress(0);}
-    void* getDPtr() { 
+    void* getDPtr(const Logger &logger) { 
         char* res;
         // This should succeed because it should only be called after
         // we've called copyAsync which would have resized things

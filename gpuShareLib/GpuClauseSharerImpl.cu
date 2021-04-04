@@ -12,8 +12,8 @@ namespace GpuShare {
 
 extern size_t maxPageLockedMem;
 
-GpuClauseSharer* makeGpuClauseSharerPtr(GpuClauseSharerOptions opts) {
-    return new GpuClauseSharerImpl(opts);
+GpuClauseSharer* makeGpuClauseSharerPtr(GpuClauseSharerOptions opts, std::function<void (const std::string &str)> logFunc) {
+    return new GpuClauseSharerImpl(opts, logFunc);
 }
 
 void writeMessageAndThrow(const char *message) {
@@ -21,7 +21,7 @@ void writeMessageAndThrow(const char *message) {
     THROW();
 }
 
-GpuClauseSharerImpl::GpuClauseSharerImpl(GpuClauseSharerOptions _opts) {
+GpuClauseSharerImpl::GpuClauseSharerImpl(GpuClauseSharerOptions _opts, std::function<void (const std::string &str)> logFunc): logger {_opts.verbosity, logFunc} {
     // It can be necessary for debugging if we print a lot
     // 100 Megs
     // cudaDeviceSetLimit(cudaLimitPrintfFifoSize, 1048576 * 100);
@@ -51,7 +51,8 @@ GpuClauseSharerImpl::GpuClauseSharerImpl(GpuClauseSharerOptions _opts) {
         cudaDeviceProp props;
         exitIfError(cudaGetDeviceProperties(&props, 0), POSITION);
         opts.gpuBlockCountGuideline = props.multiProcessorCount * 2;
-        if (opts.verbosity > 0) printf("c Setting block count guideline to %d (twice the number of multiprocessors)\n", opts.gpuBlockCountGuideline);
+
+        LOG(logger, 1, "c Setting block count guideline to " << opts.gpuBlockCountGuideline << " (twice the number of multiprocessors)\n");
     }
     if (opts.gpuThreadsPerBlockGuideline < 0) opts.gpuThreadsPerBlockGuideline = 512;
 
@@ -67,10 +68,10 @@ GpuClauseSharerImpl::GpuClauseSharerImpl(GpuClauseSharerOptions _opts) {
     GpuDims gpuDims {opts.gpuBlockCountGuideline, opts.gpuThreadsPerBlockGuideline};
 
     maxPageLockedMem = opts.maxPageLockedMemory;
-    assigs = my_make_unique<HostAssigs>(gpuDims);  
-    clauses = my_make_unique<HostClauses>(gpuDims, opts.clauseActivityDecay, true, globalStats);
+    assigs = my_make_unique<HostAssigs>(gpuDims, logger);  
+    clauses = my_make_unique<HostClauses>(gpuDims, opts.clauseActivityDecay, true, globalStats, logger);
     reported = my_make_unique<Reported>(*clauses, oneSolverStats);
-    gpuRunner = my_make_unique<GpuRunner>(*clauses, *assigs, *reported, gpuDims, opts.quickProf, opts.initReportCountPerCategory, sp.get(), globalStats);
+    gpuRunner = my_make_unique<GpuRunner>(*clauses, *assigs, *reported, gpuDims, opts.quickProf, opts.initReportCountPerCategory, sp.get(), globalStats, logger);
 
 }
 

@@ -21,12 +21,16 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "core/Solver.h"
 #include "core/Finisher.h"
 #include "satUtils/Dimacs.h"
+#include "gpuShareLib/Utils.h"
+
+#include <iostream>
 
 namespace Glucose {
 // Simple solver test
 BOOST_AUTO_TEST_CASE(SolverSolveTest) {
         Finisher finisher;
-        Solver solver(10, finisher);
+        GpuShare::Logger logger {2, directPrint};
+        Solver solver(10, finisher, logger);
         solver.newVar();
         solver.newVar();
 
@@ -42,7 +46,8 @@ BOOST_AUTO_TEST_CASE(SolverSolveTest) {
 // Propagation
 BOOST_AUTO_TEST_CASE(SolverPropagate) {
         Finisher finisher;
-        Solver solver(0, finisher);
+        GpuShare::Logger logger {2, directPrint};
+        Solver solver(0, finisher, logger);
         solver.newVar();
         solver.newVar();
 

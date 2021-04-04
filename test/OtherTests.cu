@@ -22,6 +22,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "gpuShareLib/ContigCopy.cuh"
 #include "gpuShareLib/GpuUtils.cuh"
 #include "gpuShareLib/Reporter.cuh"
+#include "testUtils/TestHelper.cuh"
 
 namespace Glucose {
     inline void clearObj(int a) {
@@ -60,7 +61,8 @@ __global__ void dTestSetAt(int *v, int val) {
 
 BOOST_AUTO_TEST_CASE(testContigCopyArr) {
     StreamPointer sp;
-    ContigCopier copier;
+    Logger logger {2, directPrint};
+    ContigCopier copier(logger);
     ArrPair<int> ap1 = copier.buildArrPair<int>(4, NULL);
     ArrPair<int> ap2 = copier.buildArrPair<int>(3, NULL);
 
@@ -82,7 +84,8 @@ BOOST_AUTO_TEST_CASE(testContigCopyArr) {
 
 BOOST_AUTO_TEST_CASE(testContigCopyDeviceToHostOnly) {
     StreamPointer sp;
-    ContigCopier copier;
+    Logger logger {2, directPrint};
+    ContigCopier copier(logger);
     ArrPair<int> ap = copier.buildArrPair<int>(1, NULL);
     dTestSetAt<<<1, 1, 0, sp.get()>>>(ap.getDArr().getPtr(), 3);
     BOOST_CHECK(copier.tryCopyAsync(cudaMemcpyDeviceToHost, sp.get()));
@@ -95,7 +98,8 @@ BOOST_AUTO_TEST_CASE(testContigCopyDeviceToHostOnly) {
 // Test that we don't get a misalignment if we have sizes 1 and 4
 BOOST_AUTO_TEST_CASE(testContigAlignment) {
     StreamPointer sp;
-    ContigCopier copier;
+    Logger logger {2, directPrint};
+    ContigCopier copier(logger);
     ArrPair<bool> opb = copier.buildArrPair<bool>(1, NULL);
     ArrPair<int> opi = copier.buildArrPair<int>(1, NULL);
 
@@ -111,7 +115,8 @@ BOOST_AUTO_TEST_CASE(testContigAlignment) {
 
 BOOST_AUTO_TEST_CASE(testContigResize) {
     StreamPointer sp;
-    ContigCopier copier;
+    Logger logger {2, directPrint};
+    ContigCopier copier(logger);
     ArrPair<int> opi = copier.buildArrPair<int>(1, NULL);
     opi.increaseSize(2);
 
@@ -138,7 +143,8 @@ __global__ void dReport(int v, DReporter<int> rep) {
 
 BOOST_AUTO_TEST_CASE(RollingReportTestOne) {
     StreamPointer sp;
-    ContigCopier cc;
+    Logger logger {2, directPrint};
+    ContigCopier cc(logger);
     {
         Reporter<int> rr(cc, sp.get(), 3, 1);
         auto dReporter = rr.getDReporter();

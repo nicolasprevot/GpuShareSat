@@ -69,12 +69,11 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "core/BoundedQueue.h"
 #include "core/Constants.h"
 #include "mtl/Clone.h"
+#include "utils/JsonWriter.h"
 #include <map>
 
-// like printf, but two threads won't call it at the same time
-#define SyncedOutPrintf(...) {\
-    SyncOut so;\
-    printf(__VA_ARGS__);\
+namespace GpuShare {
+    class Logger;
 }
 
 namespace Glucose {
@@ -104,7 +103,7 @@ class Solver : public Clone {
 public:
 
     // Constructor/Destructor:
-    Solver(int cpuThreadId, Finisher &_finisher);
+    Solver(int cpuThreadId, Finisher &_finisher, const GpuShare::Logger &logger);
     Solver(const  Solver &s, int cpuThreadId);
 
     virtual ~Solver();
@@ -291,8 +290,9 @@ public:
         return trail[i];
     }
 
-    void printStats();
-    void printEncapsulatedStats(); 
+    void printStats(JsonWriter &jsonWriter);
+
+    void printEncapsulatedStats();
     long getApproximateMemAllocated() {return ca.getCap(); }
 
 protected:
@@ -415,6 +415,8 @@ protected:
     // The number of learned or perm learned clauses implying something at any given time
     // its value only matters if we have KEEP_IMPL_COUNT
     int learnedPermLearnedImplying;
+
+    const GpuShare::Logger &logger;
 
 
     // Main internal methods:

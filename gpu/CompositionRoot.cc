@@ -95,22 +95,23 @@ int GpuOptions::getNumberOfCpuThreads(int verbosity, float mem) {
 // Reason is that we need to look at memory usage of one solver to decide how many solvers to use
 // And we need to already have one cpu solver for that 
 CompositionRoot::CompositionRoot(GpuOptions opts, CommonOptions commonOpts, Finisher &finisher, int varCount) :
-    varCount(varCount)
+    varCount(varCount),
+    verb(commonOpts.getVerbosity()),
+    logger {verb.global, [&](const std::string &str) {syncedPrinter(str); }}
 {
-    verb = commonOpts.getVerbosity();
     GpuShare::GpuClauseSharerOptions csOpts = opts.toGpuClauseSharerOptions(verb.global);
     verb.writeStatsPeriodSec = (verb.global > 0) ? opts.writeStatsPeriodSec : -1;
 
 
-    gpuClauseSharer = std::unique_ptr<GpuShare::GpuClauseSharer>(GpuShare::makeGpuClauseSharerPtr(csOpts));
+    gpuClauseSharer = std::unique_ptr<GpuShare::GpuClauseSharer>(GpuShare::makeGpuClauseSharerPtr(csOpts, logger.logFunc));
     //  It matters that this is called after creating the gpu clause sharer, so initMemUsed has the gigantic amount allocated by cuda
     double initMemUsed = memUsed();
     gpuClauseSharer->setVarCount(varCount);
 
     gpuMultiSolver = my_make_unique<GpuMultiSolver>(finisher, *gpuClauseSharer,
                 std::function<GpuHelpedSolver* (int)> ([&](int cpuThreadId) {
-                    return new GpuHelpedSolver(finisher, cpuThreadId, opts.gpuHelpedSolverOptions.toParams(), *gpuClauseSharer, opts.quickProf);
-                }), varCount, opts.writeClausesPeriodSec, verb, initMemUsed, (double) opts.maxMemory, opts.gpuFirstReduceDb, opts.gpuIncReduceDb);
+                    return new GpuHelpedSolver(finisher, cpuThreadId, opts.gpuHelpedSolverOptions.toParams(), *gpuClauseSharer, opts.quickProf, logger);
+                }), varCount, opts.writeClausesPeriodSec, verb, initMemUsed, (double) opts.maxMemory, opts.gpuFirstReduceDb, opts.gpuIncReduceDb, logger);
 }
 
 } /* namespace Glucose */

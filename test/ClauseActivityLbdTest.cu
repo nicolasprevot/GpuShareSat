@@ -38,7 +38,7 @@ struct TestFixture {
 
     TestFixture(bool actOnly, float actDecay):
         globalStats(100, 0),
-        hCls(GpuDims(1, 1), actDecay, actOnly, globalStats) {
+        hCls(GpuDims(1, 1), actDecay, actOnly, globalStats, Logger {2, directPrint }) {
     }
 
     cudaStream_t& getStream() {
@@ -106,7 +106,8 @@ struct LbdAndAct {
 
 void setLbdAndAct(int lbd, int act, HostClauses &hCls, int &currentLit, cudaStream_t &stream) {
     // A clause cannot have a size strictly smaller than lbd, so set the size to be the lbd
-    HArr<Lit> lits(false);
+    Logger logger {2, directPrint};
+    HArr<Lit> lits(false, logger);
     for (int j = 0; j < lbd; j++) {
         lits.add(mkLit(currentLit++));
     }
@@ -257,7 +258,7 @@ BOOST_AUTO_TEST_CASE(testRescale) {
 
     // each decays multiplies activity inc by RESCALE_CONST * 10
     std::vector<unsigned long> globalStats(100, 0);
-    HostClauses hCls(GpuDims(1, 1), 1 / (RESCALE_CONST * 10), false, globalStats);
+    HostClauses hCls(GpuDims(1, 1), 1 / (RESCALE_CONST * 10), false, globalStats, Logger {2, directPrint});
     addClause(hCls, {mkLit(0)});
 
     GpuCref gpuCref { 1, 0};

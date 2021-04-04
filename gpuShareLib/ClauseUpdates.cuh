@@ -70,7 +70,7 @@ private:
     HArr<Lit> vals;
 
 public:
-    HClauseUpdates();
+    HClauseUpdates(const Logger &logger);
     void addNewClause(MinHArr<Lit> &lits, ClMetadata clMetadata);
     HClauseUpdate getUpdate(int p) { return updates[p]; }
     MinHArr<Lit> getLits(int p);

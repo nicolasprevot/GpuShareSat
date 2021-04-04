@@ -35,12 +35,13 @@ void setDefaultOptions(GpuClauseSharerOptions &options) {
 }
 
 GpuFixture::GpuFixture(GpuClauseSharerOptions &options, int varCount, int _solverCount) :
-        gpuClauseSharer(options)
+        gpuClauseSharer(options),
+        logger { 2, directPrint}
 {
     gpuClauseSharer.setVarCount(varCount);
     gpuClauseSharer.setCpuSolverCount(_solverCount);
     for (int s = 0; s < _solverCount; s++) {
-        GpuHelpedSolver *solv = new GpuHelpedSolver(finisher, s, GpuHelpedSolverParams {true}, gpuClauseSharer, options.quickProf);
+        GpuHelpedSolver *solv = new GpuHelpedSolver(finisher, s, GpuHelpedSolverParams {true}, gpuClauseSharer, options.quickProf, logger);
         solvers.push_back(solv);
         for (int i = 0; i < varCount; i++) {
             solv->newVar();
@@ -48,7 +49,7 @@ GpuFixture::GpuFixture(GpuClauseSharerOptions &options, int varCount, int _solve
     }
 }
 
-GpuClauseSharerForTests::GpuClauseSharerForTests(GpuClauseSharerOptions opts): GpuClauseSharerImpl(opts) {
+GpuClauseSharerForTests::GpuClauseSharerForTests(GpuClauseSharerOptions opts): GpuClauseSharerImpl(opts, directPrint) {
 }
 
 void execute(GpuClauseSharer &gpuClauseSharer) {
@@ -102,7 +103,8 @@ __global__ void globalUpdateClauses(DClauseUpdates clUpdates, DClauses dClauses)
 
 // often, this method is called just to make the clause counts on the host clauses right
 void copyToDeviceAsync(HostClauses &hCls, cudaStream_t &stream, GpuDims gpuDims) {
-    ContigCopier cc;
+    Logger logger {2, directPrint};
+    ContigCopier cc(logger);
     copyToDeviceAsync(hCls, stream, cc, gpuDims);
 }
 

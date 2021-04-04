@@ -34,7 +34,7 @@ namespace Glucose {
 // This class synchronizes the work of several GpuHelpedSolver
 GpuMultiSolver::GpuMultiSolver(Finisher &_finisher, GpuShare::GpuClauseSharer &_gpuClauseSharer, 
         std::function<GpuHelpedSolver* (int threadId) > _solverFactory, int varCount, int writeClausesPeriodSec,
-        Verbosity _verb, double _initMemUsed, double _maxMemory, int _gpuReduceDbPeriod, int _gpuReduceDbPeriodInc):
+        Verbosity _verb, double _initMemUsed, double _maxMemory, int _gpuReduceDbPeriod, int _gpuReduceDbPeriodInc, const GpuShare::Logger &_logger):
                 gpuClauseSharer(_gpuClauseSharer),
                 solverFactory(_solverFactory),
                 verb(_verb),
@@ -43,7 +43,8 @@ GpuMultiSolver::GpuMultiSolver(Finisher &_finisher, GpuShare::GpuClauseSharer &_
                 initMemUsed(_initMemUsed),
                 maxMemory(_maxMemory),
                 hasTriedToLowerCpuMemoryUsage(false),
-                finisher(_finisher) {
+                finisher(_finisher),
+                logger(_logger) {
     periodicRunner = my_make_unique<PeriodicRunner>(realTimeSecSinceStart()); 
     periodicRunner->add(verb.writeStatsPeriodSec, std::function<void ()> ([&] () { 
         printStats();
@@ -72,7 +73,7 @@ void GpuMultiSolver::addClause(const vec<Lit>& lits) {
     helpedSolvers[0]->addClause(lits);
 }
 
-void launchSolver(std::mutex &mutex, GpuHelpedSolver*& solver, Finisher &finisher) {
+void launchSolver(std::mutex &mutex, GpuHelpedSolver*& solver, Finisher &finisher, const GpuShare::Logger &logger) {
     solver->solve();
     lbool status = solver->getStatus();
     // solvers which didn't find an answer are no longer useful, destroy them to free memory
@@ -85,15 +86,14 @@ void launchSolver(std::mutex &mutex, GpuHelpedSolver*& solver, Finisher &finishe
         }
         delete copy;
     }
-    SyncOut so;
-    printf("c A thread is exiting\n");
+    LOG(logger, 1, "c A thread is exiting\n");
 }
 
 lbool GpuMultiSolver::simplify() {
     int ret2 = helpedSolvers[0]->simplify();
     if(ret2) helpedSolvers[0]->eliminate(true);
     if (!helpedSolvers[0]->okay()) {
-        printf("Solved by unit propagation\n");
+        LOG(logger, 1, "c Solved by unit propagation\n");
         return l_False;
     }
     return l_Undef;
@@ -109,8 +109,9 @@ lbool GpuMultiSolver::solve(int _cpuThreadCount) {
     configure();
 
     if (verb.global > 0) {
-        printf("c |  all clones generated. Memory = %6.2fMb.                                                             |\n", memUsed());
-        printf("c ========================================================================================================|\n");
+        // TODO: is it the right format
+        LOG(logger, 1, "c | all clones generated. Memory = " << memUsed() << "Mb\n");
+        LOG(logger, 1, "c ========================================================================================================|\n");
     }
     gpuClauseSharer.setCpuSolverCount(_cpuThreadCount);
     vec<std::thread> threads;
@@ -118,9 +119,10 @@ lbool GpuMultiSolver::solve(int _cpuThreadCount) {
     // Launching all solvers
     threads.growTo(helpedSolvers.size());
     for(int i = 0; i < helpedSolvers.size(); i++) {
-        threads[i] = std::thread(launchSolver, std::ref(solversMutex), std::ref(helpedSolvers[i]), std::ref(finisher));
+        threads[i] = std::thread(launchSolver, std::ref(solversMutex), std::ref(helpedSolvers[i]), std::ref(finisher), std::ref(logger));
     }
-    if (verb.global > 0) SYNCED_OUT(printf("All solvers launched\n"));
+
+    LOG(logger, 1, "c All solvers launched\n");
 
     while (!finisher.stopAllThreads) {
         periodicRunner->maybeRun(realTimeSecSinceStart());
@@ -138,7 +140,8 @@ lbool GpuMultiSolver::solve(int _cpuThreadCount) {
             // is that if we use more than physical memory, it will swap
             // It's very different for gpu memory usage where there's no swap
             // so it crashes if we go over the limit
-            if (verb.global > 0) SYNCED_OUT(printf("c There is %lf megabytes of memory used on cpu which is high, the limit is %lf, going to try reducing memory usage\n", cpuMemUsed, maxMemory));
+
+            LOG(logger, 1, "c There is " << cpuMemUsed << " megabytes of memory used on cpu which is high, the limit is " << maxMemory <<", going to try reducing memory usage\n");
             // All the clauses on the GPU are also on the CPU, so limit the growth of their number
             gpuReduceDbPeriodInc = 0;
             std::lock_guard<std::mutex> lock(solversMutex);
@@ -158,8 +161,8 @@ lbool GpuMultiSolver::solve(int _cpuThreadCount) {
             for (int i = 0; i < helpedSolvers.size(); i++) {
                 maxApprMemAllocated += helpedSolvers[i]->getApproximateMemAllocated();
             }
-            if (verb.global > 0) SYNCED_OUT(printf("c There is %lf megabytes of memory used on the cpu when the limit is %lf. Going to kill threads to reduce memory usage\n", cpuMemUsed, maxMemory));
-            if (verb.global > 0) SYNCED_OUT(printf("c The approximate memory allocated is %lf\n", maxApprMemAllocated / 1.0e6));
+            LOG(logger, 1, "c There is " << cpuMemUsed << " megabytes of memory used on the cpu when the limit is " << maxMemory << ". Going to kill threads to reduce memory usage\n");
+            LOG(logger, 1, "c The approximate memory allocated is " << maxApprMemAllocated  / 1.0e6 << "\n");
             finisher.stopAllThreadsAfterId = std::max(helpedSolvers.size() - 1, 1);
         }
         if (maxApprMemAllocated > 0)
@@ -176,8 +179,8 @@ lbool GpuMultiSolver::solve(int _cpuThreadCount) {
             }
         }
     }
-    if (verb.global > 0) {
-        SYNCED_OUT(printf("c printing final stats\n"));
+    if (logger.verb >= 1) {
+        LOG(logger, 1, "c printing final stats\n");
         printStats();
     }
 
@@ -198,51 +201,52 @@ void GpuMultiSolver::printStatSum(const char* name, int stat) {
 }
 
 void GpuMultiSolver::printStats() {
-    SyncOut so;
     static int nbprinted = 1;
 
     size_t freeGpuMem;
     size_t totalGpuMem;
     long apprMemAllocated = 0;
+    std::ostringstream oss;
+    JsonWriter wr(oss);
     gpuClauseSharer.getGpuMemInfo(freeGpuMem, totalGpuMem);
     {
-        JStats jstats;
-        writeJsonString("type", "periodicStats");
-        writeAsJson("cpuTime", cpuTimeSec());
-        writeAsJson("realTime", realTimeSecSinceStart());
+        JStats jstats(wr, oss);
+        wr.writeJsonString("type", "periodicStats");
+        wr.write("cpuTime", cpuTimeSec());
+        wr.write("realTime", realTimeSecSinceStart());
         {
-            writeJsonField("solverStats");
+            wr.writeJsonField("solverStats");
             {
-                JArr jarr;
+                JArr jarr(wr);
                 std::lock_guard<std::mutex> lock(solversMutex);
                 for (int i = 0; i < helpedSolvers.size(); i++) {
                     if (helpedSolvers[i] != NULL) {
-                        helpedSolvers[i]->printStats();
+                        helpedSolvers[i]->printStats(wr, oss);
                         apprMemAllocated += helpedSolvers[i]->getApproximateMemAllocated();
                     }
                 }
             }
-            writeJsonField("globalStats");
+            wr.writeJsonField("globalStats");
             {
-                JObj jo;
-                writeAsJson("cpuMemUsed_megabytes", actualCpuMemUsed());
-                writeAsJson("gpuMemUsed_megabytes", (float) (totalGpuMem - freeGpuMem) / 1.0e6);
+                JObj jo(wr);
+                wr.write("cpuMemUsed_megabytes", actualCpuMemUsed());
+                wr.write("gpuMemUsed_megabytes", (float) (totalGpuMem - freeGpuMem) / 1.0e6);
 #ifdef KEEP_IMPL_COUNT
                 printStatSum("conflict impl count sum", sumConflictImplying);
 #endif
-                writeAsJson("approximateMemAllocated_megabytes", apprMemAllocated / 1.0e6);
+                wr.write("approximateMemAllocated_megabytes", apprMemAllocated / 1.0e6);
                 for (int i = 0; i < gpuClauseSharer.getGlobalStatCount(); i++) {
                     GpuShare::GlobalStats gs = static_cast<GpuShare::GlobalStats>(i);
-                    writeAsJson(gpuClauseSharer.getGlobalStatName(gs), gpuClauseSharer.getGlobalStat(gs));
+                    wr.write(gpuClauseSharer.getGlobalStatName(gs), gpuClauseSharer.getGlobalStat(gs));
                 }
             }
         }
     } 
+    logger.logFunc(oss.str());
     nbprinted++;
 }
 
 void GpuMultiSolver::writeClausesInCnf() {
-    SyncOut so;
     printf("c Writing clauses at %lf\n", realTimeSecSinceStart());
     gpuClauseSharer.writeClausesInCnf(stdout);
 }

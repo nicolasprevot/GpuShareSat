@@ -24,6 +24,9 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "core/Finisher.h"
 #include "satUtils/SolverTypes.h"
 
+#include <iostream>
+#include <string>
+
 namespace Glucose {
     class GpuOptions;
     class GpuHelpedSolver;
@@ -53,6 +56,7 @@ public:
     Glucose::Finisher finisher;
     std::vector<Glucose::GpuHelpedSolver*> solvers;
     GpuClauseSharerForTests gpuClauseSharer;
+    Logger logger;
 
     GpuFixture(GpuClauseSharerOptions &options, int varCount, int solverCount);
     ~GpuFixture();
