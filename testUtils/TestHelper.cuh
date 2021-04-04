@@ -75,10 +75,6 @@ void copyToDeviceAsync(HostClauses &hCls, cudaStream_t &stream, ContigCopier &cc
 
 void addClause(HostClauses &hostClauses, const std::vector<Lit> &cl);
 
-inline void directPrint(const std::string &str) {
-    std::cout << str;
-}
-
 }
 
 #endif

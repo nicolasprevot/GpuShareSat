@@ -1578,8 +1578,7 @@ lbool Solver::search(int nof_conflicts) {
 
             if (conflicts % 5000 == 0 && var_decay < max_var_decay) var_decay += 0.01;
             if (verbosity() >= 1 && starts>0 && verb.everyConflicts > 0 && conflicts % verb.everyConflicts == 0) {
-                JsonWriter wr(std::cout);
-                printEncapsulatedStats(wr, std::cout);
+                printEncapsulatedStats();
             }
             if(adaptStrategies && conflicts == 100000) {
                 cancelUntil(0);
@@ -1959,9 +1958,10 @@ void Solver::printStats(JsonWriter &jw) {
     jw.write("nbClausesBeforeReduce", (unsigned long) nbclausesbeforereduce);
 }
 
-void Solver::printEncapsulatedStats(JsonWriter &writer, std::ostream &ost) {
-    JStats jstats(writer, ost);
-    printStats(writer);
+void Solver::printEncapsulatedStats() {
+    JsonWriter wr(std::cout);
+    JStats jstats(wr, std::cout);
+    printStats(wr);
 }
 
 double Glucose::luby(double y, int x) {

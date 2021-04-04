@@ -25,15 +25,11 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 
 #include <iostream>
 
-void justPrint(const std::string &str) {
-    std::cout << str;
-}
-
 namespace Glucose {
 // Simple solver test
 BOOST_AUTO_TEST_CASE(SolverSolveTest) {
         Finisher finisher;
-        GpuShare::Logger logger {2, justPrint};
+        GpuShare::Logger logger {2, directPrint};
         Solver solver(10, finisher, logger);
         solver.newVar();
         solver.newVar();
@@ -50,7 +46,7 @@ BOOST_AUTO_TEST_CASE(SolverSolveTest) {
 // Propagation
 BOOST_AUTO_TEST_CASE(SolverPropagate) {
         Finisher finisher;
-        GpuShare::Logger logger {2, justPrint};
+        GpuShare::Logger logger {2, directPrint};
         Solver solver(0, finisher, logger);
         solver.newVar();
         solver.newVar();

@@ -140,7 +140,11 @@ struct Logger {
     int verb;
     std::function<void (const std::string &str)> logFunc;
 };
-// TODO // A: change
+
+inline void directPrint(const std::string &str) {
+    std::cout << str;
+}
+
 #define LOG(__logger, __verbosity, __expr) {\
     if (__logger.verb >= (__verbosity)) {\
         std::ostringstream __oss;\

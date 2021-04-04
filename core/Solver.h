@@ -292,7 +292,7 @@ public:
 
     void printStats(JsonWriter &jsonWriter);
 
-    void printEncapsulatedStats(JsonWriter &writer, std::ostream &ost);
+    void printEncapsulatedStats();
     long getApproximateMemAllocated() {return ca.getCap(); }
 
 protected:
