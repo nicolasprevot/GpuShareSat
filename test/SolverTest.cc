@@ -29,7 +29,7 @@ namespace Glucose {
 // Simple solver test
 BOOST_AUTO_TEST_CASE(SolverSolveTest) {
         Finisher finisher;
-        GpuShare::Logger logger {2, directPrint};
+        GpuShare::Logger logger {2, GpuShare::directPrint};
         Solver solver(10, finisher, logger);
         solver.newVar();
         solver.newVar();
@@ -46,7 +46,7 @@ BOOST_AUTO_TEST_CASE(SolverSolveTest) {
 // Propagation
 BOOST_AUTO_TEST_CASE(SolverPropagate) {
         Finisher finisher;
-        GpuShare::Logger logger {2, directPrint};
+        GpuShare::Logger logger {2, GpuShare::directPrint};
         Solver solver(0, finisher, logger);
         solver.newVar();
         solver.newVar();
