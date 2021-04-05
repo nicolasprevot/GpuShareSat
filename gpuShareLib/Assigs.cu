@@ -30,7 +30,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 namespace GpuShare {
 
 __device__ __host__ void printC(MultiAgg multiAgg) {
-    printf("t: "); printBinary(multiAgg.canBeTrue); printf(" f: "); printBinary(multiAgg.canBeFalse); printf(" u: "); printBinary(multiAgg.canBeUndef); NL;
+    printf("t: "); printBinaryDH(multiAgg.canBeTrue); printf(" f: "); printBinaryDH(multiAgg.canBeFalse); printf(" u: "); printBinaryDH(multiAgg.canBeUndef); NL;
 }
 
 void printC(VarUpdate vu) {

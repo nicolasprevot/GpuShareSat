@@ -136,15 +136,15 @@ inline long realTimeMicros() {
     return time.tv_usec + 1e6 * time.tv_sec;
 }
 
-struct Logger {
-    int verb;
-    std::function<void (const std::string &str)> logFunc;
-};
-
 inline void directPrint(const std::string &str) {
     std::cout << str;
 }
 
+struct Logger {
+    int verb;
+    std::function<void (const std::string &str)> logFunc;
+};
+// TODO // A: change
 #define LOG(__logger, __verbosity, __expr) {\
     if (__logger.verb >= (__verbosity)) {\
         std::ostringstream __oss;\

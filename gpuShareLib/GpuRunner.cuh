@@ -36,6 +36,7 @@ class Reported;
 class DOneSolverAssigs;
 class DAssigAggregates;
 class AssigsAndUpdates;
+class RunInfo;
 
 // This class deals with actually running the GPU and checking clauses against assignments
 class GpuRunner {
@@ -72,7 +73,9 @@ private:
     cudaStream_t &stream;
     std::vector<unsigned long> &globalStats;
 
-    void startGpuRunAsync(cudaStream_t &stream, std::vector<AssigIdsPerSolver> &assigIdsPerSolver, std::unique_ptr<Reporter<ReportedClause>> &reporter, bool &started, bool &notEnoughGpuMemory);
+    void startGpuRunAsync(cudaStream_t &stream, std::vector<AssigIdsPerSolver> &assigIdsPerSolver, std::unique_ptr<Reporter<ReportedClause>> &reporter, bool &started, bool &notEnoughGpuMemory,
+        AssigsAndUpdates &assigsAndUpdates);
+    void launchGpu(cudaStream_t &stream, RunInfo &runInfo, AssigsAndUpdates &assigsAndUpdates, std::unique_ptr<Reporter<ReportedClause>> &reporter);
     void scheduleGpuToCpuCopyAsync(cudaStream_t &stream);
     void gatherGpuRunResults(std::vector<AssigIdsPerSolver> &assigIdsPerSolver, Reporter<ReportedClause> &reporter);
 

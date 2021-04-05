@@ -24,6 +24,10 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include <assert.h>
 #include <iostream>
 
+#define PRINTN(__x) {\
+std::cout << #__x ": " << __x << " ";\
+}
+
 #define THROW_ERROR(msgExpr) {\
     printf("Error in %s:%d: ", __FILE__, __LINE__);\
     msgExpr;\

@@ -72,7 +72,7 @@ __device__ void dCheckOneClauseOneSolver(DOneSolverAssigs dOneSolverAssigs, DAss
     reportComputer.init(dOneSolverAssigs.startVals);
     while (litPt < endLitPt) {
         Lit lit = *litPt;
-        Vals va = dVar(lit);
+        Var va = dVar(lit);
         Vals isFalse = dOneSolverAssigs.multiLBools[va].isTrue;
         if (!dSign(lit)) {
             isFalse = ~ isFalse;
@@ -151,9 +151,10 @@ __global__ void dFindClauses(DArr<DOneSolverAssigs> dOneSolverAssigs, DAssigAggr
 #endif
             Lit lit = *litPt;
 
-            Vals va = dVar(lit);
+            Var va = dVar(lit);
             ASSERT_OP_MSG_C(va, <, dAssigAggregates.multiAggs.size(), PRINTCN(lit); PRINTCN(clId); PRINTCN(clSize); PRINTCN(dClauses.getClCount(clSize)));
             MultiAgg &multiAgg = dAssigAggregates.multiAggs[va];
+            
             assert((~ (multiAgg.canBeTrue | multiAgg.canBeFalse | multiAgg.canBeUndef)) == 0);
             Vals val;
             if (dSign(lit)) {
@@ -224,9 +225,10 @@ void GpuRunner::wholeRun(bool canStart) {
     std::unique_ptr<Reporter<ReportedClause>> nextReporter;
     bool startingNew = false;
     bool notEnoughGpuMemory = false;
+    AssigsAndUpdates assigsAndUpdates;
     if (canStart) {
         nextInAssigIdsPerSolver = (lastInAssigIdsPerSolver + 1) % 2;
-        startGpuRunAsync(stream, assigIdsPerSolver[nextInAssigIdsPerSolver], nextReporter, startingNew, notEnoughGpuMemory);
+        startGpuRunAsync(stream, assigIdsPerSolver[nextInAssigIdsPerSolver], nextReporter, startingNew, notEnoughGpuMemory, assigsAndUpdates);
     }
     if (prevReporter) {
         gatherGpuRunResults(assigIdsPerSolver[lastInAssigIdsPerSolver], *prevReporter);
@@ -241,6 +243,20 @@ void GpuRunner::wholeRun(bool canStart) {
     if (notEnoughGpuMemory) {
         hostClauses.reduceDb(stream);
         hasRunOutOfGpuMemoryOnce = true;
+        if (assigsAndUpdates.dAssigUpdates.vals.size() > 0) {
+            // there are still some var updates that we must send to the GPU, do it now
+            RunInfo runInfo = hostClauses.makeRunInfo(stream, cpuToGpuContigCopier);
+            // This check must be before initClauses
+            if (!cpuToGpuContigCopier.tryCopyAsync(cudaMemcpyHostToDevice, stream)) {
+                // At this point, we can't reduce db, because there might already be a gpu run in flight with reported clauses positions. reducing db would invalidate them.
+                // We do need to make the assigs on the GPU match what's on the CPU though.
+                fprintf(stderr, "Was unable to copy assignments to the GPU due to low memory\n");
+                THROW();
+                return;
+            }
+            exitIfError(cudaEventRecord(cpuToGpuCopyDone.get(), stream), POSITION);
+            launchGpu(stream, runInfo, assigsAndUpdates, nextReporter);
+        }
     }
 }
 
@@ -255,7 +271,7 @@ struct InitParams {
 }
 
 */
-void GpuRunner::startGpuRunAsync(cudaStream_t &stream, std::vector<AssigIdsPerSolver> &assigIdsPerSolver, std::unique_ptr<Reporter<ReportedClause>> &reporter, bool &started, bool &notEnoughGpuMemory) {
+void GpuRunner::startGpuRunAsync(cudaStream_t &stream, std::vector<AssigIdsPerSolver> &assigIdsPerSolver, std::unique_ptr<Reporter<ReportedClause>> &reporter, bool &started, bool &notEnoughGpuMemory, AssigsAndUpdates &assigsAndUpdates) {
 #ifdef PRINTCN_ALOT
     printf("startGpuRunAsync\n");
 #endif
@@ -284,42 +300,48 @@ void GpuRunner::startGpuRunAsync(cudaStream_t &stream, std::vector<AssigIdsPerSo
     }
 
     TimeGauge tg(globalStats[timeSpentFillingAssigs], quickProf);
-    AssigsAndUpdates assigsAndUpdates = hostAssigs.fillAssigsAsync(cpuToGpuContigCopier, assigIdsPerSolver, stream);
+    assigsAndUpdates = hostAssigs.fillAssigsAsync(cpuToGpuContigCopier, assigIdsPerSolver, stream);
     tg.complete();
-
+    // This check must be before initClauses
     if (!cpuToGpuContigCopier.tryCopyAsync(cudaMemcpyHostToDevice, stream)) {
-        THROW();
+        // At this point, we can't reduce db, because there might already be a gpu run in flight with reported clauses positions. reducing db would invalidate them.
+        // We do need to make the assigs on the GPU match what's on the CPU though.
+        started = false;
+        notEnoughGpuMemory = true;
+        return;
     }
     exitIfError(cudaEventRecord(cpuToGpuCopyDone.get(), stream), POSITION);
+    runGpuAdjustingDims(warpsPerBlock, warpsPerBlock * blockCount, [&] (int blockCount, int threadsPerBlock) {
+        initClauses<<<blockCount, threadsPerBlock, 0, stream>>>(clUpdateSet.getDClauseUpdates(), runInfo.getDClauses());
+    });
+
+    launchGpu(stream, runInfo, assigsAndUpdates, reporter);
+    started = true;
+    notEnoughGpuMemory = false;
+}
+
+void GpuRunner::launchGpu(cudaStream_t &stream, RunInfo &runInfo, AssigsAndUpdates &assigsAndUpdates, std::unique_ptr<Reporter<ReportedClause>> &reporter) {
 
     gpuToCpuContigCopier.clear(false);
-    reporter = my_make_unique<Reporter<ReportedClause>>(gpuToCpuContigCopier, stream, countPerCategory, categoryCount);
-    auto dReporter = reporter->getDReporter();
-    DClauses dClauses = runInfo.getDClauses();
 
     ASSERT_OP_C(warpsPerBlock, >, 0);
 
+    exitIfError(cudaGetLastError(), POSITION);
+    prepareOneSolverChecksAsync(runInfo.warpCount * WARP_SIZE, stream);
+    reporter = my_make_unique<Reporter<ReportedClause>>(gpuToCpuContigCopier, stream, countPerCategory, categoryCount);
+    DReporter<ReportedClause> dReporter = reporter->getDReporter();
     runGpuAdjustingDims(warpsPerBlock, warpsPerBlock * blockCount, [&] (int blockCount, int threadsPerBlock) {
         init<<<blockCount, threadsPerBlock, 0, stream>>>(assigsAndUpdates.dAssigUpdates.get(), assigsAndUpdates.assigSet.dSolverAssigs.getDArr(), assigsAndUpdates.assigSet.dAssigAggregates, dReporter, assigsAndUpdates.assigSet.aggCorresps.get());
     });
-    exitIfError(cudaGetLastError(), POSITION);
-
-    runGpuAdjustingDims(warpsPerBlock, warpsPerBlock * blockCount, [&] (int blockCount, int threadsPerBlock) {
-        initClauses<<<blockCount, threadsPerBlock, 0, stream>>>(clUpdateSet.getDClauseUpdates(), dClauses);
-    });
-
-    prepareOneSolverChecksAsync(runInfo.warpCount * WARP_SIZE, stream);
-    if (quickProf) exitIfError(cudaEventRecord(beforeFindClauses.get(), stream), POSITION);
-
     // Only this run uses runInfo.warpCount for the dimensions
+    DClauses dClauses = runInfo.getDClauses();
+    if (quickProf) exitIfError(cudaEventRecord(beforeFindClauses.get(), stream), POSITION);
     runGpuAdjustingDims(warpsPerBlock, runInfo.warpCount, [&] (int blockCount, int threadsPerBlock) {
         dFindClauses<<<blockCount, threadsPerBlock, 0, stream>>>(assigsAndUpdates.assigSet.dSolverAssigs.getDArr(),
             assigsAndUpdates.assigSet.dAssigAggregates, dClauses, dReporter, clauseTestsOnAssigs.getDArr());
     });
-    exitIfError(cudaEventRecord(afterFindClauses.get(), stream), POSITION);
+    if (quickProf) exitIfError(cudaEventRecord(afterFindClauses.get(), stream), POSITION);
     setAllAssigsToLastAsync(warpsPerBlock, warpsPerBlock * blockCount, assigsAndUpdates, stream);
-    started = true;
-    notEnoughGpuMemory = false;
 }
 
 void GpuRunner::scheduleGpuToCpuCopyAsync(cudaStream_t &stream) {

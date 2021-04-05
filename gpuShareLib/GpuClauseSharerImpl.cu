@@ -237,6 +237,10 @@ const char* GpuClauseSharerImpl::getOneSolverStatName(OneSolverStats stat) {
 
 void GpuClauseSharerImpl::getCurrentAssignment(int solverId, uint8_t *assig) { 
     assigs->getAssigs(solverId).getCurrentAssignment(assig);
+    for (int i = 0; i < toUnset[solverId].size(); i++) {
+        Var v = var(toUnset[solverId][i]);
+        assig[v] = toInt(gl_Undef);
+    }
 }
 
 long GpuClauseSharerImpl::getLastAssigAllReported(int cpuSolverId) {

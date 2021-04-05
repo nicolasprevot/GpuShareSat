@@ -123,11 +123,11 @@ inline MultiLBool makeMultiLBool(lbool lb) {
 inline __device__ __host__ void printC(const MultiLBool vad) {
 	Vals tr = vad.withTrue();
 	if (tr != 0) {
-		printf("tr: "); GpuShare::printBinary(tr); printf(" ");
+		printf("tr: "); GpuShare::printBinaryDH(tr); printf(" ");
 	}
 	Vals fa = vad.withFalse();
 	if (fa != 0) {
-		printf("fa: "); GpuShare::printBinary(fa); printf(" ");
+		printf("fa: "); GpuShare::printBinaryDH(fa); printf(" ");
 	}
 }
 
