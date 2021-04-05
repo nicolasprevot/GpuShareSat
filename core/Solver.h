@@ -71,6 +71,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "mtl/Clone.h"
 #include "utils/JsonWriter.h"
 #include <map>
+#include <string>
 
 namespace GpuShare {
     class Logger;

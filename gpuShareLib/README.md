@@ -21,7 +21,7 @@ You will need to include GpuClauseSharer:
 And create an instance of GpuClauseSharer:
 ```
 GpuShare::GpuClauseSharerOptions csOpts;
-GpuClauseSharer* gpuClauseSharer = GpuShare::makeGpuClauseSharerPtr(csOpts, varCount);
+GpuShare::GpuClauseSharer* gpuClauseSharer = GpuShare::makeGpuClauseSharerPtr(csOpts);
 ```
 
 You might want to wrap it in a ```std::unique_ptr<GpuClauseSharer>```.
@@ -64,11 +64,11 @@ Sending assignments is needed so that the GPU can tell which clauses would have 
 GpuClauseSharer maintains a representation of an assignment for every CPU thread.
 
 The three GpuClauseSharer methods that will need to be called are:
-- bool trySetSolverValues(int cpuSolverId, int *lits, int count) 
-- void unsetSolverValues(int cpuSolverId, int *lits, int count)
-- long trySendAssignment(int cpuSolverId)
+- `bool trySetSolverValues(int cpuSolverId, int *lits, int count)` 
+- `void unsetSolverValues(int cpuSolverId, int *lits, int count)`
+- `long trySendAssignment(int cpuSolverId)`
 
-Each thread should maintain a variable: int trailCopiedUntil, such that the representation of GpuClauseSharer of its assignment corresponds
+Each thread should maintain a variable: `int trailCopiedUntil`, such that the representation of GpuClauseSharer of its assignment corresponds
 to all the literals in the trail up to not including this one.
 
 Whenever your solver backtracks, you should notify GpuClauseSharer of the literals that are being unset. Assuming that the solver has the same meaning for
@@ -97,7 +97,7 @@ void trySendAssignmentToGpu(int level) {
         unsetFromGpu(level)
         sendUntil = trail_lim[level];
     } else {
-        sendUntil = trail.size()
+        sendUntil = trail.size();
     }
     if (trailCopiedUntil >= sendUntil) return;
     // gpuClauseSharer might already have too many assignments from our solver in which case we might not be able to pass a new assignment 
