@@ -49,7 +49,7 @@ void JsonWriter::writePrecJson() {
         os << ",";
     }
     if (needNewline) {
-        os << "\n";
+        os << "\nc";
     }
     needComma = false;
     needNewline = false;
@@ -85,7 +85,7 @@ JObj::JObj(JsonWriter &_writer): writer(_writer) {
 
 JObj::~JObj() {
     if (writer.needNewline) {
-        writer.write("\n");
+        writer.write("\nc");
     }
     writer.write("}");
     writer.setNeedNewlineAndComma();
@@ -99,7 +99,7 @@ JArr::JArr(JsonWriter &_writer): writer(_writer) {
 
 JArr::~JArr() {
     if (writer.needNewline) {
-        writer.write("\n");
+        writer.write("\nc");
     }
     writer.write("]");
     writer.setNeedNewlineAndComma();
