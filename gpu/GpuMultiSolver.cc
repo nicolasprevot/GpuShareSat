@@ -86,14 +86,14 @@ void launchSolver(std::mutex &mutex, GpuHelpedSolver*& solver, Finisher &finishe
         }
         delete copy;
     }
-    LOG(logger, 1, "c A thread is exiting\n");
+    LOG(logger, 1, "c A thread is exiting");
 }
 
 lbool GpuMultiSolver::simplify() {
     int ret2 = helpedSolvers[0]->simplify();
     if(ret2) helpedSolvers[0]->eliminate(true);
     if (!helpedSolvers[0]->okay()) {
-        LOG(logger, 1, "c Solved by unit propagation\n");
+        LOG(logger, 1, "c Solved by unit propagation");
         return l_False;
     }
     return l_Undef;
@@ -110,8 +110,8 @@ lbool GpuMultiSolver::solve(int _cpuThreadCount) {
 
     if (verb.global > 0) {
         // TODO: is it the right format
-        LOG(logger, 1, "c | all clones generated. Memory = " << memUsed() << "Mb\n");
-        LOG(logger, 1, "c ========================================================================================================|\n");
+        LOG(logger, 1, "c | all clones generated. Memory = " << memUsed() << "Mb");
+        LOG(logger, 1, "c ========================================================================================================|");
     }
     gpuClauseSharer.setCpuSolverCount(_cpuThreadCount);
     vec<std::thread> threads;
@@ -122,7 +122,7 @@ lbool GpuMultiSolver::solve(int _cpuThreadCount) {
         threads[i] = std::thread(launchSolver, std::ref(solversMutex), std::ref(helpedSolvers[i]), std::ref(finisher), std::ref(logger));
     }
 
-    LOG(logger, 1, "c All solvers launched\n");
+    LOG(logger, 1, "c All solvers launched");
 
     while (!finisher.stopAllThreads) {
         periodicRunner->maybeRun(realTimeSecSinceStart());
@@ -141,7 +141,7 @@ lbool GpuMultiSolver::solve(int _cpuThreadCount) {
             // It's very different for gpu memory usage where there's no swap
             // so it crashes if we go over the limit
 
-            LOG(logger, 1, "c There is " << cpuMemUsed << " megabytes of memory used on cpu which is high, the limit is " << maxMemory <<", going to try reducing memory usage\n");
+            LOG(logger, 1, "c There is " << cpuMemUsed << " megabytes of memory used on cpu which is high, the limit is " << maxMemory <<", going to try reducing memory usage");
             // All the clauses on the GPU are also on the CPU, so limit the growth of their number
             gpuReduceDbPeriodInc = 0;
             std::lock_guard<std::mutex> lock(solversMutex);
@@ -161,8 +161,8 @@ lbool GpuMultiSolver::solve(int _cpuThreadCount) {
             for (int i = 0; i < helpedSolvers.size(); i++) {
                 maxApprMemAllocated += helpedSolvers[i]->getApproximateMemAllocated();
             }
-            LOG(logger, 1, "c There is " << cpuMemUsed << " megabytes of memory used on the cpu when the limit is " << maxMemory << ". Going to kill threads to reduce memory usage\n");
-            LOG(logger, 1, "c The approximate memory allocated is " << maxApprMemAllocated  / 1.0e6 << "\n");
+            LOG(logger, 1, "c There is " << cpuMemUsed << " megabytes of memory used on the cpu when the limit is " << maxMemory << ". Going to kill threads to reduce memory usage");
+            LOG(logger, 1, "c The approximate memory allocated is " << maxApprMemAllocated  / 1.0e6);
             finisher.stopAllThreadsAfterId = std::max(helpedSolvers.size() - 1, 1);
         }
         if (maxApprMemAllocated > 0)
@@ -180,7 +180,7 @@ lbool GpuMultiSolver::solve(int _cpuThreadCount) {
         }
     }
     if (logger.verb >= 1) {
-        LOG(logger, 1, "c printing final stats\n");
+        LOG(logger, 1, "c printing final stats");
         printStats();
     }
 

@@ -126,14 +126,14 @@ bool allocMemoryDevice(void **pt, size_t amount, const Logger &logger) {
     // I've seen it happening for clause updates in a case where cpu solvers generated lots of clauses
     // and gpu was really slow, so it rarely copied clauses to the gpu so they built up on the cpu
     if (amount > 400000000) {
-        LOG(logger, 1, "Allocating large amount of memory: " << amount << "\n");
+        LOG(logger, 1, "Allocating large amount of memory: " << amount);
     }
     size_t freeMem;
     size_t totalMem;
     exitIfError(cudaMemGetInfo(&freeMem, &totalMem), POSITION);
     if (freeMem < 0.01 * totalMem + amount ) {
-        LOG(logger, 1, "c Little memory left on gpu, refusing to allocate\n");
-        LOG(logger, 1, "c There was " << freeMem << " left out of " << totalMem << ", wanted to allocate " << amount << "\n");
+        LOG(logger, 1, "c Little memory left on gpu, refusing to allocate");
+        LOG(logger, 1, "c There was " << freeMem << " left out of " << totalMem << ", wanted to allocate " << amount);
         *pt = NULL;
         return false;
     }
@@ -141,7 +141,7 @@ bool allocMemoryDevice(void **pt, size_t amount, const Logger &logger) {
     // fragmentation
     cudaError_t err = cudaMalloc(pt, amount);
     if (err == cudaErrorMemoryAllocation) {
-        LOG(logger, 1, "c Failed to allocate memory on device\n");
+        LOG(logger, 1, "c Failed to allocate memory on device");
         *pt = NULL;
         return false;
     }
@@ -221,7 +221,7 @@ void* allocateMemoryHost(size_t amount, bool &pageLocked, const Logger &logger) 
         cudaError_t err = cudaMallocHost(&hPtr, amount);
         if (err != cudaSuccess) {
             pageLocked = false;
-            LOG(logger, 1, "c switching memory from page locked to paged because cudaMallocHost failed, amount was " <<  amount << "\n");
+            LOG(logger, 1, "c switching memory from page locked to paged because cudaMallocHost failed, amount was " <<  amount);
         }
     } 
     if (!pageLocked) {

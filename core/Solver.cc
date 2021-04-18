@@ -1362,7 +1362,7 @@ bool Solver::simplify() {
 void Solver::adaptSolver() {
     bool adjusted = false;
     bool reinit = false;
-    LOG(logger, 2, "c\nc Solver " << cpuThreadId << ": try to adapt solver strategies at " << realTimeSecSinceStart() << ". There are " << learned.size() << " learned clauses and " << permanentlyLearned.size() << " permanently learned\n, " << stats[removedClauses] << " clauses were removed\n");
+    LOG(logger, 2, "c\nc Solver " << cpuThreadId << ": try to adapt solver strategies at " << realTimeSecSinceStart() << ". There are " << learned.size() << " learned clauses and " << permanentlyLearned.size() << " permanently learned " << stats[removedClauses] << " clauses were removed");
     /*  printf("c Adjusting solver for the SAT Race 2015 (alpha feature)\n");
     printf("c key successive Conflicts       : %" PRIu64"\n",stats[noDecisionConflict]);
     printf("c nb unary clauses learned        : %" PRIu64"\n",stats[nbUn]);
@@ -1374,7 +1374,7 @@ void Solver::adaptSolver() {
         compareLbd = false;
         glureduce = true;
         adjusted = true;
-        LOG(logger, 2, "c Adjusting for low decision levels.\n");
+        LOG(logger, 2, "c Adjusting for low decision levels.");
         reinit = true;
         firstReduceDB = 2000;
         nbclausesbeforereduce = firstReduceDB;
@@ -1388,10 +1388,10 @@ void Solver::adaptSolver() {
         var_decay = 0.999;
         max_var_decay = 0.999;
         adjusted = true;
-        LOG(logger, 2, "c Adjusting for low successive conflicts.\n");
+        LOG(logger, 2, "c Adjusting for low successive conflicts.");
     }
     if(stats[noDecisionConflict] > 54400 && mayPermLearnLowLbd) {
-        LOG(logger, 2, "c Adjusting for high successive conflicts.\n");
+        LOG(logger, 2, "c Adjusting for high successive conflicts.");
         coLBDBound = 3;
         compareLbd = false;
         glureduce = true;
@@ -1405,12 +1405,12 @@ void Solver::adaptSolver() {
         var_decay = 0.91;
         max_var_decay = 0.91;
         adjusted = true;
-        LOG(logger, 2, "c Adjusting for a very large number of true glue clauses found.\n");
+        LOG(logger, 2, "c Adjusting for a very large number of true glue clauses found.");
     }
     if(!adjusted) {
-        LOG(logger, 2, "c Nothing extreme in this problem, continue with glucose default strategies.\n");
+        LOG(logger, 2, "c Nothing extreme in this problem, continue with glucose default strategies.");
     }
-    LOG(logger, 2, "c\n");
+    LOG(logger, 2, "c");
     if(adjusted) { // Let's reinitialize the glucose restart strategy counters
         lbdQueue.fastclear();
         sumLBD = 0;
@@ -1434,7 +1434,7 @@ void Solver::adaptSolver() {
             }
         }
         learned.shrink(i - j);
-        LOG(logger, 2, "c Activating Chanseok Strategy: moved " << moved << " clauses to the permanent set.\n");
+        LOG(logger, 2, "c Activating Chanseok Strategy: moved " << moved << " clauses to the permanent set.");
     }
 
     if(reinit) {
@@ -1453,7 +1453,7 @@ void Solver::adaptSolver() {
     }
     printf("c reinitialization of all variables activity/phase/learned clauses.\n");
 */
-        LOG(logger, 2, "c Removing of non permanent clauses.\n");
+        LOG(logger, 2, "c Removing of non permanent clauses.");
     }
 }
 
@@ -1930,7 +1930,7 @@ void Solver::garbageCollect() {
     // is not precise but should avoid some unnecessary reallocations for the new region:
     ClauseAllocator to(ca.size() - ca.wasted());
     relocAll(to);
-    LOG(logger, 2, "c  Garbage collection:   " << ca.size() * ClauseAllocator::Unit_Size << " bytes => " << to.size() * ClauseAllocator::Unit_Size << "\n");
+    LOG(logger, 2, "c  Garbage collection:   " << ca.size() * ClauseAllocator::Unit_Size << " bytes => " << to.size() * ClauseAllocator::Unit_Size);
     to.moveTo(ca);
 }
 
