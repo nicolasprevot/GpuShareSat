@@ -66,8 +66,8 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "mtl/Alg.h"
 #include "utils/Options.h"
 #include "satUtils/SolverTypes.h"
-#include "core/BoundedQueue.h"
-#include "core/Constants.h"
+#include "../core/BoundedQueue.h"
+#include "../core/Constants.h"
 #include "mtl/Clone.h"
 #include "utils/JsonWriter.h"
 #include <map>
@@ -82,7 +82,7 @@ namespace Glucose {
 
 enum CoreStats {
 #define X(v) v,
-#include "core/CoreSolverStats.h"
+#include "../core/CoreSolverStats.h"
 #undef X
 } ;
 

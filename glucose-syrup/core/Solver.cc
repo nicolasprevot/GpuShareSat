@@ -56,12 +56,12 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "utils/System.h"
 #include "utils/Utils.h"
 #include "mtl/Sort.h"
-#include "core/Solver.h"
-#include "core/Constants.h"
-#include "simp/SimpSolver.h"
+#include "../core/Solver.h"
+#include "../core/Constants.h"
+#include "../simp/SimpSolver.h"
 #include "utils/JsonWriter.h"
 #include "Finisher.h"
-#include "gpuShareLib/Utils.h"
+#include "../gpuShareLib/Utils.h"
 
 using namespace Glucose;
 

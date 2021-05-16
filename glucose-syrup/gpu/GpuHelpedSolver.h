@@ -26,8 +26,8 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #ifndef GPUHELPEDSOLVER_H_
 #define GPUHELPEDSOLVER_H_
 
-#include "simp/SimpSolver.h"
-#include "gpuShareLib/GpuClauseSharer.h"
+#include "../simp/SimpSolver.h"
+#include "../gpuShareLib/GpuClauseSharer.h"
 
 #include <set>
 
@@ -50,12 +50,12 @@ enum GpuStats{
     // overlap
 #define X(v) 1 +
     nbexportedgpu=(
-#include "core/CoreSolverStats.h"
+#include "../core/CoreSolverStats.h"
     0
     ),
 #undef X
 #define X(v) v,
-#include "gpu/GpuSolverStats.h"
+#include "../gpu/GpuSolverStats.h"
 #undef X
 } ;
 

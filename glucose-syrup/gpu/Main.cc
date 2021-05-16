@@ -26,10 +26,10 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "GpuMultiSolver.h"
 #include "satUtils/Dimacs.h"
 #include "CompositionRoot.h"
-#include "core/Solver.h"
+#include "../core/Solver.h"
 #include "satUtils/InitHelper.h"
 #include "utils/System.h"
-#include "core/Finisher.h"
+#include "../core/Finisher.h"
 
 using namespace Glucose;
 
