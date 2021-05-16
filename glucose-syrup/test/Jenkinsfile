@@ -1,0 +1,16 @@
+pipeline {
+    agent any
+    triggers {
+        pollSCM('* * * * *')
+    }
+    stages {
+        stage('test') {
+            steps {
+                dir('test') {
+                    sh 'make'
+                    sh './test-glucose'
+                }
+            }
+        }
+    }
+}
