@@ -1,0 +1,16 @@
+**/*.out
+**/*.or
+**/*.o
+**/depend.mk
+**/*_release
+**/*_debug
+**/*_profile
+**/*.swp
+**/*.cudafe1.*
+**/*.ptx
+**/*.fatbin*
+**/*.module_id
+**/*.cubin
+**/glucose*
+**/test-*
+tags

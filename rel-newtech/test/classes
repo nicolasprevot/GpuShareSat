@@ -1,0 +1,8 @@
+ArrAllocator
+ArrPair
+ClauseBatch
+ContigCopier
+CorrespArr
+DArr
+DClauses
+GpuClauseSharerImpl
