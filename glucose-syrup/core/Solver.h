@@ -62,14 +62,14 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 
 // #define KEEP_IMPL_COUNT
 
-#include "mtl/Heap.h"
-#include "mtl/Alg.h"
-#include "utils/Options.h"
-#include "satUtils/SolverTypes.h"
+#include "../mtl/Heap.h"
+#include "../mtl/Alg.h"
+#include "../utils/Options.h"
+#include "../satUtils/SolverTypes.h"
 #include "../core/BoundedQueue.h"
 #include "../core/Constants.h"
-#include "mtl/Clone.h"
-#include "utils/JsonWriter.h"
+#include "../mtl/Clone.h"
+#include "../utils/JsonWriter.h"
 #include <map>
 #include <string>
 

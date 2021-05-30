@@ -22,7 +22,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "gpuShareLib/Clauses.cuh"
 #include "gpuShareLib/ContigCopy.cuh"
 #include "../testUtils/TestHelper.cuh"
-#include "mtl/Vec.h"
+#include "../mtl/Vec.h"
 #include <math.h>
 
 namespace GpuShare {

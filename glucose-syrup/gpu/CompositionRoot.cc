@@ -25,8 +25,8 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 
 #include "CompositionRoot.h"
 #include "GpuHelpedSolver.h"
-#include "utils/System.h"
-#include "utils/Options.h"
+#include "../utils/System.h"
+#include "../utils/Options.h"
 #include "gpuShareLib/GpuClauseSharer.h"
 #include "gpuShareLib/my_make_unique.h"
 #include <thread>

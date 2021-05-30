@@ -23,11 +23,11 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "gpuShareLib/Clauses.cuh"
 #include "../gpu/GpuHelpedSolver.h"
 #include "gpuShareLib/GpuRunner.cuh"
-#include "satUtils/SolverTypes.h"
+#include "../satUtils/SolverTypes.h"
 #include "../core/Solver.h"
 #include "gpuShareLib/Utils.h"
 #include <cuda.h>
-#include <mtl/Vec.h>
+#include "../mtl/Vec.h"
 #include <algorithm>
 #include <cstdlib>
 #include <ctime>
@@ -37,7 +37,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "gpuShareLib/Utils.h"
 #include "gpuShareLib/my_make_unique.h"
 #include "gpuShareLib/Reported.cuh"
-#include "utils/Utils.h"
+#include "../utils/Utils.h"
 
 using namespace GpuShare;
 

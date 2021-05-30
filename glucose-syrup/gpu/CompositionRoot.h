@@ -28,10 +28,10 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 
 #include <iostream>
 
-#include "utils/Options.h"
+#include "../utils/Options.h"
 #include "GpuHelpedSolver.h"
 #include "Periodic.h"
-#include "satUtils/InitHelper.h"
+#include "../satUtils/InitHelper.h"
 #include "GpuMultiSolver.h"
 #include "gpuShareLib/GpuClauseSharer.h"
 

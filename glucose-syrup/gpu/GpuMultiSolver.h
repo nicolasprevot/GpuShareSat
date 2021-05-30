@@ -19,8 +19,8 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #ifndef DEF_GPU_MULTI_SOLVER
 #define DEF_GPU_MULTI_SOLVER
 
-#include "mtl/Vec.h"
-#include "satUtils/SolverTypes.h"
+#include "../mtl/Vec.h"
+#include "../satUtils/SolverTypes.h"
 #include <functional>
 #include "gpuShareLib/Utils.h"
 

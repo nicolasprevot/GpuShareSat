@@ -55,12 +55,12 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include <sys/resource.h>
 
 #include "../core/Finisher.h"
-#include "utils/System.h"
-#include "utils/ParseUtils.h"
-#include "utils/Options.h"
-#include "satUtils/Dimacs.h"
+#include "../utils/System.h"
+#include "../utils/ParseUtils.h"
+#include "../utils/Options.h"
+#include "../satUtils/Dimacs.h"
 #include "../simp/SimpSolver.h"
-#include "satUtils/InitHelper.h"
+#include "../satUtils/InitHelper.h"
 #include "gpuShareLib/Utils.h"
 
 using namespace Glucose;

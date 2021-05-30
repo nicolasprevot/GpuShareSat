@@ -24,11 +24,11 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include <csignal>
 
 #include "GpuMultiSolver.h"
-#include "satUtils/Dimacs.h"
+#include "../satUtils/Dimacs.h"
 #include "CompositionRoot.h"
 #include "../core/Solver.h"
-#include "satUtils/InitHelper.h"
-#include "utils/System.h"
+#include "../satUtils/InitHelper.h"
+#include "../utils/System.h"
 #include "../core/Finisher.h"
 
 using namespace Glucose;

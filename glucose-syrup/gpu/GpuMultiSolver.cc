@@ -18,15 +18,15 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
  **************************************************************************************************/
 #include "GpuMultiSolver.h"
 #include "GpuHelpedSolver.h"
-#include "utils/System.h"
+#include "../utils/System.h"
 #include "gpuShareLib/Utils.h"
-#include "satUtils/Dimacs.h"
+#include "../satUtils/Dimacs.h"
 #include <thread> 
 #include "Periodic.h"
 #include "gpuShareLib/my_make_unique.h"
 #include "../core/Finisher.h"
-#include "utils/Utils.h"
-#include "utils/JsonWriter.h"
+#include "../utils/Utils.h"
+#include "../utils/JsonWriter.h"
 
 namespace Glucose {
 

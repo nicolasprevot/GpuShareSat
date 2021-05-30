@@ -52,9 +52,9 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #ifndef Glucose_SimpSolver_h
 #define Glucose_SimpSolver_h
 
-#include "mtl/Queue.h"
+#include "../mtl/Queue.h"
 #include "../core/Solver.h"
-#include "mtl/Clone.h"
+#include "../mtl/Clone.h"
 
 namespace Glucose {
 

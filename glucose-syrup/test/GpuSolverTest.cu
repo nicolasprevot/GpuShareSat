@@ -27,12 +27,12 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "gpuShareLib/GpuRunner.cuh"
 #include "../gpu/GpuMultiSolver.h"
 #include "gpuShareLib/Reported.cuh"
-#include "satUtils/SolverTypes.h"
+#include "../satUtils/SolverTypes.h"
 #include "../core/Solver.h"
 #include "../testUtils/TestHelper.cuh"
 #include "gpuShareLib/ContigCopy.cuh"
 #include <cuda.h>
-#include <mtl/Vec.h>
+#include "../mtl/Vec.h"
 #include <algorithm>
 #include "gpuShareLib/Utils.h"
 
