@@ -18,7 +18,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
  **************************************************************************************************/
 
 #include "gpuShareLib/Helper.cuh"
-#include "testUtils/TestHelper.cuh"
+#include "../testUtils/TestHelper.cuh"
 #include "gpu/CompositionRoot.h"
 #include "gpuShareLib/Clauses.cuh"
 #include <boost/test/unit_test.hpp>

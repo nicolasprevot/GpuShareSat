@@ -21,7 +21,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 
 #include "gpuShareLib/GpuClauseSharerImpl.cuh"
 #include "gpuShareLib/GpuUtils.cuh"
-#include "core/Finisher.h"
+#include "../core/Finisher.h"
 #include "satUtils/SolverTypes.h"
 
 #include <iostream>

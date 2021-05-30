@@ -21,9 +21,9 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 
 #include <cuda.h>
 #include <boost/test/unit_test.hpp>
-#include "../gpuShareLib/CorrespArr.cuh"
-#include "../gpuShareLib/GpuUtils.cuh"
-#include "testUtils/TestHelper.cuh"
+#include "gpuShareLib/CorrespArr.cuh"
+#include "gpuShareLib/GpuUtils.cuh"
+#include "../testUtils/TestHelper.cuh"
 
 namespace GpuShare {
 

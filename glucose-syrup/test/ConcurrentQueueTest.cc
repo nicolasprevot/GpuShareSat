@@ -18,7 +18,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
  **************************************************************************************************/
 
 #include <boost/test/unit_test.hpp>
-#include "../gpuShareLib/ConcurrentQueue.h"
+#include "gpuShareLib/ConcurrentQueue.h"
 
 namespace GpuShare {
 

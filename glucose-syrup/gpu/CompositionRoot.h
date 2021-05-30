@@ -33,7 +33,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "Periodic.h"
 #include "satUtils/InitHelper.h"
 #include "GpuMultiSolver.h"
-#include "../gpuShareLib/GpuClauseSharer.h"
+#include "gpuShareLib/GpuClauseSharer.h"
 
 #include <memory>
 

@@ -61,7 +61,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "../simp/SimpSolver.h"
 #include "utils/JsonWriter.h"
 #include "Finisher.h"
-#include "../gpuShareLib/Utils.h"
+#include "gpuShareLib/Utils.h"
 
 using namespace Glucose;
 

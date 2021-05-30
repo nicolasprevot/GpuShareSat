@@ -61,7 +61,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "satUtils/Dimacs.h"
 #include "../simp/SimpSolver.h"
 #include "satUtils/InitHelper.h"
-#include "../gpuShareLib/Utils.h"
+#include "gpuShareLib/Utils.h"
 
 using namespace Glucose;
 

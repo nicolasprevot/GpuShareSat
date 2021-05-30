@@ -19,10 +19,10 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 
 #include <boost/test/unit_test.hpp>
 #include <cuda.h>
-#include "../gpuShareLib/ContigCopy.cuh"
-#include "../gpuShareLib/GpuUtils.cuh"
-#include "../gpuShareLib/Reporter.cuh"
-#include "testUtils/TestHelper.cuh"
+#include "gpuShareLib/ContigCopy.cuh"
+#include "gpuShareLib/GpuUtils.cuh"
+#include "gpuShareLib/Reporter.cuh"
+#include "../testUtils/TestHelper.cuh"
 
 namespace Glucose {
     inline void clearObj(int a) {

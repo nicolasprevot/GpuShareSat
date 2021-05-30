@@ -18,26 +18,26 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
  **************************************************************************************************/
 #define BOOST_TEST_MODULE cuda_module
 #include <boost/test/unit_test.hpp>
-#include "../gpuShareLib/Helper.cuh"
+#include "gpuShareLib/Helper.cuh"
 #include "../gpu/CompositionRoot.h"
-#include "../gpuShareLib/GpuUtils.cuh"
-#include "../gpuShareLib/Assigs.cuh"
-#include "../gpuShareLib/Clauses.cuh"
+#include "gpuShareLib/GpuUtils.cuh"
+#include "gpuShareLib/Assigs.cuh"
+#include "gpuShareLib/Clauses.cuh"
 #include "../gpu/GpuHelpedSolver.h"
-#include "../gpuShareLib/GpuRunner.cuh"
+#include "gpuShareLib/GpuRunner.cuh"
 #include "../gpu/GpuMultiSolver.h"
-#include "../gpuShareLib/Reported.cuh"
+#include "gpuShareLib/Reported.cuh"
 #include "satUtils/SolverTypes.h"
 #include "../core/Solver.h"
-#include "testUtils/TestHelper.cuh"
-#include "../gpuShareLib/ContigCopy.cuh"
+#include "../testUtils/TestHelper.cuh"
+#include "gpuShareLib/ContigCopy.cuh"
 #include <cuda.h>
 #include <mtl/Vec.h>
 #include <algorithm>
-#include "../gpuShareLib/Utils.h"
+#include "gpuShareLib/Utils.h"
 
-#include "../gpuShareLib/GpuRunner.cuh"
-#include "../gpuShareLib/GpuClauseSharer.h"
+#include "gpuShareLib/GpuRunner.cuh"
+#include "gpuShareLib/GpuClauseSharer.h"
 
 using namespace std;
 

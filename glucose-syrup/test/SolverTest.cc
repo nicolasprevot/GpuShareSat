@@ -21,7 +21,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "../core/Solver.h"
 #include "../core/Finisher.h"
 #include "satUtils/Dimacs.h"
-#include "../gpuShareLib/Utils.h"
+#include "gpuShareLib/Utils.h"
 
 #include <iostream>
 
