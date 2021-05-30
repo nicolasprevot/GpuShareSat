@@ -13,35 +13,29 @@ This is done by exporting all learned clauses to the GPU. The GPU checks its cla
 
 The GPU repeatedly checks up to millions of clauses against up to 1024 assignments. Experiments show that the GPU is more than able to cope with assignments coming from the CPU (provided the CPU only sends the parent of a conflict).
 
-For more details, see [the whitepaper](./paper.pdf)
-
 ## Directory overview:
 
-- mtl:            Minisat Template Library. Utilities not related to SAT.
-- satUtils:       Some utilities related to SAT.
-- core:           A core version of the solver glucose (no main here)
-- simp:           An extended solver with simplification capabilities
-- gpu:            Involves the gpu
-- test:           Some unit tests
-- perftest:       Some performance tests involving the gpu
+- glucose-syrup:  The glucose-syrup solver with GpuShareSat
+- rel-newtech:    The Relaxed LCMDCBDL newTech with GpuShareSat
+- gpuShareLib:    The GpuShare Sat library itself
 
 ## To build
-release version: without assertions, statically linked, etc   
-Like minisat....
-
-cd  simp  
-make rs
-
-To compile the GPU version:
-- Follow [CUDA installation guide](https://docs.nvidia.com/cuda/cuda-quick-start-guide/index.html) if you don't have CUDA installed yet
-- cd gpu
-- make 
+First, follow [CUDA installation guide](https://docs.nvidia.com/cuda/cuda-quick-start-guide/index.html) if you don't have CUDA installed yet
+```
+cd glucose-syrup/gpu
+make
+```
+or 
+```
+cd rel-newtech/gpu
+make
+```
 
 ## Usage:
 
-in simp directory: ./glucose --help
+in glucose-syrup/gpu directory: ./glucose-gpu --help
 
-in gpu directory: ./glucose-gpu --help
+in rel-newtech/gpu directory: ./rel-newtech-gpu --help
 
 ## Contact
 [nicolas.prevt@gmail.com](mailto:nicolas.prevt@gmail.com)

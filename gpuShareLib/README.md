@@ -52,7 +52,7 @@ Each solver thread will need to know its id, we will use a variable cpuThreadId 
 
 ### Sending clauses to the GPU
 Each thread should send all the clauses it learns to the GPU, with the GpuClauseSharer method: ```long addClause(int solverId, int *lits, int count);```
-The representation for the literals is: 2 * var for positive literals, 2 * var + 1 for negative ones, like minisat.
+The representation for the literals is: 2 * var for positive literals, 2 * var + 1 for negative ones, like Minisat.
 Assuming that your solver uses the same representation, you can call: ``` gpuClauseSharer.addClause(cpuThreadId, (int*) &cl[0], cl.size())```
 
 This method returns a unique long identifying the clause. You do not need to use it, but it might be useful for debugging.
@@ -109,8 +109,11 @@ void trySendAssignmentToGpu(int level) {
 }
 ```
 
-Whenever a conflict is found, you can call: ```trySendAssignmentToGpu(decisionLevel() - 1)```
+There are two possible strategies to call the above method:
+1. Whenever a conflict is found, call: ```trySendAssignmentToGpu(decisionLevel() - 1)```
+2. Whenever unit propagation completes without conflicts, call: ```trySendAssignmentToGpu(decisionLevel())```
 
+The first is less likely to overwhelm the GPU with too many assignments, but it does not work very well with chronological backtracking, when the second one does.
 
 ### Importing clauses from the GPU
 The GpuClauseSharer method to call is: ``` bool popReportedClause(int cpuSolverId, int* &lits, int &count, long &gpuClauseId) ```
