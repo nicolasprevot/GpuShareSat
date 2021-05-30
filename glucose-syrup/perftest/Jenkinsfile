@@ -9,8 +9,8 @@ pipeline {
                 dir('glucose-syrup/perftest') {
                     sh 'make'
                     sh 'make perftest-glucose_release'
-                    sh 'perftest-glucose'
-                    sh 'perftest-glucose_release'
+                    sh './perftest-glucose'
+                    sh './perftest-glucose_release'
                 }
             }
         }
