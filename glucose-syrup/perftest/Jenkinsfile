@@ -1,0 +1,18 @@
+pipeline {
+    agent any
+    triggers {
+        pollSCM('* * * * *')
+    }
+    stages {
+        stage('perftest') {
+            steps {
+                dir('glucose-syrup/perftest') {
+                    sh 'make'
+                    sh 'make perftest-glucose_release'
+                    sh 'perftest-glucose'
+                    sh 'perftest-glucose_release'
+                }
+            }
+        }
+    }
+}

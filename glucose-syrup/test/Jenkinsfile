@@ -6,7 +6,7 @@ pipeline {
     stages {
         stage('test') {
             steps {
-                dir('test') {
+                dir('glucose-syrup/test') {
                     sh 'make'
                     sh './test-glucose'
                 }
