@@ -1,7 +1,0 @@
-Date is: 26/05/2018
-Just for perftest:
-with 10000 runs, 1000000 clauses of size 5: about 10 reads per nanosecond, so about 2 clauses looked per nanosecond
-adding the reporter made it drop by half. (but that's because there are lots of clauses to report)
-Adding or not the actual checks inside the gpu rather than reading all the clauses didn't lead to a big loss (about 10%)
-
-Have a variable number of clauses doesn't change much versus a fixed one
