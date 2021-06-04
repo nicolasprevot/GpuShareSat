@@ -129,5 +129,5 @@ if l1 < l2, we backtrack to l1 and imply the last literal there. Otherwise, we d
 
 Importing clauses should be done regularly, for example after each decision.
 
-You can inspire yourselves from the gpuImportClauses method of [GpuHelpedSolver](../gpu/GpuHelpedSolver.cc) for this.
+You can inspire yourselves from the gpuImportClauses method of [GpuHelpedSolver](../glucose-syrup/gpu/GpuHelpedSolver.cc) for this.
 It relies on the following: ```int litLevel(Lit p) {return value(p) != l_False ? INT_MAX : level(var(p));}```
