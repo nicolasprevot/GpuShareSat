@@ -10,7 +10,7 @@ In contrast, in GpuShareSat, a thead will only import a clause if this clause wo
 This is done by exporting all learned clauses to the GPU. The GPU checks its clauses against past partial assignments coming from the CPU threads. This allows the GPU to notice when a clause would have been useful for a CPU thread. In this case, that CPU thread gets notified and imports the clause. 
 The GPU repeatedly checks up to millions of clauses against up to 1024 assignments.
 
-For more details see [the paper](comp.nus.edu.sg/~meel/Papers/sat21-psm.pdf), to be published during the [24th International Conference on Theory and Applications of Satisfiability Testing](https://static-webs.doc.iiia.csic.es/sat2021/)
+For more details see [the paper](https://comp.nus.edu.sg/~meel/Papers/sat21-psm.pdf), to be published during the [24th International Conference on Theory and Applications of Satisfiability Testing](https://static-webs.doc.iiia.csic.es/sat2021/)
 
 ## Directory overview:
 - glucose-syrup:  The glucose-syrup solver with GpuShareSat
