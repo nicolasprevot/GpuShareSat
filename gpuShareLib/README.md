@@ -113,7 +113,7 @@ There are two possible strategies to call the above method:
 1. Whenever a conflict is found, call: ```trySendAssignmentToGpu(decisionLevel() - 1)```
 2. Whenever unit propagation completes without conflicts, call: ```trySendAssignmentToGpu(decisionLevel())```
 
-The first is less likely to overwhelm the GPU with too many assignments, but it does not work very well with chronological backtracking, when the second one does.
+The first is less likely to overwhelm the GPU with too many assignments, but it does not work very well with chronological backtracking, when the second one does. The second one is recommended.
 
 ### Importing clauses from the GPU
 The GpuClauseSharer method to call is: ``` bool popReportedClause(int cpuSolverId, int* &lits, int &count, long &gpuClauseId) ```
