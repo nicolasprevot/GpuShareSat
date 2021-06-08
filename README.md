@@ -34,6 +34,3 @@ make rel-newtech_release
 in glucose-syrup/gpu directory: ```./glucose-gpu_relase --help```
 
 in rel-newtech/gpu directory: ```./rel-newtech-gpu_release --help```
-
-## Contact
-[nicolas.prevt@gmail.com](mailto:nicolas.prevt@gmail.com)
